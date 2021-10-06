@@ -2,10 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import skfuzzy as fuzz
 # from skfuzzy import control as ctrl
-from fuzzyFunctions import triangularFunc
-from fuzzySet import fuzzySet
-from fuzzyRule import fuzzyRule
-from fuzzySystem import fuzzySystem
+from fuzzyLib.fuzzyFunctions import triangularFunc
+from fuzzyLib.fuzzySet import fuzzySet
+from fuzzyLib.fuzzyRule import fuzzyRule
+from fuzzyLib.fuzzySystem import fuzzySystem
+
+from DOELib.LHSDesign import LHSDesign
 
 # Generate universe variables
 nominal = np.array([350, 425, 410, 580, 3.5])
@@ -123,97 +125,17 @@ cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 
 plt.show()
 
+# normalize aggregate membership function
+dx = n_safety.universe[1] - n_safety.universe[0]
+area = np.trapz(aggregate, dx=dx)
+aggregate /= area
 
-# # Define Antecedent/Consequent objects 
-# # They hold universe variables and membership functions
+# Define threshold safety factor
+threshold = 2.8
 
-# # Define Antecedents first
-# ctrl_sets = []
+# Latin hypercube for n_safety
+lb_nsafety = np.array([lb[-1],])
+ub_nsafety = np.array([ub[-1],])
+nsamples = 100
 
-# # Temperature T1
-# input_set = ctrl.Antecedent(fuzzy_sets[0].universe, labels[0])
-
-# # Custom membership functions passed to control objects
-# input_set['low'] = fuzzy_sets[0].lo.getArray()
-# input_set['medium'] = fuzzy_sets[0].md.getArray()
-# input_set['high'] = fuzzy_sets[0].hi.getArray()
-
-# ctrl_sets += [input_set]
-
-# # Temperature T4
-# input_set = ctrl.Antecedent(fuzzy_sets[3].universe, labels[3])
-
-# # Custom membership functions passed to control objects
-# input_set['low'] = fuzzy_sets[3].lo.getArray()
-# input_set['medium'] = fuzzy_sets[3].md.getArray()
-# input_set['high'] = fuzzy_sets[3].hi.getArray()
-
-# ctrl_sets += [input_set]
-
-# # Define Consequents
-
-# output_set = ctrl.Consequent(fuzzy_sets[-1].universe, labels[-1])
-
-# output_set['low'] = fuzzy_sets[-1].lo.getArray()
-# output_set['medium'] = fuzzy_sets[-1].md.getArray()
-# output_set['high'] = fuzzy_sets[-1].hi.getArray()
-
-# ctrl_sets += [output_set]
-
-# # label each fuzzy set
-# temp_T1 = ctrl_sets[0]
-# temp_T4 = ctrl_sets[1]
-# n_safety = ctrl_sets[2]
-
-# # Define fuzzy rules
-# rule1 = ctrl.Rule(temp_T1['low'] & temp_T4['high'], n_safety['low'])
-# rule2 = ctrl.Rule(temp_T1['high'] & temp_T4['low'], n_safety['high'])
-# rule3 = ctrl.Rule((temp_T1['low'] & temp_T4['low']), n_safety['medium'])
-# rule4 = ctrl.Rule((temp_T1['high'] & temp_T4['high']), n_safety['medium'])
-
-# rule5 = ctrl.Rule(temp_T1['medium'] & temp_T4['high'], n_safety['low'])
-# rule6 = ctrl.Rule(temp_T1['medium'] & temp_T4['low'], n_safety['high'])
-# rule7 = ctrl.Rule(temp_T1['low'] & temp_T4['medium'], n_safety['low'])
-# rule8 = ctrl.Rule(temp_T1['high'] & temp_T4['medium'], n_safety['high'])
-
-# rule9 = ctrl.Rule(temp_T1['medium'] & temp_T4['medium'], n_safety['medium'])
-
-# # Create a control system and visualize the control space
-# n_safety_ctrl = ctrl.ControlSystem([rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9])
-# n_safety_sim = ctrl.ControlSystemSimulation(n_safety_ctrl)
-
-# # View network graph
-# n_safety_ctrl.view()
-
-# # Simulate at higher resolution the control space in 2D
-# x, y = np.meshgrid(universe[:,0], universe[:,3])
-# z = np.zeros_like(x)
-
-# # Loop through the system to collect the control surface
-# for i in range(len(universe)):
-#     for j in range(len(universe)):
-#         n_safety_sim.input['T1'] = x[i, j]
-#         n_safety_sim.input['T4'] = y[i, j]
-
-#         n_safety_sim.compute()
-#         z[i, j] = n_safety_sim.output['n_safety']
-
-# # Plot the result in 2D
-# fig = plt.figure(figsize=(8, 8))
-# ax = fig.add_subplot()
-
-# surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
-# ax.set_xlabel('T1')
-# ax.set_ylabel('T4')
-
-# cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
-# cbar.set_array(z)
-
-# boundaries = np.linspace(1, 6, 51)
-# cbar_h = fig.colorbar(cbar, boundaries=boundaries)
-# cbar_h.set_label('safety factor', rotation=90, labelpad=3)
-
-# plt.show()
-
-# # Plot the aggregated rule
-# n_safety.view(sim=n_safety_sim)
+lh_nsafety = LHSDesign(lb_nsafety,ub_nsafety,nsamples)

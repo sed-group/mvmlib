@@ -8,19 +8,23 @@ class fuzzyRule():
         """
         Constructor
 
-        input_statements: list of dicts 
-        structure of each dict
-        {
-            'fun1': fuzzyFunction object
-            'fun2': fuzzyFunction object
-            operator: 'AND', 'OR'
-        }
+        Inputs
+        ------
+        input_statements: list 
+            list of dicts 
+            structure of each dict
+            {
+                'fun1': fuzzyFunction object
+                'fun2': fuzzyFunction object
+                operator: 'AND', 'OR'
+            }
         
         # TODO: add case for only one set
 
-        output: fuzzyFunction object
-
-        label: 'str' defining name of rule
+        Optional
+        --------
+        label: str
+            string to tag instance with
         """
 
         self.input_statements = input_statements
@@ -31,11 +35,22 @@ class fuzzyRule():
         """
         Apply rule on fuzzy sets
 
-        input: dict of structure
-        {
-            'label': float,
-            'label': float,
-        }
+        Inputs
+        ------
+        input: dict
+            dict of structure
+            {
+                'label': float,
+                'label': float,
+            }
+
+        Outputs
+        -------
+        activation: np.array
+            1d array of length universe
+            holding activation function 
+            values
+
         """
 
         rules = np.zeros_like(self.input_statements[0]['fun1'].getArray())

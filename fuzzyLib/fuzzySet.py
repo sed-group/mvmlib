@@ -8,8 +8,15 @@ class fuzzySet():
         """
         Constructor
 
-        lo,md,hi: instances of fuzzyFunction class
-        !must have same universe
+        Inputs
+        ------
+        lo,md,hi: fuzzyFunction
+            instances of fuzzyFunction class
+
+        Optional
+        --------
+        label: str
+            string to tag instance with
         """
 
         self.lo = lo
@@ -26,6 +33,8 @@ class fuzzySet():
         """
         Interpret membership of input
 
+        Inputs
+        ------
         input: float
         """
 

@@ -12,8 +12,16 @@ class fuzzyFunction():
         """
         Constructor
 
-        universe: 1d array of length n
-        n=number of samples
+        Inputs
+        ------
+        universe: np.array
+            1d array of length n
+            n=number of samples
+
+        Optional
+        --------
+        label: str
+            string to tag instance with
         """
 
         self.universe = universe
@@ -28,9 +36,11 @@ class triangularFunc(fuzzyFunction):
         """
         Create an instance of the triangular membership function
 
-        low: int
-        medium: int
-        high: int
+        Inputs
+        ------
+        low,medium,high: int
+            specifiers for shape 
+            of triangular function
         """
 
         self.low = low; self.medium = medium; self.high = high
@@ -39,8 +49,10 @@ class triangularFunc(fuzzyFunction):
         """
         Sample an array of values from membership function
         
-        Output:
-        1d array of length n
+        Outputs
+        -------
+        self.array: np.array
+            1d array of length universe
         """
 
         self.array = fuzz.trimf(self.universe, [self.low, self.medium, self.high])
@@ -49,7 +61,12 @@ class triangularFunc(fuzzyFunction):
     def interp(self,input=None):
         """
         Interpret membership of input ot fuzzy function
-        input: 'float'
+
+        Optional
+        --------
+
+        input: float
+            
         """
 
         if input:
