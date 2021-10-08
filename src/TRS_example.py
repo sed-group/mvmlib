@@ -2,12 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import skfuzzy as fuzz
 # from skfuzzy import control as ctrl
-from fuzzyLib.fuzzyFunctions import triangularFunc
-from fuzzyLib.fuzzySet import fuzzySet
-from fuzzyLib.fuzzyRule import fuzzyRule
-from fuzzyLib.fuzzySystem import fuzzySystem
+from dmLib.fuzzyLib.fuzzyFunctions import triangularFunc
+from dmLib.fuzzyLib.fuzzySet import fuzzySet
+from dmLib.fuzzyLib.fuzzyRule import fuzzyRule
+from dmLib.fuzzyLib.fuzzySystem import fuzzySystem
 
-from DOELib.LHSDesign import LHSDesign
+from dmLib.DOELib.Design import Design
 
 # Generate universe variables
 nominal = np.array([350, 425, 410, 580, 3.5])
@@ -87,7 +87,7 @@ sim = fuzzySystem([temp_T1,temp_T2],n_safety,rules)
 
 # Compute for given inputs
 inputs = {'T1' : 370, 'T4' : 580,}
-n_safety_value, aggregate, n_safety_activation = sim.compute(inputs)
+n_safety_value, aggregate, n_safety_activation = sim.compute(inputs, normalize=True)
 
 # Visualize this
 fig, ax0 = plt.subplots(figsize=(8, 3))
@@ -125,11 +125,6 @@ cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 
 plt.show()
 
-# normalize aggregate membership function
-dx = n_safety.universe[1] - n_safety.universe[0]
-area = np.trapz(aggregate, dx=dx)
-aggregate /= area
-
 # Define threshold safety factor
 threshold = 2.8
 
@@ -138,4 +133,6 @@ lb_nsafety = np.array([lb[-1],])
 ub_nsafety = np.array([ub[-1],])
 nsamples = 100
 
-lh_nsafety = LHSDesign(lb_nsafety,ub_nsafety,nsamples)
+lh_nsafety = Design(lb_nsafety,ub_nsafety,nsamples,'LHS')
+
+

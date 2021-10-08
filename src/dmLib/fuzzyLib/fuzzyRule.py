@@ -8,8 +8,8 @@ class fuzzyRule():
         """
         Constructor
 
-        Inputs
-        ------
+        Parameters
+        ----------
         input_statements: list 
             list of dicts 
             structure of each dict
@@ -35,8 +35,8 @@ class fuzzyRule():
         """
         Apply rule on fuzzy sets
 
-        Inputs
-        ------
+        Parameters
+        ----------
         input: dict
             dict of structure
             {
@@ -44,7 +44,7 @@ class fuzzyRule():
                 'label': float,
             }
 
-        Outputs
+        Returns
         -------
         activation: np.array
             1d array of length universe
@@ -53,7 +53,7 @@ class fuzzyRule():
 
         """
 
-        rules = np.zeros_like(self.input_statements[0]['fun1'].getArray())
+        rules = 1.0
 
         for statement in self.input_statements:
 
@@ -70,8 +70,7 @@ class fuzzyRule():
 
             # TODO: add case for no operator
 
-            # rules = np.fmin(rules,rule) # AND statement between each line of statements
-            rules = rule
+            rules = np.fmin(rules,rule) # AND statement between each line of statements
 
         # Now we apply rule by clipping the top off the corresponding output
         # membership function with `np.fmin`

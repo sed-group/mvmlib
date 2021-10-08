@@ -12,8 +12,8 @@ class fuzzyFunction():
         """
         Constructor
 
-        Inputs
-        ------
+        Parameters
+        ----------
         universe: np.array
             1d array of length n
             n=number of samples
@@ -36,8 +36,8 @@ class triangularFunc(fuzzyFunction):
         """
         Create an instance of the triangular membership function
 
-        Inputs
-        ------
+        Parameters
+        ----------
         low,medium,high: int
             specifiers for shape 
             of triangular function
@@ -45,11 +45,24 @@ class triangularFunc(fuzzyFunction):
 
         self.low = low; self.medium = medium; self.high = high
 
+    def setLabel(self,label):
+        """
+        Changes label property of function
+
+        Parameters
+        ----------
+        label: float
+            new label name
+
+        """
+
+        self.label=label
+
     def getArray(self):
         """
         Sample an array of values from membership function
         
-        Outputs
+        Returns
         -------
         self.array: np.array
             1d array of length universe

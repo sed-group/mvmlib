@@ -7,8 +7,8 @@ class fuzzySystem():
         """
         Constructor
 
-        Inputs
-        ------
+        Parameters
+        ----------
         antecedents: list
             fuzzySet objects
         consequent: list
@@ -29,12 +29,12 @@ class fuzzySystem():
         self.rules = rules
         self.label = label
 
-    def compute(self,input): 
+    def compute(self,input, normalize=False): 
         """
         Compute fuzzy output of system
 
-        Inputs
-        ------
+        Parameters
+        ----------
         input: dict
             dict of structure
             {
@@ -42,7 +42,12 @@ class fuzzySystem():
                 'label': float,
             }
 
-        Outputs
+        Optional
+        --------
+        normalize: bool
+            if True normalize aggregate output by area
+
+        Returns
         -------
 
         output: float
@@ -60,6 +65,12 @@ class fuzzySystem():
 
             activation = rule.apply(input)
             aggregate = np.fmax(activation,aggregate)
+
+        # normalize aggregate membership function
+        if normalize:
+            dx = self.consequent.universe[1] - self.consequent.universe[0]
+            area = np.trapz(aggregate, dx=dx)
+            aggregate /= area
 
         # Calculate defuzzified result
         output = fuzz.defuzz(self.consequent.universe, aggregate, 'centroid')

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "dmLib"
+authors = [{name = "Khalil Al Handawi", email = "khalil.alhandawi@mail.mcgill.ca"}]
+
+requires-python = ">=3.8"
+dynamic = ['version', 'description']
+
+dependencies = [
+"matplotlib==3.4.3",
+"pyDOE==0.3.8",
+"scikit-fuzzy==0.4.2",
+]
+
+[project.urls]
+Source = "https://github.com/sed-group/DM_Module"

@@ -8,8 +8,8 @@ class fuzzySet():
         """
         Constructor
 
-        Inputs
-        ------
+        Parameters
+        ----------
         lo,md,hi: fuzzyFunction
             instances of fuzzyFunction class
 
@@ -26,15 +26,36 @@ class fuzzySet():
         self.universe = lo.universe
         self.label = label
 
+        self.lo.setLabel(label)
+        self.md.setLabel(label)
+        self.hi.setLabel(label)
+
         # TODO: if different universes raise an error
+
+
+    def setLabel(self,label):
+        """
+        Changes label property of fuzzy set and all its membership functions
+
+        Parameters
+        ----------
+        label: float
+            new label name
+
+        """
+
+        self.label=label
+        self.lo.setLabel(label)
+        self.md.setLabel(label)
+        self.hi.setLabel(label)
 
     def interp(self,input):
 
         """
         Interpret membership of input
 
-        Inputs
-        ------
+        Parameters
+        ----------
         input: float
         """
 
