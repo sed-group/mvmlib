@@ -1,13 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# import skfuzzy as fuzz
-# from skfuzzy import control as ctrl
-from dmLib.fuzzyLib.fuzzyFunction import triangularFunc
-from dmLib.fuzzyLib.fuzzySet import fuzzySet
-from dmLib.fuzzyLib.fuzzyRule import fuzzyRule
-from dmLib.fuzzyLib.fuzzySystem import fuzzySystem
 
-from dmLib.DOELib.Design import Design
+from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
+from dmLib import Design
 
 # Generate universe variables
 lb = np.array([250, 480, 1.0])
@@ -95,33 +90,6 @@ ax0.fill_between(n_safety.universe, n_0, aggregate, facecolor='Orange', alpha=0.
 ax0.plot([n_safety_value, n_safety_value], [0, n_safety_activation], 'k', linewidth=1.5, alpha=0.9)
 ax0.set_title('Aggregated membership and result (line)')
 
-# Simulate at higher resolution the control space in 2D
-x, y = np.meshgrid(universe[:,0], universe[:,1])
-z = np.zeros_like(x)
-
-# Loop through the system to collect the control surface
-for i in range(len(universe)):
-    for j in range(len(universe)):
-        inputs = {'T1' : x[i, j], 'T2' : y[i, j],}
-        z[i, j],_,_ = sim.compute(inputs)
-
-# Plot the result in 2D
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_subplot()
-
-surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
-ax.set_xlabel('T1')
-ax.set_ylabel('T2')
-
-cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
-cbar.set_array(z)
-
-boundaries = np.linspace(1, 6, 51)
-cbar_h = fig.colorbar(cbar, boundaries=boundaries)
-cbar_h.set_label('safety factor', rotation=90, labelpad=3)
-
-plt.show()
-
 # Define threshold safety factor
 threshold = 2.8
 
@@ -132,4 +100,36 @@ nsamples = 100
 
 lh_nsafety = Design(lb_nsafety,ub_nsafety,nsamples,'LHS')
 
+# Compute capability at a particular input
+lh_activation = sim.interpolate_activation(lh_nsafety.unscale())
+
+# p = len(lh_nsafety[lh_activation >])
+
+
+# # Simulate at higher resolution the control space in 2D
+# x, y = np.meshgrid(universe[:,0], universe[:,1])
+# z = np.zeros_like(x)
+
+# # Loop through the system to collect the control surface
+# for i in range(len(universe)):
+#     for j in range(len(universe)):
+#         inputs = {'T1' : x[i, j], 'T2' : y[i, j],}
+#         z[i, j],_,_ = sim.compute(inputs)
+
+# # Plot the result in 2D
+# fig = plt.figure(figsize=(8, 8))
+# ax = fig.add_subplot()
+
+# surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
+# ax.set_xlabel('T1')
+# ax.set_ylabel('T2')
+
+# cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
+# cbar.set_array(z)
+
+# boundaries = np.linspace(1, 6, 51)
+# cbar_h = fig.colorbar(cbar, boundaries=boundaries)
+# cbar_h.set_label('safety factor', rotation=90, labelpad=3)
+
+# plt.show()
 

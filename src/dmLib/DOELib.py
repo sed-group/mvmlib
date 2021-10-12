@@ -1,6 +1,8 @@
 from pyDOE import lhs
 import numpy as np
 
+"""DOE Library for generating a design"""
+
 def gridsamp(bounds, q):
 	"""
     GRIDSAMP  n-dimensional grid over given range

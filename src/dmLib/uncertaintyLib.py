@@ -1,5 +1,7 @@
 import numpy as np
 
+"""Uncertainty Library for computing different PDFs"""
+
 class gaussianFunc():
 
     def __init__(self,mu,Sigma,label=''):

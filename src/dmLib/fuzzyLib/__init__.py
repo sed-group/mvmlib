@@ -1,1 +1,0 @@
-"""Fuzzy Library for computing aggregate membership functions for fuzzy variables"""

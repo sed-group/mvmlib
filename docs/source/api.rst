@@ -10,10 +10,7 @@ The “DOELib” module
 .. automodule:: dmLib.DOELib
    :members:
 
-.. automodule:: dmLib.DOELib.Design
-   :members:
-
-.. autoclass:: dmLib.DOELib.Design.Design
+.. autoclass:: dmLib.DOELib.Design
    :members:
 
 The “fuzzyLib” module
@@ -22,20 +19,20 @@ The “fuzzyLib” module
 .. automodule:: dmLib.fuzzyLib
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzyFunction.triangularFunc
+.. autoclass:: dmLib.fuzzyLib.triangularFunc
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzyRule.fuzzyRule
+.. autoclass:: dmLib.fuzzyLib.fuzzyRule
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzySet.fuzzySet
+.. autoclass:: dmLib.fuzzyLib.fuzzySet
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzySystem.fuzzySystem
+.. autoclass:: dmLib.fuzzyLib.fuzzySystem
    :members:
 
 The “uncertaintyLib” module
 ---------------------------
 
-.. autoclass:: dmLib.uncertaintyLib.probFunction.gaussianFunc
+.. autoclass:: dmLib.uncertaintyLib.gaussianFunc
    :members:
