@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import skfuzzy as fuzz
 # from skfuzzy import control as ctrl
-from dmLib.fuzzyLib.fuzzyFunctions import triangularFunc
+from dmLib.fuzzyLib.fuzzyFunction import triangularFunc
 from dmLib.fuzzyLib.fuzzySet import fuzzySet
 from dmLib.fuzzyLib.fuzzyRule import fuzzyRule
 from dmLib.fuzzyLib.fuzzySystem import fuzzySystem
@@ -10,21 +10,20 @@ from dmLib.fuzzyLib.fuzzySystem import fuzzySystem
 from dmLib.DOELib.Design import Design
 
 # Generate universe variables
-nominal = np.array([350, 425, 410, 580, 3.5])
-lb = np.array([250, 325, 310, 480, 1.0])
-ub = np.array([450, 525, 510, 680, 6.0])
-labels = ['T1','T2','T3','T4','n_safety']
+lb = np.array([250, 480, 1.0])
+ub = np.array([450, 680, 6.0])
+labels = ['T1','T2','n_safety']
 
 universe = np.linspace(lb, ub, 100) # grid for all variables
 
 # Define shape of triangular membership functions
-shapes_lo = np.array([lb,lb,lb + (ub-lb)/2])
-shapes_md = np.array([lb + (ub-lb)/4,lb + (ub-lb)/2,ub - (ub-lb)/4])
-shapes_hi = np.array([lb + 1*(ub-lb)/2,ub,ub])
+shapes_lo = np.array([lb,               lb,             lb + (ub-lb)/2  ])
+shapes_md = np.array([lb + (ub-lb)/4,   lb + (ub-lb)/2, ub - (ub-lb)/4  ])
+shapes_hi = np.array([lb + 1*(ub-lb)/2, ub,             ub              ])
 
 # Generate fuzzy membership functions
 fuzzy_sets = []
-for i in range(len(nominal)):
+for i in range(len(lb)):
     lo = triangularFunc(universe[:,i],labels[i])
     lo.setFunc(shapes_lo[0,i],shapes_lo[1,i],shapes_lo[2,i])
 
@@ -41,12 +40,10 @@ for i in range(len(nominal)):
 # label each fuzzy set
 temp_T1 = fuzzy_sets[0]
 temp_T2 = fuzzy_sets[1]
-temp_T3 = fuzzy_sets[2]
-temp_T4 = fuzzy_sets[3]
-n_safety = fuzzy_sets[4]
+n_safety = fuzzy_sets[2]
 
 # Visualize these universes and membership functions
-fig, axis = plt.subplots(nrows=5, figsize=(15, 9))
+fig, axis = plt.subplots(nrows=3, figsize=(8, 9))
 
 i = 1
 for ax,var,label in zip(axis,fuzzy_sets,labels):
@@ -69,24 +66,24 @@ for ax in axis:
 plt.tight_layout()
 
 # Define fuzzy rules
-rule1 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T4.hi, 'operator': 'AND'},],n_safety.lo,label='R1')
-rule2 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T4.lo, 'operator': 'AND'},],n_safety.hi,label='R2')
-rule3 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T4.lo, 'operator': 'AND'},],n_safety.md,label='R3')
-rule4 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T4.hi, 'operator': 'AND'},],n_safety.md,label='R4')
+rule1 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T2.hi, 'operator': 'AND'},],n_safety.lo,label='R1')
+rule2 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T2.lo, 'operator': 'AND'},],n_safety.hi,label='R2')
+rule3 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T2.lo, 'operator': 'AND'},],n_safety.md,label='R3')
+rule4 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T2.hi, 'operator': 'AND'},],n_safety.md,label='R4')
 
-rule5 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T4.hi, 'operator': 'AND'},],n_safety.lo,label='R5')
-rule6 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T4.lo, 'operator': 'AND'},],n_safety.hi,label='R6')
-rule7 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T4.md, 'operator': 'AND'},],n_safety.lo,label='R7')
-rule8 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T4.md, 'operator': 'AND'},],n_safety.hi,label='R8')
+rule5 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T2.hi, 'operator': 'AND'},],n_safety.lo,label='R5')
+rule6 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T2.lo, 'operator': 'AND'},],n_safety.hi,label='R6')
+rule7 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T2.md, 'operator': 'AND'},],n_safety.lo,label='R7')
+rule8 = fuzzyRule([{'fun1': temp_T1.hi, 'fun2': temp_T2.md, 'operator': 'AND'},],n_safety.hi,label='R8')
 
-rule9 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T4.md, 'operator': 'AND'},],n_safety.md,label='R9')
+rule9 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T2.md, 'operator': 'AND'},],n_safety.md,label='R9')
 
 # Define fuzzy control system
 rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
 sim = fuzzySystem([temp_T1,temp_T2],n_safety,rules)
 
 # Compute for given inputs
-inputs = {'T1' : 370, 'T4' : 580,}
+inputs = {'T1' : 370, 'T2' : 580,}
 n_safety_value, aggregate, n_safety_activation = sim.compute(inputs, normalize=True)
 
 # Visualize this
@@ -99,13 +96,13 @@ ax0.plot([n_safety_value, n_safety_value], [0, n_safety_activation], 'k', linewi
 ax0.set_title('Aggregated membership and result (line)')
 
 # Simulate at higher resolution the control space in 2D
-x, y = np.meshgrid(universe[:,0], universe[:,3])
+x, y = np.meshgrid(universe[:,0], universe[:,1])
 z = np.zeros_like(x)
 
 # Loop through the system to collect the control surface
 for i in range(len(universe)):
     for j in range(len(universe)):
-        inputs = {'T1' : x[i, j], 'T4' : y[i, j],}
+        inputs = {'T1' : x[i, j], 'T2' : y[i, j],}
         z[i, j],_,_ = sim.compute(inputs)
 
 # Plot the result in 2D
@@ -114,7 +111,7 @@ ax = fig.add_subplot()
 
 surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
 ax.set_xlabel('T1')
-ax.set_ylabel('T4')
+ax.set_ylabel('T2')
 
 cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 cbar.set_array(z)

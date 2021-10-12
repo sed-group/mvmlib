@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib.fuzzyLib.fuzzyFunctions import triangularFunc
+from dmLib.fuzzyLib.fuzzyFunction import triangularFunc
 from dmLib.fuzzyLib.fuzzySet import fuzzySet
 from dmLib.fuzzyLib.fuzzyRule import fuzzyRule
 from dmLib.fuzzyLib.fuzzySystem import fuzzySystem

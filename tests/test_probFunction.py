@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from dmLib.DOELib.Design import Design
-from dmLib.uncertaintyLib.probFunction import guassianFunc
+from dmLib.uncertaintyLib.probFunction import gaussianFunc
 
 def test_multivariateGaussian():
     """testing the multivariate Gaussian function"""
@@ -17,7 +17,7 @@ def test_multivariateGaussian():
     ub = np.array([1.0, 1.0,])
     s = Design(lb,ub,5,'fullfact').unscale()
 
-    test_function = guassianFunc(mu,Sigma)
+    test_function = gaussianFunc(mu,Sigma)
 
     test = test_function.multivariateGaussian(s)
 
@@ -52,7 +52,7 @@ def test_guassianVolume():
         [0.0375,0.15]]) # Covariance matrix
 
     w, v = np.linalg.eig(Sigma) # eigen values and vector
-    test_function = guassianFunc(mu,Sigma)
+    test_function = gaussianFunc(mu,Sigma)
     r = 2
 
     # plot rotated ellipse

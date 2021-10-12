@@ -15,5 +15,16 @@ dependencies = [
 "scikit-fuzzy==0.4.2",
 ]
 
+[project.optional-dependencies]
+test = [
+    "pytest >=6.2.5",
+    "pytest-cov",
+]
+doc = [
+    "sphinx",
+    "sphinx-autobuild",
+    "nbsphinx"
+]
+
 [project.urls]
 Source = "https://github.com/sed-group/DM_Module"

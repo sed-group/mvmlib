@@ -5,22 +5,19 @@ class fuzzySystem():
 
     def __init__(self,antecedents,consequent,rules,label=''):
         """
-        Constructor
-
+        Contains all fuzzy inputs, outputs, rules,
+        and fuzzy logic interpreter
+        
         Parameters
         ----------
-        antecedents: list
+        antecedents : list
             fuzzySet objects
-        consequent: list
+        consequent : list
             fuzzySet objects
-        rules: list
+        rules : list
             fuzzyRule objects
-
-        Optional
-        --------
-        label: str
+        label: str, optional
             string to tag instance with
-
         """
 
         self.antecedents = antecedents
@@ -35,28 +32,24 @@ class fuzzySystem():
 
         Parameters
         ----------
-        input: dict
+        input : dict
             dict of structure
             {
-                'label': float,
-                'label': float,
+            'label': float,
+            'label': float,
             }
-
-        Optional
-        --------
-        normalize: bool
+        normalize: bool, optional
             if True normalize aggregate output by area
-
+        
         Returns
         -------
 
-        output: float
+        output : float
             defuzzified value
-        aggregate: np.array
+        aggregate : np.array
             array of length universe
-        output_activation: float
+        output_activation : float
             activation for defuzzified output
-
         """
 
         aggregate = np.zeros_like(self.antecedents[0].universe)

@@ -4,25 +4,20 @@ import numpy as np
 def gridsamp(bounds, q):
 	"""
     GRIDSAMP  n-dimensional grid over given range
-	
-	Call:    S = gridsamp(bounds, q)
-	
-    Inputs
-    ------
-	bounds: np.array
+    
+    Parameters
+    ----------
+	bounds : np.array
         2*n matrix with lower and upper limits
-	q: np.array
+	q : np.array
         n-vector, q(j) is the number of points
         in the j'th direction.
         If q is a scalar, then all q(j) = q
-
-    Outputs
+    
+    Returns
     -------
-	S: np.array
+	S : np.array
         m*n array with points, m = prod(q)
-	
-	 hbn@imm.dtu.dk  
-	 Last update June 25, 2002
     """
 	
 	[mr,n] = np.shape(bounds);    dr = np.diff(bounds, axis=0)[0]; # difference across rows
@@ -69,8 +64,8 @@ def scaling(x,l,u,operation):
     """
     Scaling by a range
 
-    Inputs
-    ------
+    Parameters
+    ----------
     x : np.array
         2d array of size n * nsamples of datapoints
     l : np.array
@@ -79,12 +74,11 @@ def scaling(x,l,u,operation):
         1d array of length n = len(l) specifying upper range of features
     operation : int
         The flag type indicates whether to scale (1) or unscale (2)
-
-    Outputs
+    
+    Returns
     -------
     x_out : np.array
         2d array of size n * nsamples of unscaled datapoints
-    
     """
     
     if operation == 1:
@@ -100,7 +94,8 @@ class Design():
 
     def __init__(self,lb,ub,nsamples,type):
         """
-        Constructor
+        Contains the experimental design limits, 
+        samples and other relevant statistics
 
         Parameters
         ----------
@@ -113,16 +108,12 @@ class Design():
         type : str
             Allowable values are "LHS" and "fullfact". If no value 
             given, the design is simply randomized.
-
-        Optional
-        --------
-        criterion : str
+        criterion : str, optional
             Allowable values are "center" or "c", "maximin" or "m", 
             "centermaximin" or "cm", and "correlation" or "corr". If no value 
             given, the design is simply randomized.
-
+        
         TODO: return error if len(lb) != len(ub)
-
         """
 
         self.lb = lb
@@ -145,9 +136,8 @@ class Design():
 
         Returns
         -------
-        unscaled_LH: np.array
+        unscaled_LH : np.array
             numpy array of size n * nsamples of LH values unscaled by lb and ub
-
         """
 
         unscaled_LH = scaling(self.design,self.lb,self.ub,2)
@@ -160,9 +150,8 @@ class Design():
 
         Returns
         -------
-        scaled_LH: np.array
+        scaled_LH : np.array
             numpy array of size n * nsamples of LH values between 0 and 1
-
         """
         
         return self.design

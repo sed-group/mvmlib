@@ -2,25 +2,18 @@
 import skfuzzy as fuzz
 
 class fuzzyFunction():
-    
-    """
-    Contrains description and implementation of
-    different fuzzy membership functions
-    """
 
     def __init__(self,universe,label=''):
         """
-        Constructor
-
+        Contrains description and implementation of
+        different fuzzy membership functions
+        
         Parameters
         ----------
-        universe: np.array
+        universe : np.array
             1d array of length n
             n=number of samples
-
-        Optional
-        --------
-        label: str
+        label : str, optional
             string to tag instance with
         """
 
@@ -38,9 +31,12 @@ class triangularFunc(fuzzyFunction):
 
         Parameters
         ----------
-        low,medium,high: int
-            specifiers for shape 
-            of triangular function
+        low : int
+            left foot of triangle
+        medium : int
+            peak of triangle
+        high : int
+            right foot of triangle
         """
 
         self.low = low; self.medium = medium; self.high = high
@@ -51,9 +47,8 @@ class triangularFunc(fuzzyFunction):
 
         Parameters
         ----------
-        label: float
+        label : float
             new label name
-
         """
 
         self.label=label
@@ -64,7 +59,7 @@ class triangularFunc(fuzzyFunction):
         
         Returns
         -------
-        self.array: np.array
+        array : np.array
             1d array of length universe
         """
 
@@ -75,11 +70,14 @@ class triangularFunc(fuzzyFunction):
         """
         Interpret membership of input ot fuzzy function
 
-        Optional
-        --------
+        Parameters
+        ----------
+        input : float
 
-        input: float
-            
+        Returns
+        -------
+        level : float
+            interpreted membership level of the input
         """
 
         if input:

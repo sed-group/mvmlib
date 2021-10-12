@@ -6,16 +6,18 @@ class fuzzySet():
     def __init__(self,lo,md,hi,label=''):
 
         """
-        Constructor
+        Contains all fuzzy funtions describing the 
+        low, medium, and high level membership functions
 
         Parameters
         ----------
-        lo,md,hi: fuzzyFunction
-            instances of fuzzyFunction class
-
-        Optional
-        --------
-        label: str
+        lo : fuzzyFunction
+            low instance of fuzzyFunction class
+        md : fuzzyFunction
+            medium instance of fuzzyFunction class
+        hi : fuzzyFunction
+            high instance of fuzzyFunction class
+        label : str, optional
             string to tag instance with
         """
 
@@ -30,7 +32,7 @@ class fuzzySet():
         self.md.setLabel(label)
         self.hi.setLabel(label)
 
-        # TODO: if different universes raise an error
+        # TODO : if different universes raise an error
 
 
     def setLabel(self,label):
@@ -39,9 +41,8 @@ class fuzzySet():
 
         Parameters
         ----------
-        label: float
+        label : float
             new label name
-
         """
 
         self.label=label
@@ -53,10 +54,10 @@ class fuzzySet():
 
         """
         Interpret membership of input
-
+        
         Parameters
         ----------
-        input: float
+        input : float
         """
 
         level_lo = self.lo.interp(input) 

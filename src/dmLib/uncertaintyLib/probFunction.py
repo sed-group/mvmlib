@@ -1,30 +1,23 @@
 import numpy as np
 
-class guassianFunc():
-
-    """
-    Contrains description and implementation of the multivariate 
-    Gaussian PDF
-    """
+class gaussianFunc():
 
     def __init__(self,mu,Sigma,label=''):
         """
-        Constructor
+        Contrains description and implementation of the multivariate 
+        Gaussian PDF
 
         Parameters
         ----------
-        mu: np.array
+        mu : np.array
             1d array of length n_dims containing means
-        Sigma: np.array
+        Sigma : np.array
             1d array of length n_dims containing standard deviations
             OR
             2d array of length n_dims * n_dims containing standard deviations
             and covariances
-
-        Optional
-        --------
-        label: str
-            string to tag instance with
+        label : str, optional
+            string to tag instance with        
         """
 
         self.mu = mu
@@ -38,12 +31,12 @@ class guassianFunc():
 
         Parameters
         ----------
-        samples: np.array
+        samples : np.array
             array of shape n_samples * n_dims at which PDF will be evaluated
 
         Returns
         -------
-        Z: np.array
+        Z : np.array
             array of shape n_samples * n_dims of PDF values
         """
 
@@ -77,9 +70,9 @@ class guassianFunc():
         The volume of the ellipsoid (x-mu)T.Sigma-1.(x-mu) = r
         This is the output of this method.
 
-        Optional
-        --------
-        r: float
+        Parameters
+        ----------
+        r : float
             corresponds to Mahalanobis distance r for hyperellipsoids
             r = 1 ---> 1 sigma
             r = 2 ---> 2 sigma
@@ -87,7 +80,7 @@ class guassianFunc():
 
         Returns
         -------
-        V: float
+        V : float
             volume of hyperellipsoid for Mahalanobis distance r
 
         """
@@ -100,22 +93,18 @@ class guassianFunc():
 
         return V_d * np.power(np.linalg.det(self.Sigma), 0.5) * (r**self.n_dims)
 
-class probFunction(guassianFunc):
-    
-    """
-    base class for managing different probability density functions
-    """
+class probFunction(gaussianFunc):
 
     def __init__(self,mean,spread,type,label=''):
         """
-        Constructor
+        base class for managing different probability density functions
 
         Parameters
         ----------
-        mean: np.array
+        mean : np.array
             1d array of length n
             n=number of dimensions
-        spread: np.array
+        spread : np.array
             1d array of length n
             n=number of dimensions
 
@@ -123,20 +112,17 @@ class probFunction(guassianFunc):
 
             2d array of length n * n containing standard deviations
             and covariances if "type" is "guassian"
-
+        
         type : str
             Allowable values are "guassian" or "g", "uniform" or "u", 
-
-        Optional
-        --------
-        label: str
+        label : str, optional
             string to tag instance with
         """
         self.type = type
         self.n_dims = len(mean)
 
         if self.type == 'guassian':
-            guassianFunc().__init__(mean,spread,label)
+            gaussianFunc().__init__(mean,spread,label)
             
 
     def getPDFValues(self,samples):
@@ -145,18 +131,17 @@ class probFunction(guassianFunc):
 
         Parameters
         ----------
-        samples: np.array
+        samples : np.array
             array of shape n_samples * n_dims at which PDF will be evaluated
-
-
+        
         Returns
         -------
-        Z: np.array
+        Z : np.array
             array of shape n_samples * n_dims of PDF values
         """
 
         if self.type == 'guassian':
-            Z = guassianFunc().multivariate_gaussian(self,samples)
+            Z = gaussianFunc().multivariate_gaussian(self,samples)
 
         return Z
 

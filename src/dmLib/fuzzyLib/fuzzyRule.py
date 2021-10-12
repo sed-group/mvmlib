@@ -6,11 +6,12 @@ class fuzzyRule():
     def __init__(self,input_statements,output,label=''):
 
         """
-        Constructor
+        Defines a fuzzy rules by connecting fuzzy inputs
+        to outputs
 
         Parameters
         ----------
-        input_statements: list 
+        input_statements : list 
             list of dicts 
             structure of each dict
             {
@@ -19,11 +20,8 @@ class fuzzyRule():
                 operator: 'AND', 'OR'
             }
         
-        # TODO: add case for only one set
-
-        Optional
-        --------
-        label: str
+        # TODO : add case for only one set
+        label : str, optional
             string to tag instance with
         """
 
@@ -37,20 +35,19 @@ class fuzzyRule():
 
         Parameters
         ----------
-        input: dict
+        input : dict
             dict of structure
             {
-                'label': float,
-                'label': float,
+            'label': float,
+            'label': float,
             }
-
+        
         Returns
         -------
-        activation: np.array
+        activation : np.array
             1d array of length universe
             holding activation function 
             values
-
         """
 
         rules = 1.0
