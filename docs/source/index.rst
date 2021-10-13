@@ -12,6 +12,7 @@ Welcome to dmLib's documentation!
 
    examples
    api
+   history
 
 Indices and tables
 ==================

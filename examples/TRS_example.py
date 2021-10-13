@@ -38,27 +38,9 @@ temp_T2 = fuzzy_sets[1]
 n_safety = fuzzy_sets[2]
 
 # Visualize these universes and membership functions
-fig, axis = plt.subplots(nrows=3, figsize=(8, 9))
-
-i = 1
-for ax,var,label in zip(axis,fuzzy_sets,labels):
-
-    ax.plot(var.universe, var.lo.getArray(), 'b', linewidth=1.5, label='Low')
-    ax.plot(var.universe, var.md.getArray(), 'g', linewidth=1.5, label='Medium')
-    ax.plot(var.universe, var.hi.getArray(), 'r', linewidth=1.5, label='High')
-    ax.set_title(label)
-    ax.legend()
-
-    i += 1
-
-# Turn off top/right axes
-for ax in axis:
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.get_xaxis().tick_bottom()
-    ax.get_yaxis().tick_left()
-
-plt.tight_layout()
+temp_T1.view()
+temp_T2.view()
+n_safety.view()
 
 # Define fuzzy rules
 rule1 = fuzzyRule([{'fun1': temp_T1.lo, 'fun2': temp_T2.hi, 'operator': 'AND'},],n_safety.lo,label='R1')
@@ -78,7 +60,10 @@ rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
 sim = fuzzySystem([temp_T1,temp_T2],n_safety,rules)
 
 # Compute for given inputs
-inputs = {'T1' : 370, 'T2' : 580,}
+inputs = np.array([
+    370.0, # T1
+    580.0, # T2
+    ])
 n_safety_value, aggregate, n_safety_activation = sim.compute(inputs, normalize=True)
 
 # Visualize this
@@ -101,35 +86,35 @@ nsamples = 100
 lh_nsafety = Design(lb_nsafety,ub_nsafety,nsamples,'LHS')
 
 # Compute capability at a particular input
-lh_activation = sim.interpolate_activation(lh_nsafety.unscale())
+# lh_activation = sim.interpolate_activation(lh_nsafety.unscale())
 
 # p = len(lh_nsafety[lh_activation >])
 
+# Simulate at higher resolution the control space in 2D
+n_levels = 5
+grid_in = Design(lb[:2],ub[:2],n_levels,"fullfact").unscale()
 
-# # Simulate at higher resolution the control space in 2D
-# x, y = np.meshgrid(universe[:,0], universe[:,1])
-# z = np.zeros_like(x)
+# Loop through the system to collect the control surface
+z,a,_ = sim.compute(grid_in)
 
-# # Loop through the system to collect the control surface
-# for i in range(len(universe)):
-#     for j in range(len(universe)):
-#         inputs = {'T1' : x[i, j], 'T2' : y[i, j],}
-#         z[i, j],_,_ = sim.compute(inputs)
+x = grid_in[:,0].reshape((n_levels,n_levels))
+y = grid_in[:,1].reshape((n_levels,n_levels))
+z = z.reshape((n_levels,n_levels))
 
-# # Plot the result in 2D
-# fig = plt.figure(figsize=(8, 8))
-# ax = fig.add_subplot()
+# Plot the result in 2D
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot()
 
-# surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
-# ax.set_xlabel('T1')
-# ax.set_ylabel('T2')
+surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
+ax.set_xlabel('T1')
+ax.set_ylabel('T2')
 
-# cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
-# cbar.set_array(z)
+cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
+cbar.set_array(z)
 
-# boundaries = np.linspace(1, 6, 51)
-# cbar_h = fig.colorbar(cbar, boundaries=boundaries)
-# cbar_h.set_label('safety factor', rotation=90, labelpad=3)
+boundaries = np.linspace(1, 6, 51)
+cbar_h = fig.colorbar(cbar, boundaries=boundaries)
+cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 
-# plt.show()
+plt.show()
 

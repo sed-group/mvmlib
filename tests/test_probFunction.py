@@ -2,8 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib.DOELib.Design import Design
-from dmLib.uncertaintyLib.probFunction import gaussianFunc
+from dmLib import Design, gaussianFunc
 
 def test_multivariateGaussian():
     """testing the multivariate Gaussian function"""

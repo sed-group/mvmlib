@@ -1,6 +1,7 @@
 import skfuzzy as fuzz
 import numpy as np
 from scipy.interpolate import interp1d
+import matplotlib.pyplot as plt
 from typing import Dict, Any, AnyStr, List
 
 """Fuzzy Library for computing aggregate membership functions for fuzzy variables"""
@@ -14,7 +15,7 @@ class fuzzyFunction():
         
         Parameters
         ----------
-        universe : np.array
+        universe : np.1darray
             1d array of length n
             n=number of samples
         label : str, optional
@@ -63,7 +64,7 @@ class triangularFunc(fuzzyFunction):
         
         Returns
         -------
-        array : np.array
+        array : np.1darray
             1d array of length universe
         """
 
@@ -72,19 +73,20 @@ class triangularFunc(fuzzyFunction):
 
     def interp(self,input=None):
         """
-        Interpret membership of input ot fuzzy function
+        Interpret membership of input for fuzzy function
 
         Parameters
         ----------
-        input : float
+        input : float OR np.1darray
+            value(s) at which membership is to be interpreted
 
         Returns
         -------
-        level : float
-            interpreted membership level of the input
+        level : float OR np.1darray
+            interpreted membership level(s) of the input(s)
         """
 
-        if input:
+        if input is not None:
             level = fuzz.interp_membership(self.universe, self.getArray(), input)
         else:
             level = fuzz.interp_membership(self.universe, self.getArray(), self.universe[0])
@@ -124,28 +126,30 @@ class fuzzyRule():
         self.output = output
         self.label = label
 
-    def apply(self,input):
+    def apply(self,inputs):
         """
         Apply rule on fuzzy sets
 
         Parameters
         ----------
-        input : dict
-            dict of structure
-            {
-            'label': float,
-            'label': float,
-            }
-        
+        inputs : np.ndarray
+            pair(s) of values to be evaluated by rule
+
         Returns
         -------
-        activation : np.array
-            1d array of length universe
-            holding activation function 
-            values
+        activation : np.ndarray
+            2d array with dimensions = len inputs * length universe
+            holding activation function values
         """
 
-        rules = 1.0
+        if inputs.ndim == 1:
+            inputs = inputs.reshape((1,2)) # reshape 1D arrays to 2D
+
+        # inputs = [n, 2]
+
+        rules = np.ones(inputs.shape[0])
+
+        # rules = [n]
 
         for statement in self.input_statements:
 
@@ -156,9 +160,9 @@ class fuzzyRule():
             # The AND operator means we take the minimum of these two.
 
             if statement['operator'] == 'AND':
-                rule = np.fmin(fun1.interp(input[fun1.label]), fun2.interp(input[fun2.label]))
+                rule = np.fmin(fun1.interp(inputs[:,0]), fun2.interp(inputs[:,1]))
             elif statement['operator'] == 'OR':
-                rule = np.fmax(fun1.interp(input[fun1.label]), fun2.interp(input[fun2.label]))
+                rule = np.fmax(fun1.interp(inputs[:,0]), fun2.interp(inputs[:,1]))
 
             # TODO: add case for no operator
 
@@ -166,7 +170,18 @@ class fuzzyRule():
 
         # Now we apply rule by clipping the top off the corresponding output
         # membership function with `np.fmin`
-        activation = np.fmin(rules, self.output.getArray())  # removed entirely to 0
+
+        rules = rules.reshape((len(rules),1))
+
+        # rules [n, 1]
+        
+        rules = np.tile(rules,(1,len(self.output.universe))) # broadcasting
+
+        # rules [n, len universe]
+
+        activation = np.fmin(rules, self.output.getArray()) # removed entirely to 0
+
+        # activation [n, len universe]
 
         return activation
 
@@ -224,21 +239,55 @@ class fuzzySet():
         self.md.setLabel(label)
         self.hi.setLabel(label)
 
-    def interp(self,input):
+    def interp(self,inputs):
 
         """
         Interpret membership of input
         
         Parameters
         ----------
-        input : float
+        inputs : float OR np.1darray
+            The input(s) at which membership is to be interpreted
+
+        Returns
+        -------
+        level_lo : float OR np.1darray
+            The interpreted membership to the low 
+            membership function of the input(s)
+        level_md : float OR np.1darray
+            The interpreted membership to the medium 
+            membership function of the input(s)
+        level_hi : float OR np.1darray
+            The interpreted membership to the high 
+            membership function of the input(s)
         """
 
-        level_lo = self.lo.interp(input) 
-        level_md = self.md.interp(input)
-        level_hi = self.hi.interp(input)
+        level_lo = self.lo.interp(inputs) 
+        level_md = self.md.interp(inputs)
+        level_hi = self.hi.interp(inputs)
 
         return level_lo,level_md,level_hi
+
+    def view(self):
+        """
+        Used to view the distribution of all associated membership functions
+        """
+
+        # Visualize these universes and membership functions
+        fig, ax = plt.subplots(nrows=1, figsize=(8, 3))
+
+        ax.plot(self.universe, self.lo.getArray(), 'b', linewidth=1.5, label='Low')
+        ax.plot(self.universe, self.md.getArray(), 'g', linewidth=1.5, label='Medium')
+        ax.plot(self.universe, self.hi.getArray(), 'r', linewidth=1.5, label='High')
+        ax.set_title(self.label)
+        ax.legend()
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.get_xaxis().tick_bottom()
+        ax.get_yaxis().tick_left()
+
+        plt.tight_layout()
 
 class fuzzySystem():
 
@@ -269,13 +318,15 @@ class fuzzySystem():
 
         self.rules = rules
         self.label = label
-
+        print(self.consequent.universe.shape[0])
         # Empty aggregate function
-        self.aggregate = np.zeros_like(self.consequent.universe)
+        self.aggregate = np.zeros((1,self.consequent.universe.shape[0]))
+
+        # aggregate = [1, len consequent.universe]
 
 
     def compute(self,
-        input : Dict[str,float], 
+        inputs : np.ndarray, 
         normalize=False
         ): 
         """
@@ -283,74 +334,84 @@ class fuzzySystem():
 
         Parameters
         ----------
-        input : dict
-            dict of structure
-            {
-            'label': float,
-            'label': float,
-            }
+        inputs : np.ndarray
+            2d Array of inputs of shape [n, n_inputs]
+            n = number of data points to be computed and 
+            n_inputs = len(antecedents)
         normalize: bool, optional
             if True normalize aggregate output by area
         
         Returns
         -------
 
-        output : float
-            defuzzified value
-        aggregate : np.array
-            array of length universe
-        output_activation : float
-            activation for defuzzified output
+        output : float OR np.1darray
+            defuzzified crisp value(s)
+        aggregate : np.ndarray
+            array of shape [n, len universe] 
+            n = number of data points in the input
+            len universe = len(self.universe)
+        output_activation : np.1darray
+            activation values(s) for defuzzified output
         """
 
         self.reset()
 
-        aggregate = self.aggregate
+        if inputs.ndim == 1:
+            inputs = inputs.reshape((1,len(inputs))) # reshape 1D arrays to 2D
+
+        # inputs = [n, len antecedents]
+
+        aggregate = np.tile(self.aggregate,(inputs.shape[0],1))
+
+        # aggregate = [n, len consequent.universe]
 
         for rule in self.rules:
 
-            activation = rule.apply(input)
+            activation = rule.apply(inputs)
+
+            # activation = [n, len consequent.universe]
+
             aggregate = np.fmax(activation,aggregate)
+
+            # aggregate = [n, len consequent.universe]
 
         # normalize aggregate membership function
         if normalize:
-            dx = self.consequent.universe[1] - self.consequent.universe[0]
-            area = np.trapz(aggregate, dx=dx)
-            aggregate /= area
+            area = np.trapz(aggregate, x=self.consequent.universe)
+
+            # area = [n]
+
+            aggregate = np.divide(aggregate.T,area).T
+
+            # aggregate = [n, len consequent.universe]
 
         self.aggregate = aggregate
 
         # Calculate defuzzified result
-        output = fuzz.defuzz(self.consequent.universe, aggregate, 'centroid')
-        output_activation = fuzz.interp_membership(self.consequent.universe, aggregate, output) # for plot
+        def defuzzify(a):
+            """Defuzzify an aggregate membership function"""
+            return fuzz.defuzz(self.consequent.universe, a, 'centroid')
 
-        return output, aggregate, output_activation
+        output = np.apply_along_axis(defuzzify, 1, aggregate)
 
-    def interpolate_activation(self,value):
-        """interpolate the activation of any value in the
-        consequent universe
+        # output = [n]
 
-        Parameters
-        ----------
-        value : float or np.array
-            value(s) inside consequent universe 
-            to interpolate activation at.
+        # Calculate defuzzified result
+        def get_activation(a):
+            """Defuzzify an aggregate membership function"""
+            return fuzz.interp_membership(self.consequent.universe, a, output)
 
-        Returns
-        -------
-        interp_activation : float or np.array
-            interpolated activation value(s)
-        """
+        output_activation = np.apply_along_axis(get_activation, 1, aggregate) # for plot
 
-        # Linear interpolation of aggregate membership
-        f_a = interp1d(self.consequent.universe, self.aggregate)
+        # output_activation = [n]
 
-        interp_activation = f_a(value)
+        if inputs.ndim == 1:
+            inputs = inputs.reshape((1,len(inputs))) # reshape 1D arrays to 2D
 
-        return interp_activation
+        return output.squeeze(), aggregate.squeeze(), output_activation.squeeze()
 
     def reset(self):
         """
-        Resets intermediate aggregate membership function to zeros
+        Resets in termediate aggregate membership function to zeros
         """
-        self.aggregate = np.zeros_like(self.consequent.universe)
+        self.aggregate = np.zeros((1,self.consequent.universe.shape[0]))
