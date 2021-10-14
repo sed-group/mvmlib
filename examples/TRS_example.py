@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import patches
 
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
@@ -75,31 +76,18 @@ ax0.fill_between(n_safety.universe, n_0, aggregate, facecolor='Orange', alpha=0.
 ax0.plot([n_safety_value, n_safety_value], [0, n_safety_activation], 'k', linewidth=1.5, alpha=0.9)
 ax0.set_title('Aggregated membership and result (line)')
 
-# Define threshold safety factor
-threshold = 2.8
-
-# Latin hypercube for n_safety
-lb_nsafety = np.array([lb[-1],])
-ub_nsafety = np.array([ub[-1],])
-nsamples = 100
-
-lh_nsafety = Design(lb_nsafety,ub_nsafety,nsamples,'LHS')
-
-# Compute capability at a particular input
-# lh_activation = sim.interpolate_activation(lh_nsafety.unscale())
-
-# p = len(lh_nsafety[lh_activation >])
-
 # Simulate at higher resolution the control space in 2D
-n_levels = 5
+n_levels = 100
 grid_in = Design(lb[:2],ub[:2],n_levels,"fullfact").unscale()
 
 # Loop through the system to collect the control surface
-z,a,_ = sim.compute(grid_in)
+z,a,_ = sim.compute(grid_in,normalize=True)
 
 x = grid_in[:,0].reshape((n_levels,n_levels))
 y = grid_in[:,1].reshape((n_levels,n_levels))
 z = z.reshape((n_levels,n_levels))
+
+# %% Figure 1
 
 # Plot the result in 2D
 fig = plt.figure(figsize=(8, 8))
@@ -118,3 +106,91 @@ cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 
 plt.show()
 
+# Requirement definition
+
+from dmLib import gaussianFunc
+
+mu = np.array([370,580])
+Sigma = np.array([
+    [50, 25],
+    [75, 100],
+    ])
+
+Requirement = gaussianFunc(mu, Sigma, 'thermal_requirement')
+r = 3
+
+# %% Figure 2
+
+p = Requirement.compute_density(grid_in) # get probability density
+p = p.reshape((n_levels,n_levels))
+
+# Compute capability of the design
+threshold = 3.0 # threshold in universe
+feasible_condition = n_safety.universe > threshold
+area = np.trapz(a[:, feasible_condition], x=n_safety.universe[feasible_condition])
+area = area.reshape((n_levels,n_levels))
+
+# find boundary of requirements
+requirement = np.zeros_like(x)
+requirement[p < Requirement.compute_density_r(r=3)] = 1
+
+# Plot the result in 2D
+fig = plt.figure(figsize=(8, 8))
+ax = fig.add_subplot()
+
+surf = ax.contourf(x, y, area, cmap=plt.cm.jet,)
+ax.set_xlabel('T1')
+ax.set_ylabel('T2')
+
+cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
+cbar.set_array(area)
+
+cbar_h = fig.colorbar(cbar)
+cbar_h.set_label('Probability of no failure', rotation=90, labelpad=3)
+
+c1 = ax.contourf( x, y, requirement, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
+							hatches=['//', None])
+ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=2)
+
+label='requirement 3-$\sigma$'
+actor = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#FF0000', facecolor='none', fill='None', hatch='///')
+
+ax.legend([actor,],[label,])
+
+plt.show()
+# %% Margin computation
+n_levels = 200
+grid_margins = Design(lb[:2],ub[:2],n_levels,"fullfact").unscale()
+
+total_V = np.prod(ub[:2] - lb[:2])
+n = grid_margins.shape[0]
+p = Requirement.compute_density(grid_margins) # get probability density of requirements
+
+# Compute capability
+# Loop through the system to collect the control surface
+z,a,_ = sim.compute(grid_margins,normalize=True)
+# Compute capability of the design
+feasible_condition = n_safety.universe > threshold
+area = np.trapz(a[:, feasible_condition], x=n_safety.universe[feasible_condition])
+
+# calculate capability
+capability = (1/n) * np.sum(area)
+
+# calculate reliability
+p_reliability = area * p.copy() # np.array is mutable!!
+
+reliability = (total_V/n) * np.sum(p_reliability)
+
+req_cond = p >= Requirement.compute_density_r(r=3)
+
+# calculate buffer
+p_buffer = area.copy() # np.array is mutable!!
+p_buffer[~req_cond] = 0 # apply indicator function I_C
+
+buffer = (1/n) * np.sum(p_buffer)
+
+# calculate excess
+p_excess = area.copy() # np.array is mutable!!
+p_excess[req_cond] = 0 # apply indicator function I_C
+
+excess = (1/n) * np.sum(p_excess)

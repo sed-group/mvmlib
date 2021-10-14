@@ -6,14 +6,14 @@ class gaussianFunc():
 
     def __init__(self,mu,Sigma,label=''):
         """
-        Contrains description and implementation of the multivariate 
+        Contains description and implementation of the multivariate 
         Gaussian PDF
 
         Parameters
         ----------
-        mu : np.array
+        mu : np.1darray
             1d array of length n_dims containing means
-        Sigma : np.array
+        Sigma : np.ndarray
             1d array of length n_dims containing standard deviations
             OR
             2d array of length n_dims * n_dims containing standard deviations
@@ -27,29 +27,29 @@ class gaussianFunc():
         self.label = label
         self.n_dims = len(self.mu)
 
-    def multivariateGaussian(self,samples):
+    def compute_density(self,samples):
         """
-        Return the multivariate Gaussian distribution on array samples.
+        Return the multivariate Gaussian probability density 
+        distribution on array samples.
 
         Parameters
         ----------
-        samples : np.array
+        samples : np.ndarray
             array of shape n_samples * n_dims at which PDF will be evaluated
 
         Returns
         -------
-        Z : np.array
+        Z : np.1darray
             array of shape n_samples * n_dims of PDF values
         """
 
-        n_dims = samples.shape[1]
         n_samples = samples.shape[0]
 
         # pos is an array constructed by packing the meshed arrays of variables
         # x_1, x_2, x_3, ..., x_k into its _last_ dimension.
-        pos = np.empty((n_samples,1) + (n_dims,))
+        pos = np.empty((n_samples,1) + (self.n_dims,))
             
-        for i in range(n_dims):
+        for i in range(self.n_dims):
             X_norm = np.reshape(samples[:,i],(n_samples,1))
             # Pack X1, X2 ... Xk into a single 3-dimensional array
             pos[:, :, i] = X_norm
@@ -57,7 +57,7 @@ class gaussianFunc():
         Sigma_inv = np.linalg.inv(self.Sigma)
         Sigma_det = np.linalg.det(self.Sigma)
 
-        N = np.sqrt((2*np.pi)**n_dims * Sigma_det)
+        N = np.sqrt((2*np.pi)**self.n_dims * Sigma_det)
         
         # This einsum call calculates (x-mu)T.Sigma-1.(x-mu) - the Mahalanobis distance d^2 - in a vectorized
         # way across all the input variables.
@@ -95,6 +95,29 @@ class gaussianFunc():
 
         return V_d * np.power(np.linalg.det(self.Sigma), 0.5) * (r**self.n_dims)
 
+    def compute_density_r(self,r=3):
+        """
+        Returns the value of probability density at given Mahalanobis distance r
+
+        Parameters
+        ----------
+        r : float
+            corresponds to Mahalanobis distance r for hyperellipsoids
+            r = 1 ---> 1 sigma
+            r = 2 ---> 2 sigma
+            r = 3 ---> 3 sigma
+
+        Returns
+        -------
+        p : float
+            probability density at Mahalanobis distance r
+
+        """
+        Sigma_det = np.linalg.det(self.Sigma)
+        N = np.sqrt((2*np.pi)**self.n_dims * Sigma_det)
+
+        return np.exp(-r**2 / 2)/N
+
 class probFunction(gaussianFunc):
 
     def __init__(self,mean,spread,type,label=''):
@@ -103,10 +126,10 @@ class probFunction(gaussianFunc):
 
         Parameters
         ----------
-        mean : np.array
+        mean : np.1darray
             1d array of length n
             n=number of dimensions
-        spread : np.array
+        spread : np.ndarray
             1d array of length n
             n=number of dimensions
 
@@ -133,12 +156,12 @@ class probFunction(gaussianFunc):
 
         Parameters
         ----------
-        samples : np.array
+        samples : np.ndarray
             array of shape n_samples * n_dims at which PDF will be evaluated
         
         Returns
         -------
-        Z : np.array
+        Z : np.ndarray
             array of shape n_samples * n_dims of PDF values
         """
 
