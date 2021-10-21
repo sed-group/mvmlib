@@ -366,6 +366,11 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
     # Compute for given inputs
     value, aggregate, activation = sim.compute(input_2D_1, normalize=False)
 
+    print(aggregate)
+    assert value.ndim == 0
+    assert activation.ndim == 0
+    assert (aggregate.ndim == 1) & (aggregate.shape == output_set.universe.shape)
+
     # Test result by manual calculation
     rule_test_1 = np.fmax(input_set_1.lo.interp(input_2D_1[:,0]), input_set_2.lo.interp(input_2D_1[:,1]))
     
@@ -409,7 +414,12 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
     
     ############### 5 inputs in a 2D array ###############
     # Compute for given inputs
+    sim.reset() # reset storred aggregation
     value, aggregate, activation = sim.compute(input_2D_5, normalize=False)
+
+    assert (value.ndim == 1) & (len(value) == 5)
+    assert (activation.ndim == 1) & (len(activation) == 5)
+    assert (aggregate.ndim == 2) & (aggregate.shape == (5,len(output_set.universe)))
 
     # Test result by manual calculation
     rule_test_1 = np.fmax(input_set_1.lo.interp(input_2D_5[:,0]), input_set_2.lo.interp(input_2D_5[:,1]))
@@ -451,3 +461,35 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
     # aggregate_test [n, len output_set.universe]
 
     assert (aggregate == aggregate_test).all()
+
+if __name__ == "__main__":
+
+    # DEBUG:
+
+    lb = 0.0
+    ub = 10.0
+    input_set_1 = create_set(lb,ub)
+    input_set_1.setLabel('Input_1')
+
+    lb = 0.0
+    ub = 10.0
+    input_set_2 = create_set(lb,ub)
+    input_set_2.setLabel('Input_2')
+
+    lb = 0.0
+    ub = 100.0
+    output_set = create_set(lb,ub)
+    output_set.setLabel('output')
+
+    input_2D_1 = np.array([[2.0, 0.5,],])
+
+    input_2D_5 = np.array([
+        [1.0, 0.5,],
+        [2.0, 1.5,],
+        [3.0, 2.5,],
+        [4.0, 3.5,],
+        [5.0, 4.5,],
+        ])
+
+    test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D_5)
+    

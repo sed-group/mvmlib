@@ -34,5 +34,11 @@ The “fuzzyLib” module
 The “uncertaintyLib” module
 ---------------------------
 
+.. automodule:: dmLib.uncertaintyLib
+   :members:
+
 .. autoclass:: dmLib.uncertaintyLib.gaussianFunc
+   :members:
+
+.. autoclass:: dmLib.uncertaintyLib.Distribution
    :members:

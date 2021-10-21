@@ -1,10 +1,11 @@
 import skfuzzy as fuzz
 import numpy as np
-from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 from typing import Dict, Any, AnyStr, List
 
-"""Fuzzy Library for computing aggregate membership functions for fuzzy variables"""
+"""
+Fuzzy Library for computing aggregate membership functions for fuzzy variables
+"""
 
 class fuzzyFunction():
 
@@ -101,7 +102,6 @@ class fuzzyRule():
         output : fuzzyFunction,
         label=''
         ):
-
         """
         Defines a fuzzy rules by connecting fuzzy inputs
         to outputs
@@ -109,15 +109,16 @@ class fuzzyRule():
         Parameters
         ----------
         input_statements : list 
-            list of dicts 
-            structure of each dict
+            list of dicts, structure of each dict
             {
-                'fun1': fuzzyFunction object
-                'fun2': fuzzyFunction object
-                operator: 'AND', 'OR'
+            
+            'fun1': fuzzyFunction object
+
+            'fun2': fuzzyFunction object
+
+            operator: 'AND', 'OR'
+
             }
-        
-        # TODO : add case for only one set
         label : str, optional
             string to tag instance with
         """
@@ -125,6 +126,8 @@ class fuzzyRule():
         self.input_statements = input_statements
         self.output = output
         self.label = label
+
+        # TODO : add case for only one set
 
     def apply(self,inputs):
         """
@@ -193,7 +196,6 @@ class fuzzySet():
         hi : fuzzyFunction,
         label=''
         ):
-
         """
         Contains all fuzzy funtions describing the 
         low, medium, and high level membership functions
@@ -318,12 +320,14 @@ class fuzzySystem():
 
         self.rules = rules
         self.label = label
-        print(self.consequent.universe.shape[0])
+
         # Empty aggregate function
         self.aggregate = np.zeros((1,self.consequent.universe.shape[0]))
 
         # aggregate = [1, len consequent.universe]
 
+        self.output = np.zeros(1)
+        self.output_activation = np.zeros(1)
 
     def compute(self,
         inputs : np.ndarray, 
@@ -353,8 +357,6 @@ class fuzzySystem():
         output_activation : np.1darray
             activation values(s) for defuzzified output
         """
-
-        self.reset()
 
         if inputs.ndim == 1:
             inputs = inputs.reshape((1,len(inputs))) # reshape 1D arrays to 2D
@@ -392,26 +394,45 @@ class fuzzySystem():
             """Defuzzify an aggregate membership function"""
             return fuzz.defuzz(self.consequent.universe, a, 'centroid')
 
-        output = np.apply_along_axis(defuzzify, 1, aggregate)
+        self.output = np.apply_along_axis(defuzzify, 1, self.aggregate)
 
         # output = [n]
 
         # Calculate defuzzified result
-        def get_activation(a):
-            """Defuzzify an aggregate membership function"""
-            return fuzz.interp_membership(self.consequent.universe, a, output)
+        self.output_activation = np.zeros(self.output.shape)
 
-        output_activation = np.apply_along_axis(get_activation, 1, aggregate) # for plot
-
+        i = 0
+        for a,b in zip(self.aggregate,self.output):
+            # Defuzzify an aggregate membership function
+            self.output_activation[i] = fuzz.interp_membership(self.consequent.universe, a, b)
+            i += 0
+        
         # output_activation = [n]
 
         if inputs.ndim == 1:
             inputs = inputs.reshape((1,len(inputs))) # reshape 1D arrays to 2D
 
-        return output.squeeze(), aggregate.squeeze(), output_activation.squeeze()
+        return self.output.squeeze(), self.aggregate.squeeze(), self.output_activation.squeeze()
 
     def reset(self):
         """
-        Resets in termediate aggregate membership function to zeros
+        Resets intermediate aggregate membership function to zeros
         """
+        self.output = np.zeros(1)
+        self.output_activation = np.zeros(1)
         self.aggregate = np.zeros((1,self.consequent.universe.shape[0]))
+
+    def view(self):
+        """
+        View the aggregate membership function on the universe
+        """
+
+        fig, ax = plt.subplots(figsize=(8, 3))
+
+        n_0 = np.zeros_like(self.consequent.universe)
+
+        ax.fill_between(self.consequent.universe, n_0, self.aggregate[0,:], facecolor='Orange', alpha=0.7)
+        ax.plot([self.output[0], self.output[0]], [0, self.output_activation[0]], 'k', linewidth=1.5, alpha=0.9)
+        ax.set_title('Aggregated membership and result (line)')
+
+        plt.show()

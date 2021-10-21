@@ -8,11 +8,11 @@ uncertainty modelling
 
 """
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 __all__=["triangularFunc", "fuzzySet", "fuzzyRule", 
-    "fuzzySystem", "gaussianFunc", "probFunction",
+    "fuzzySystem", "gaussianFunc", "Distribution"
     "Design"]
 
 from .fuzzyLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
-from .uncertaintyLib import gaussianFunc, probFunction
+from .uncertaintyLib import gaussianFunc, Distribution
 from .DOELib import Design

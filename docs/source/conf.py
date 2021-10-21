@@ -21,7 +21,7 @@ copyright = '2021, Khalil Al Handawi'
 author = 'Khalil Al Handawi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.2.0'
+release = '0.3.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,6 +46,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# reference __init__ class documentation
+autoclass_content = 'init'
 
 # -- Options for HTML output -------------------------------------------------
 

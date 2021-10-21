@@ -127,7 +127,7 @@ class Design():
         # Generate latin hypercube design and store it
 
         if self.type == 'LHS':
-            self.design = lhs(len(self.lb), samples=self.nsamples, criterion='maximin')
+            self.design = lhs(len(self.lb), samples=self.nsamples)
         elif self.type == 'fullfact':
             bounds = np.array([[0.0]*len(self.lb),[1.0]*len(self.ub)])
             self.design = gridsamp(bounds, np.array([self.nsamples]))

@@ -4,8 +4,11 @@ from matplotlib import patches
 
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
+from dmLib import Distribution, gaussianFunc
 
-# Generate universe variables
+np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
+
+# Generate universe variabless
 lb = np.array([250, 480, 1.0])
 ub = np.array([450, 680, 6.0])
 labels = ['T1','T2','n_safety']
@@ -60,21 +63,13 @@ rule9 = fuzzyRule([{'fun1': temp_T1.md, 'fun2': temp_T2.md, 'operator': 'AND'},]
 rules = [rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, rule9]
 sim = fuzzySystem([temp_T1,temp_T2],n_safety,rules)
 
-# Compute for given inputs
+# %% Compute for given inputs
 inputs = np.array([
     370.0, # T1
     580.0, # T2
     ])
 n_safety_value, aggregate, n_safety_activation = sim.compute(inputs, normalize=True)
-
-# Visualize this
-fig, ax0 = plt.subplots(figsize=(8, 3))
-
-n_0 = np.zeros_like(n_safety.universe)
-
-ax0.fill_between(n_safety.universe, n_0, aggregate, facecolor='Orange', alpha=0.7)
-ax0.plot([n_safety_value, n_safety_value], [0, n_safety_activation], 'k', linewidth=1.5, alpha=0.9)
-ax0.set_title('Aggregated membership and result (line)')
+sim.view()
 
 # Simulate at higher resolution the control space in 2D
 n_levels = 100
@@ -87,7 +82,7 @@ x = grid_in[:,0].reshape((n_levels,n_levels))
 y = grid_in[:,1].reshape((n_levels,n_levels))
 z = z.reshape((n_levels,n_levels))
 
-# %% Figure 1
+# Figure 2
 
 # Plot the result in 2D
 fig = plt.figure(figsize=(8, 8))
@@ -110,87 +105,25 @@ plt.show()
 
 from dmLib import gaussianFunc
 
+# Requirement specifications
 mu = np.array([370,580])
 Sigma = np.array([
     [50, 25],
     [75, 100],
     ])
-
 Requirement = gaussianFunc(mu, Sigma, 'thermal_requirement')
-r = 3
+Requirement.view()
 
-# %% Figure 2
+# Target threshold
+mu = np.array([3.0,])
+Sigma = np.array([[0.1**2,],])
+threshold = gaussianFunc(mu, Sigma, 'safety_threshold')
+threshold.view()
 
-p = Requirement.compute_density(grid_in) # get probability density
-p = p.reshape((n_levels,n_levels))
+# Behavior and capability
 
-# Compute capability of the design
-threshold = 3.0 # threshold in universe
-feasible_condition = n_safety.universe > threshold
-area = np.trapz(a[:, feasible_condition], x=n_safety.universe[feasible_condition])
-area = area.reshape((n_levels,n_levels))
+behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1])
 
-# find boundary of requirements
-requirement = np.zeros_like(x)
-requirement[p < Requirement.compute_density_r(r=3)] = 1
-
-# Plot the result in 2D
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_subplot()
-
-surf = ax.contourf(x, y, area, cmap=plt.cm.jet,)
-ax.set_xlabel('T1')
-ax.set_ylabel('T2')
-
-cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
-cbar.set_array(area)
-
-cbar_h = fig.colorbar(cbar)
-cbar_h.set_label('Probability of no failure', rotation=90, labelpad=3)
-
-c1 = ax.contourf( x, y, requirement, alpha=0.0, levels=[-20, 0, 20], colors=['#FF0000','#FF0000'], 
-							hatches=['//', None])
-ax.contour(c1, colors='#FF0000', linewidths = 2.0, zorder=2)
-
-label='requirement 3-$\sigma$'
-actor = patches.Rectangle((20,20), 20, 20, linewidth=2, edgecolor='#FF0000', facecolor='none', fill='None', hatch='///')
-
-ax.legend([actor,],[label,])
-
-plt.show()
-# %% Margin computation
-n_levels = 200
-grid_margins = Design(lb[:2],ub[:2],n_levels,"fullfact").unscale()
-
-total_V = np.prod(ub[:2] - lb[:2])
-n = grid_margins.shape[0]
-p = Requirement.compute_density(grid_margins) # get probability density of requirements
-
-# Compute capability
-# Loop through the system to collect the control surface
-z,a,_ = sim.compute(grid_margins,normalize=True)
-# Compute capability of the design
-feasible_condition = n_safety.universe > threshold
-area = np.trapz(a[:, feasible_condition], x=n_safety.universe[feasible_condition])
-
-# calculate capability
-capability = (1/n) * np.sum(area)
-
-# calculate reliability
-p_reliability = area * p.copy() # np.array is mutable!!
-
-reliability = (total_V/n) * np.sum(p_reliability)
-
-req_cond = p >= Requirement.compute_density_r(r=3)
-
-# calculate buffer
-p_buffer = area.copy() # np.array is mutable!!
-p_buffer[~req_cond] = 0 # apply indicator function I_C
-
-buffer = (1/n) * np.sum(p_buffer)
-
-# calculate excess
-p_excess = area.copy() # np.array is mutable!!
-p_excess[req_cond] = 0 # apply indicator function I_C
-
-excess = (1/n) * np.sum(p_excess)
+print(behaviour(10000).mean(axis=1)) # should be close to 10.0
+print(behaviour(10000).std(axis=1)) # should be close to 5.0
+behaviour.view()

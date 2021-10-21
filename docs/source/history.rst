@@ -2,6 +2,36 @@
 Changelog
 *********
 
+.. _release-0.3.0:
+
+0.3.0
+=====
+
+:Date: October 23, 2021
+
+Features
+--------
+
+* Add support for defining arbitrary probability densities using raw density values ``Distribution(p)``
+* Add support for random sampling from instance of ``Distribution`` by calling it
+* Add support for sampling from Gaussian distribution ``gaussianFunc`` by calling it directly
+* Add support for viewing samples from defined distribution using the ``.view()`` method for ``Distribution`` and ``gaussianFunc`` instances
+* Add support for viewing aggregate function after computing using ``.view()`` method for ``fuzzySystem`` after using ``.compute()`` method
+
+Incompatible changes
+--------------------
+
+* Must manually reset ``fuzzySystem`` instance after ``.compute()`` to clear aggregate function
+
+Fixes
+-----
+
+* Fixed problem with ``fuzzySystem.output_activation``` not being calculated properly using element-wise operations
+* Add ``PDF_examples.py`` script
+* Improve existing tests ``test_fuzzyInference_N``
+* Add new tests ``test_gaussian_pdf_rvs`` and ``test_arbitrary_pdf_rvs``
+* Update documentation ``conf.py`` to include class docstring from ``__init__``
+
 .. _release-0.2.1:
 
 0.2.1
