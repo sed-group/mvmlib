@@ -2,9 +2,11 @@ import numpy as np
 import  scipy.stats as st
 import matplotlib.pyplot as plt
 from .DOELib import Design
+from .utilities import check_folder
+
 """Uncertainty Library for computing different PDFs"""
 class Distribution(object):
-    def __init__(self, pdf, lb = -1, ub = 1, sort = True, interpolation = True):
+    def __init__(self, pdf, lb = -1, ub = 1, sort = True, interpolation = True, label=''):
         """
         Draws samples from a one dimensional probability distribution,
         by means of inversion of a discrete inversion of a cumulative density function,
@@ -33,29 +35,70 @@ class Distribution(object):
             coming from a piecewise continuous distribution 
             If false, then a discrete distribution is assumed,
             by default True
+        label : str, optional
+            string to tag instance with   
         """
 
         self.shape          = pdf.shape
-        self.pdf            = pdf.ravel()
         self.sort           = sort
         self.interpolation  = interpolation
-        self.lb = lb
-        self.ub = ub
+        self.pdf            = pdf
+        self.lb             = lb
+        self.ub             = ub
+        self.label          = label
+        self._samples       = np.empty((self.ndim,0))
 
         # upper bound cannot be smaller than lower bound
         assert(self._ub > self._lb).all()
         # Check that the interval is square
         assert ((self._ub - self._lb) == (self._ub[0] - self._lb[0])).all()
 
-        # a PDF can not be negative
+    @property
+    def pdf(self):
+        """
+        Returns pdf values
+
+        Returns
+        -------
+        np.ndarray OR np.1darray
+            array of pdf values
+        """
+
+        return self._pdf
+
+    @pdf.setter
+    def pdf(self,pdf):
+        """
+        Sets the sorted pdf and asserts it is positive
+
+        Parameters
+        ----------
+        pdf: np.ndarray OR np.1darray
+            Array of pdf values. If ndim > 1 then 
+            pdf must have a shape of size (n,n,...,n)
+        """
+
         assert(np.all(pdf>=0))
 
         # sort the PDF by magnitude
         if self.sort:
-            self.sortindex = np.argsort(self.pdf, axis=None)
-            self.pdf = self.pdf[self.sortindex]
-        # construct the cumulative distribution function
-        self.cdf = np.cumsum(self.pdf)
+            self.sortindex = np.argsort(pdf.ravel(), axis=None)
+            self._pdf = pdf.ravel()[self.sortindex]
+        else:
+            self._pdf = pdf.ravel()
+
+    @property
+    def cdf(self):
+        """
+        construct the cumulative distribution function
+
+        Returns
+        -------
+        np.1darray
+            vector of cumilative distribution
+        """
+
+        return np.cumsum(self.pdf)
 
     @property
     def lb(self):
@@ -147,6 +190,36 @@ class Distribution(object):
 
         return self.cdf[-1]
 
+    @property
+    def samples(self):
+        """
+        Target vector getter
+
+        Returns
+        -------
+        np.1darray
+            vector of target observations
+        """
+        return self._samples
+
+    @samples.setter
+    def samples(self,s):
+        """
+        Appends target observation t to target vector
+
+        Parameters
+        ----------
+        t : float
+            value to append to target vector
+        """
+        self._samples = np.append(self._samples,s,axis=1)
+
+    def reset(self):
+        """
+        Resets the stored samples
+        """
+        self._samples = np.empty((self.ndim,0))
+
     def transform(self,i):
         """
         Transform discrete integer choices when sampling
@@ -170,25 +243,47 @@ class Distribution(object):
         return ((((i - self.shape[0]/2)) / (self.shape[0]/2)) \
             * half_interval) + (half_mean)
 
-    def view(self):
+    def view(self,xlabel='',savefile=None):
         """
         view 1D or 2D plot of distribution for visual checks
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            variable names to be shown on plot axes, by default ''
+        savefile : str, optional
+            if provided saves an image of the figure in directory 
+            /images/self.label/, by default None
+
+        Raises
+        ------
+        ValueError
+            if called when ndim is > 2
         """
 
         self.fig, self.ax = plt.subplots(figsize=(8, 3))
 
         if self.ndim == 1:
             # 1D example
-            self.ax.hist(self.__call__(10000).squeeze(), bins=100, density=True)
-            plt.show()
+            self.ax.hist(self.samples.squeeze(), bins=100, density=True)
+            self.ax.set_xlabel(xlabel)
+            self.ax.set_ylabel('density')
 
         elif self.ndim == 2:
             # View distribution
-            self.ax.scatter(*self.__call__(1000))
-            plt.show()
+            self.ax.scatter(*self.samples)
+            self.ax.set_title(xlabel)
 
         else:
             raise ValueError("only applicable for 1D and 2D probability density functions") 
+
+        if savefile is not None:
+            # Save figure to image
+            check_folder('images/%s' %(self.label))
+            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile),
+                format='pdf', dpi=200, bbox_inches='tight')
+
+        plt.show()
 
     def __call__(self, N=1):
         """
@@ -221,7 +316,9 @@ class Distribution(object):
         # is this a discrete or piecewise continuous distribution?
         if self.interpolation:
             index = index + np.random.uniform(size=index.shape)
-        return self.transform(index)
+
+        self.samples = self.transform(index) # store the samples inside instance
+        return self.transform(index) # return the requested number of samples
 
 class gaussianFunc(Distribution):
 
@@ -245,7 +342,6 @@ class gaussianFunc(Distribution):
 
         self.mu = mu
         self.Sigma = Sigma
-        self.label = label
         lb = self.mu - 3 * np.sqrt(np.max(self.eigvals))
         ub = self.mu + 3 * np.sqrt(np.max(self.eigvals))
 
@@ -253,7 +349,7 @@ class gaussianFunc(Distribution):
         p = self.compute_density(x) # get density values
         pdf = p.reshape((50,)*self.ndim)
         
-        super().__init__(pdf,lb=lb,ub=ub) # Initialize a distribution object for calling random samples
+        super().__init__(pdf,lb=lb,ub=ub,label=label) # Initialize a distribution object for calling random samples
 
     @property
     def ndim(self):
@@ -373,12 +469,24 @@ class gaussianFunc(Distribution):
 
         return np.exp(-r**2 / 2)/N
 
-    def view(self):
+    def view(self,xlabel='',savefile=None):
         """
         view 1D or 2D plot of distribution for visual checks
-        """
 
-        super().view() # call parent distribution class
+        Parameters
+        ----------
+        xlabel : str, optional
+            variable names to be shown on plot axes, by default ''
+        savefile : str, optional
+            if provided saves an image of the figure in directory 
+            /images/self.label/, by default None
+
+        Raises
+        ------
+        ValueError
+            if called when ndim is > 2
+        """
+        super().view(xlabel=xlabel,savefile=savefile) # call parent distribution class
 
         if self.ndim == 1: # add trace of normal distribution to plot
         
@@ -387,6 +495,13 @@ class gaussianFunc(Distribution):
             self.ax.plot(x,p)
             plt.draw()
             plt.pause(0.0001)
+
+        if savefile is not None:
+            # Save figure to image
+            check_folder('images/%s' %(self.label))
+            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
+                format='pdf', dpi=200, bbox_inches='tight')
+
 
 if __name__ == "__main__":
 

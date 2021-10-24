@@ -28,9 +28,6 @@ class fuzzyFunction():
 
 class triangularFunc(fuzzyFunction):
 
-    def __init__(self, universe,label=''):
-        super().__init__(universe,label)
-
     def setFunc(self,low,medium,high):
         """
         Create an instance of the triangular membership function
@@ -434,5 +431,8 @@ class fuzzySystem():
         ax.fill_between(self.consequent.universe, n_0, self.aggregate[0,:], facecolor='Orange', alpha=0.7)
         ax.plot([self.output[0], self.output[0]], [0, self.output_activation[0]], 'k', linewidth=1.5, alpha=0.9)
         ax.set_title('Aggregated membership and result (line)')
+
+        ax.set_xlabel(self.consequent.label)
+        ax.set_ylabel('density')
 
         plt.show()

@@ -42,3 +42,12 @@ The “uncertaintyLib” module
 
 .. autoclass:: dmLib.uncertaintyLib.Distribution
    :members:
+
+The "designMargins" module
+--------------------------
+
+.. automodule:: dmLib.designMarginsLib
+   :members:
+
+.. autoclass:: dmLib.designMarginsLib.MarginNode
+   :members:

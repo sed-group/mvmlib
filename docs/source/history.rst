@@ -2,6 +2,25 @@
 Changelog
 *********
 
+.. _release-0.4.0:
+
+0.4.0
+=====
+
+:Date: October 26, 2021
+
+Features
+--------
+
+* Add building block for a Margin Analysis Network (MAN) as a class object ``MarginNode``
+* Add ability to call ``MarginNode()`` using a set of requirement observations and design parameters in a Monte Carlo setting
+* Add ability to view ``MarginNode`` excess pdf and cdf using ``MarginNode.view()`` and ``MarginNode.view_cdf()`` methods
+
+Fixes
+-----
+
+* Transfer class object labels to plot axes for ``fuzzySystem.view()``, ``Distribution.view()``, and ``gaussianFunc.view()``
+
 .. _release-0.3.0:
 
 0.3.0

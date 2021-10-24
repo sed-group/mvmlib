@@ -4,6 +4,7 @@ from matplotlib import patches
 
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
+from dmLib import MarginNode
 from dmLib import Distribution, gaussianFunc
 
 np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
@@ -11,7 +12,7 @@ np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
 # Generate universe variabless
 lb = np.array([250, 480, 1.0])
 ub = np.array([450, 680, 6.0])
-labels = ['T1','T2','n_safety']
+labels = ['$T_1$','$T_2$','$n_\mathrm{safety}$']
 
 universe = np.linspace(lb, ub, 100) # grid for all variables
 
@@ -76,6 +77,7 @@ n_levels = 100
 grid_in = Design(lb[:2],ub[:2],n_levels,"fullfact").unscale()
 
 # Loop through the system to collect the control surface
+sim.reset()
 z,a,_ = sim.compute(grid_in,normalize=True)
 
 x = grid_in[:,0].reshape((n_levels,n_levels))
@@ -89,8 +91,8 @@ fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot()
 
 surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
-ax.set_xlabel('T1')
-ax.set_ylabel('T2')
+ax.set_xlabel('$T_1$')
+ax.set_ylabel('$T_2$')
 
 cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
 cbar.set_array(z)
@@ -99,6 +101,7 @@ boundaries = np.linspace(1, 6, 51)
 cbar_h = fig.colorbar(cbar, boundaries=boundaries)
 cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 
+# fig.savefig('images/sim2D.png', format='png', dpi=200)
 plt.show()
 
 # Requirement definition
@@ -111,19 +114,61 @@ Sigma = np.array([
     [50, 25],
     [75, 100],
     ])
-Requirement = gaussianFunc(mu, Sigma, 'thermal_requirement')
-Requirement.view()
+Requirement = gaussianFunc(mu, Sigma, 'R1')
+Requirement(10000)
+Requirement.view(xlabel='Thermal specification $T_1,T_2 \
+    \sim \mathcal{N}(\mu,\Sigma)$',savefile='R')
+Requirement.reset()
 
 # Target threshold
-mu = np.array([3.0,])
-Sigma = np.array([[0.1**2,],])
-threshold = gaussianFunc(mu, Sigma, 'safety_threshold')
-threshold.view()
+mu = np.array([4.0,])
+Sigma = np.array([[0.3**2,],])
+threshold = gaussianFunc(mu, Sigma, 'T1')
+threshold(10000)
+threshold.view(xlabel='Threshold $N_\mathrm{safety}^\mathrm{threshold}$',savefile='Th')
+threshold.reset()
 
-# Behavior and capability
+# Behaviour and capability
 
-behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1])
+behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1],label='B1')
+print("Sample mean for n_safety = %f" %(behaviour(10000).mean(axis=1))) # should be close to n_safety_value
+print("Sample standard deviation for n_safety = %f" %(behaviour(10000).std(axis=1))) # should be close to n_safety_value
+behaviour.view(xlabel='Response $N_\mathrm{safety}$',savefile='B')
+behaviour.reset()
 
-print(behaviour(10000).mean(axis=1)) # should be close to 10.0
-print(behaviour(10000).std(axis=1)) # should be close to 5.0
-behaviour.view()
+# Defining a MarginNode object
+class ThermalNode(MarginNode):
+
+    def behaviour(self,T,D):
+        # Compute for given inputs
+        sim.reset()
+        _,aggregate,_ = sim.compute(T, normalize=True)
+        behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1])
+        return behaviour()
+
+    def threshold(self):
+        # some specific model-dependent behaviour
+        return threshold()
+
+ThermalNode_1 = ThermalNode('EM1')
+
+ThermalNode_1(Requirement(10000),None)
+ThermalNode_1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+    N_\mathrm{safety}^\mathrm{threshold}$')
+ThermalNode_1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+    N_\mathrm{safety}^\mathrm{threshold}$')
+
+
+# for N in range(10,1000,50):
+#     ThermalNode_1(Requirement(N),None)
+#     # behaviour(N) # dummy behaviour
+
+#     Requirement.view(xlabel='Thermal specification $T_1,T_2 \
+#         \sim \mathcal{N}(\mu,\Sigma)$',savefile='R_%i' %(N))
+#     threshold.view(xlabel='Threshold $N_\mathrm{safety}^\mathrm{threshold}$',savefile='Th_%i' %(N))
+#     # behaviour.view(xlabel='Response $N_\mathrm{safety}$',savefile='B_%i' %(N))
+
+#     ThermalNode_1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+#         N_\mathrm{safety}^\mathrm{threshold}$', savefile='E_%i' %(N))
+#     ThermalNode_1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+#         N_\mathrm{safety}^\mathrm{threshold}$', savefile='E_cdf_%i' %(N))
