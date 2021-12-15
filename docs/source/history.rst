@@ -2,6 +2,19 @@
 Changelog
 *********
 
+.. _release-0.4.1:
+
+0.4.1
+=====
+
+:Date: December 15, 2021
+
+Incompatible changes
+--------------------
+
+* ``MarginNode`` class object is now called using ``MarginNode(decided_value,threshold)``, where ``decided_value`` and ``threshold`` are vectors of equal length sampled from their respective functions
+
+
 .. _release-0.4.0:
 
 0.4.0

@@ -14,22 +14,22 @@ def stochastic_inputs() -> Tuple[gaussianFunc,gaussianFunc]:
     Sigma = np.array([[0.3**2,],])
     threshold = gaussianFunc(mu, Sigma, 'T1')
 
-    # Behaviour and capability
+    # decided value (capability)
     mu = np.array([4.6,])
     Sigma = np.array([[0.3**2,],])
-    behaviour = gaussianFunc(mu, Sigma, 'B1')
+    decided_value = gaussianFunc(mu, Sigma, 'B1')
 
-    return threshold, behaviour
+    return threshold, decided_value
 
 @pytest.fixture
 def deterministic_inputs():
     # Target threshold
     threshold = 4.0
 
-    # Behaviour and capability
-    behaviour = 5.8
+    # decided value (capability)
+    decided_value = 5.8
 
-    return threshold, behaviour
+    return threshold, decided_value
 
 @pytest.fixture
 def requirement():
@@ -52,37 +52,27 @@ def test_deterministic(deterministic_inputs):
     # # Target threshold
     # threshold = 4.0
 
-    # # Behaviour and capability
-    # behaviour = 5.8
+    # # decided value (capability)
+    # decided_value = 5.8
 
-    # example_mean_std = (threshold, behaviour)
+    # example_mean_std = (threshold, decided_value)
 
     ######################################################
     # Defining a MarginNode object
 
-    threshold, behaviour = deterministic_inputs
-
-    class ThermalNode(MarginNode):
-
-        def behaviour(self,T,D):
-            # Compute for given inputs
-            return behaviour
-
-        def threshold(self,T,D):
-            # some specific model-dependent behaviour
-            return threshold
+    threshold, decided_value = deterministic_inputs
 
     ######################################################
     # Check excess calculation for one sample
-    ThermalNode_1 = ThermalNode('EM1')
-    ThermalNode_1(np.ones(1),None)
-    assert ThermalNode_1.excess == np.array([behaviour-threshold])
+    ThermalNode = MarginNode('EM1')
+    ThermalNode(decided_value,threshold)
+    assert ThermalNode.excess == np.array([decided_value-threshold])
 
     ######################################################
     # Check return for multiple inputs
-    ThermalNode_1.reset()
-    ThermalNode_1(np.ones(10),None)
-    assert (ThermalNode_1.excess == np.ones(10) * (behaviour-threshold)).all()
+    ThermalNode.reset()
+    ThermalNode(np.ones(10)*decided_value,np.ones(10)*threshold)
+    assert (ThermalNode.excess == np.ones(10) * (decided_value-threshold)).all()
 
 def test_stochastic(stochastic_inputs):
     """
@@ -95,62 +85,53 @@ def test_stochastic(stochastic_inputs):
     Sigma = np.array([[0.3**2,],])
     threshold = gaussianFunc(mu, Sigma, 'T1')
 
-    # Behaviour and capability
+    # decided value (capability)
     mu = np.array([4.6,])
     Sigma = np.array([[0.3**2,],])
-    behaviour = gaussianFunc(mu, Sigma, 'B1')
+    decided_value = gaussianFunc(mu, Sigma, 'B1')
 
-    stochastic_inputs = (threshold, behaviour)
+    stochastic_inputs = (threshold, decided_value)
 
     ######################################################
 
     # Defining a MarginNode object
-    threshold, behaviour = stochastic_inputs
-    behaviour.samples
-    class ThermalNode(MarginNode):
-
-        def behaviour(self,T,D):
-            # Compute for given inputs
-            return behaviour()
-
-        def threshold(self,T,D):
-            # some specific model-dependent behaviour
-            return threshold()
+    threshold, decided_value = stochastic_inputs
+    decided_value.samples
     
     ######################################################
     # Check excess calculation for one sample
-    ThermalNode_1 = ThermalNode('EM1')
-    ThermalNode_1(np.ones(1),None)
-    assert ThermalNode_1.excess == behaviour.samples-threshold.samples
+    ThermalNode = MarginNode('EM1')
+    ThermalNode(decided_value(),threshold())
+    assert ThermalNode.excess == decided_value.samples-threshold.samples
 
     ######################################################
     # Check sampling accuracy of mean and standard deviaction of excess
 
-    ThermalNode_1.reset()
-    behaviour.reset()
+    ThermalNode.reset()
+    decided_value.reset()
     threshold.reset()
 
-    mu_excess = behaviour.mu - threshold.mu # calculate composite random variable mean
-    Sigma_excess = behaviour.Sigma + (((-1)**2) * threshold.Sigma) # calculate composite random variable variance
+    mu_excess = decided_value.mu - threshold.mu # calculate composite random variable mean
+    Sigma_excess = decided_value.Sigma + (((-1)**2) * threshold.Sigma) # calculate composite random variable variance
 
-    ThermalNode_1(np.ones(10000),None)
+    ThermalNode(decided_value(10000),threshold(10000))
     
     # Check that means and variances of excess
-    assert np.math.isclose(np.mean(ThermalNode_1.excess), mu_excess.squeeze(), rel_tol=1e-1)
-    assert np.math.isclose(np.var(ThermalNode_1.excess), Sigma_excess.squeeze(), rel_tol=1e-1)
+    assert np.math.isclose(np.mean(ThermalNode.excess), mu_excess.squeeze(), rel_tol=1e-1)
+    assert np.math.isclose(np.var(ThermalNode.excess), Sigma_excess.squeeze(), rel_tol=1e-1)
 
     ######################################################
     # Check that CDF computation is correct
-    bin_centers, cdf, excess_limit, reliability = ThermalNode_1.compute_cdf(bins=500)
+    bin_centers, cdf, excess_limit, reliability = ThermalNode.compute_cdf(bins=500)
 
     test_excess_pdf = norm(loc=mu_excess,scale=np.sqrt(Sigma_excess))
     test_reliability = 1 - test_excess_pdf.cdf(0).squeeze() 
     test_excess_limit = test_excess_pdf.ppf(0.9).squeeze()
     test_excess_cdf = test_excess_pdf.cdf(bin_centers).squeeze()
 
-    # ThermalNode_1.view_cdf(xlabel='Excess')
-    # ThermalNode_1.axC.plot(bin_centers,test_excess_cdf,'--r')
-    # ThermalNode_1.figC.show()
+    # ThermalNode.view_cdf(xlabel='Excess')
+    # ThermalNode.axC.plot(bin_centers,test_excess_cdf,'--r')
+    # ThermalNode.figC.show()
 
     assert np.math.isclose(reliability, test_reliability, rel_tol=1e-1)
     assert np.math.isclose(excess_limit, test_excess_limit, rel_tol=1e-1)

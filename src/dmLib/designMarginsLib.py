@@ -29,7 +29,7 @@ class MarginNode():
         self.cutoff = 0.9
         self.buffer_limit = 0.0
         self._target = np.empty(0)
-        self._response = np.empty(0)
+        self._decided_value = np.empty(0)
         self._excess = np.empty(0)
         self._excess_dist = None
 
@@ -52,13 +52,13 @@ class MarginNode():
 
         Parameters
         ----------
-        t : float
+        t : float OR np.1darray
             value to append to target vector
         """
         self._target = np.append(self._target,t)
 
     @property
-    def response(self):
+    def decided_value(self):
         """
         Response vector getter
 
@@ -67,19 +67,19 @@ class MarginNode():
         np.1darray
             vector of response observations
         """
-        return self._response
+        return self._decided_value
 
-    @response.setter
-    def response(self,r):
+    @decided_value.setter
+    def decided_value(self,r):
         """
         Appends response observation r to target vector
 
         Parameters
         ----------
-        r : float
+        r : float OR np.1darray
             value to append to response vector
         """
-        self._response = np.append(self._response,r)
+        self._decided_value = np.append(self._decided_value,r)
 
     @property
     def excess(self):
@@ -100,7 +100,7 @@ class MarginNode():
 
         Parameters
         ----------
-        e : float
+        e : float OR np.1darray
             value to append to response vector
         """
         self._excess = np.append(self._excess,e)
@@ -129,53 +129,13 @@ class MarginNode():
         """
         self._excess_dist = Distribution(excess, lb=min(excess),ub=max(excess))
 
-    def threshold(self, *args, **kwargs):
-        """
-        The function that will be used to calculate the target value
-            - Can be a deterministic model
-            - Can be a stochastic model (by calling a defined dmLib.Distribution instance)
-        
-        This method must be redefined by the user for every instance
-
-        Example
-        -------
-        >>> # [in the plugin file]
-        >>> from dmLib import designSolution
-        >>> class myDesignSolution(designSolution):
-        >>>     def threshold(self):
-        >>>         # some threshold
-        >>>         return t() # if t is a dmLib.Distribution
-        """
-        # default code for the default threshold
-        return
-
-    def behaviour(self, *args, **kwargs):
-        """
-        The function that will be used to calculate decided value
-            - Can be a deterministic model
-            - Can be a stochastic model (by calling a defined dmLib.Distribution instance)
-        
-        This method must be redefined by the user for every instance
-
-        Example
-        -------
-        >>> # [in the plugin file]
-        >>> from dmLib import designSolution
-        >>> class myDesignSolution(designSolution):
-        >>>     def behaviour(self,r,d):
-        >>>         # some specific model-dependent behaviour
-        >>>         return r*2+1 / d
-        """
-        # default code for the default behaviour
-        return
-
     def reset(self):
         """
-        Resets accumilated random observations in target, 
+        Resets accumulated random observations in target, 
         response, and excess attributes
         """
         self._target = np.empty(0)
-        self._response = np.empty(0)
+        self._decided_value = np.empty(0)
         self._excess = np.empty(0)
         self._excess_dist = None
 
@@ -278,30 +238,22 @@ class MarginNode():
 
         plt.show()
 
-    def __call__(self,inputs,decisions):
+    def __call__(self,decided_value,target_threshold):
         """
-        Calculate behaviour and target for each input provided
+        Calculate excess given the target threshold and decided value
 
         Parameters
         ----------
-        inputs : np.ndarray
-            Inputs to the margin node. They are mapped using the 
-            behaviour() method to response. The dimensions are N * n_samples, 
-            where N is the number of inputs to the node
-        decisions : np.1darray
-            The design parameters used to select the design at the margin node
-            The length of this vector equals the number of design parameters
+        decided_value : np.1darray
+            decided values to the margin node describing the capability of the design.
+            The length of this vector equals the number of samples
+        target_threshold : np.1darray
+            The target threshold parameters that the design needs to achieve
+            The length of this vector equals the number of samples
         """
-        if inputs.ndim == 1:
-            inputs = inputs[None,:] # reshape 1D arrays to 2D
-
-        for i in range(inputs.shape[1]):
             
-            r = self.behaviour(inputs[:,i],decisions)
-            self.response = r # add to list of responses
+        self.decided_value = decided_value # add to list of decided values
+        self.target = target_threshold # add to list of targets
 
-            t = self.threshold(inputs[:,i],decisions)
-            self.target = t # add to list of targets
-
-            e = r - t
-            self.excess = e # add to list of targets
+        e = decided_value - target_threshold
+        self.excess = e # add to list of excesses

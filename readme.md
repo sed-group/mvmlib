@@ -12,11 +12,22 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+Install ``pandoc``, needed to build documentation, see [https://pandoc.org/installing.html](https://pandoc.org/installing.html) 
+
 Use ``flit`` to install this package locally
 
 ```
 flit build
 flit install --deps=develop
+```
+
+On windows use.
+```
+flit install --deps=develop --pth-file
+```
+On MacOS/Linux use
+```
+flit install --deps=develop --symlink
 ```
 
 Use ``sphinx`` to build the documentation

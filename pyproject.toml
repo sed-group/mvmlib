@@ -19,6 +19,7 @@ dependencies = [
 test = [
     "pytest >=6.2.5",
     "pytest-cov",
+    "pandoc"
 ]
 doc = [
     "sphinx",
