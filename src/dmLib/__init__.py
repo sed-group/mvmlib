@@ -8,12 +8,11 @@ uncertainty modelling
 
 """
 
-__version__ = '0.4.1'
-__all__=["triangularFunc", "fuzzySet", "fuzzyRule",
-    "fuzzySystem", "gaussianFunc", "Distribution"
-    "Design", "MarginNode"]
+__version__ = '0.4.2'
+__all__=['triangularFunc', 'fuzzySet', 'fuzzyRule','fuzzySystem', 'gaussianFunc', 'Distribution'
+    'Design', 'MarginNode','InputSpec', 'FixedParam', 'DesignParam', 'Behaviour']
 
 from .fuzzyLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from .uncertaintyLib import gaussianFunc, Distribution
 from .DOELib import Design
-from .designMarginsLib import MarginNode
+from .designMarginsLib import InputSpec, FixedParam, DesignParam, Behaviour, MarginNode, MarginNetwork

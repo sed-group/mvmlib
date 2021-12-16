@@ -18,7 +18,6 @@ Use ``flit`` to install this package locally
 
 ```
 flit build
-flit install --deps=develop
 ```
 
 On windows use.

@@ -8,7 +8,6 @@ Fuzzy Library for computing aggregate membership functions for fuzzy variables
 """
 
 class fuzzyFunction():
-
     def __init__(self,universe,label=''):
         """
         Contrains description and implementation of
@@ -27,7 +26,6 @@ class fuzzyFunction():
         self.label = label
 
 class triangularFunc(fuzzyFunction):
-
     def setFunc(self,low,medium,high):
         """
         Create an instance of the triangular membership function
@@ -92,7 +90,6 @@ class triangularFunc(fuzzyFunction):
         return level
     
 class fuzzyRule():
-
     def __init__(
         self,
         input_statements : Dict[str, fuzzyFunction],
@@ -222,7 +219,6 @@ class fuzzySet():
 
         # TODO : if different universes raise an error
 
-
     def setLabel(self,label):
         """
         Changes label property of fuzzy set and all its membership functions
@@ -239,7 +235,6 @@ class fuzzySet():
         self.hi.setLabel(label)
 
     def interp(self,inputs):
-
         """
         Interpret membership of input
         

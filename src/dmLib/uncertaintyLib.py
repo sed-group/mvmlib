@@ -6,7 +6,7 @@ from .utilities import check_folder
 
 """Uncertainty Library for computing different PDFs"""
 class Distribution(object):
-    def __init__(self, pdf, lb = -1, ub = 1, sort = True, interpolation = True, label=''):
+    def __init__(self, pdf:np.ndarray, lb = -1, ub = 1, sort = True, interpolation = True, label=''):
         """
         Draws samples from a one dimensional probability distribution,
         by means of inversion of a discrete inversion of a cumulative density function,
@@ -19,14 +19,14 @@ class Distribution(object):
 
         Parameters
         ----------
-        lb : np.1darray OR float OR int, optional
-            The lower bound for the pdf support, default = -1
-        ub : np.1darray OR float OR int, optional
-            The uppoer bound for the pdf support, default = 1
         pdf : np.ndarray
             2d-array of shape n_samples * n_dims including 
             sample density values throughout the real or 
             discrete space
+        lb : np.1darray OR float OR int, optional
+            The lower bound for the pdf support, default = -1
+        ub : np.1darray OR float OR int, optional
+            The uppoer bound for the pdf support, default = 1
         sort : bool, optional
             if True sort pdf to avoid interpolation 
             errors when evaluating from cdf, by default True
@@ -501,7 +501,6 @@ class gaussianFunc(Distribution):
             check_folder('images/%s' %(self.label))
             self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
                 format='pdf', dpi=200, bbox_inches='tight')
-
 
 if __name__ == "__main__":
 

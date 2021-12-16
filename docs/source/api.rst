@@ -49,5 +49,20 @@ The "designMargins" module
 .. automodule:: dmLib.designMarginsLib
    :members:
 
+.. autoclass:: dmLib.designMarginsLib.InputSpec
+   :members:
+
+.. autoclass:: dmLib.designMarginsLib.FixedParam
+   :members:
+
+.. autoclass:: dmLib.designMarginsLib.DesignParam
+   :members:
+
+.. autoclass:: dmLib.designMarginsLib.Behaviour
+   :members:
+
 .. autoclass:: dmLib.designMarginsLib.MarginNode
+   :members:
+
+.. autoclass:: dmLib.designMarginsLib.MarginNetwork
    :members:

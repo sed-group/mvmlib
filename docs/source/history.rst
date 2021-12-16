@@ -2,6 +2,23 @@
 Changelog
 *********
 
+.. _release-0.4.2:
+
+0.4.2
+=====
+
+:Date: December 17, 2021
+
+Features
+--------
+* Add building block for a Margin Analysis Network (MAN) as a class object ``InputSpec``
+* Add building block for a Margin Analysis Network (MAN) as a class object ``FixedParam``
+* Add building block for a Margin Analysis Network (MAN) as a class object ``DesignParam``
+* Add building block for a Margin Analysis Network (MAN) as a class object ``Behaviour``
+* ``Behaviour`` ``__call__`` method must be redefined by the user
+* Add ``MarginNetwork`` class object that must be inherited and redefined by user
+* Add ability to call ``MarginNetwork.forward()`` in a Monte Carlo setting
+
 .. _release-0.4.1:
 
 0.4.1

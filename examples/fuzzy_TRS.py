@@ -4,7 +4,7 @@ from matplotlib import patches
 
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
-from dmLib import MarginNode
+from dmLib import InputSpec, Behaviour, MarginNode, MarginNetwork
 from dmLib import Distribution, gaussianFunc
 
 np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
@@ -108,7 +108,9 @@ plt.show()
 
 from dmLib import gaussianFunc
 
-# Requirement specifications
+# Define PDFs for input specifications
+
+# For T1, T2
 mu = np.array([370,580])
 Sigma = np.array([
     [50, 25],
@@ -120,7 +122,7 @@ Requirement.view(xlabel='Thermal specification $T_1,T_2 \
     \sim \mathcal{N}(\mu,\Sigma)$',savefile='R')
 Requirement.reset()
 
-# Target threshold
+# for n_threshold
 mu = np.array([4.0,])
 Sigma = np.array([[0.3**2,],])
 threshold = gaussianFunc(mu, Sigma, 'T1')
@@ -128,36 +130,62 @@ threshold(10000)
 threshold.view(xlabel='Threshold $N_\mathrm{safety}^\mathrm{threshold}$',savefile='Th')
 threshold.reset()
 
-# Behaviour and capability
+# define input specifications
+s1 = InputSpec(Requirement  ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,symbol='T1'            )
+s2 = InputSpec(Requirement  ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,symbol='T2'            )
+s3 = InputSpec(threshold    ,'S3'                   ,description='threshold safety'         ,symbol='n_threshold'   )
+input_specs = [s1,s2,s3]
 
+# define the behaviour models
 behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1],label='B1')
 print("Sample mean for n_safety = %f" %(behaviour(10000).mean(axis=1))) # should be close to n_safety_value
 print("Sample standard deviation for n_safety = %f" %(behaviour(10000).std(axis=1))) # should be close to n_safety_value
 behaviour.view(xlabel='Response $N_\mathrm{safety}$',savefile='B')
 behaviour.reset()
 
-# Defining a MarginNode object
-class ThermalNode(MarginNode):
-
-    def behaviour(self,T,D):
+# this is the n_safety model
+class B1(Behaviour):
+    def __call__(self,T1,T2):
         # Compute for given inputs
         sim.reset()
-        _,aggregate,_ = sim.compute(T, normalize=True)
+        _,aggregate,_ = sim.compute(np.array([[T1,T2],]), normalize=True)
         behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1])
-        return behaviour()
+        self.decided_value = behaviour()
 
-    def threshold(self):
-        # some specific model-dependent behaviour
-        return threshold()
+b1 = B1('B1')
+behaviours = [b1,]
 
-ThermalNode_1 = ThermalNode('EM1')
+# Defining a MarginNode object
+e1 = MarginNode('E1',type='must_exceed')
+margin_nodes = [e1,]
 
-ThermalNode_1(Requirement(10000),None)
-ThermalNode_1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+# Defining a MarginNetwork object
+class MAN(MarginNetwork):
+    def forward(self):
+
+        Requirement()
+        threshold()
+
+        # retrieve MAN components
+        s1 = self.input_specs[0] # stochastic
+        s2 = self.input_specs[1] # stochastic
+        s3 = self.input_specs[2] # stochastic
+        b1 = self.behaviours[0]
+        e1 = self.margin_nodes[0]
+
+        # Execute behaviour models
+        b1(s1(),s2())
+        e1(b1.decided_value,s3())
+
+man = MAN([],input_specs,[],behaviours,margin_nodes,'MAN_1')
+
+for n in range(10000):
+    man.forward()
+
+e1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
     N_\mathrm{safety}^\mathrm{threshold}$')
-ThermalNode_1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
+e1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
     N_\mathrm{safety}^\mathrm{threshold}$')
-
 
 # for N in range(10,1000,50):
 #     ThermalNode_1(Requirement(N),None)
