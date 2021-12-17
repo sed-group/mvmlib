@@ -104,10 +104,6 @@ cbar_h.set_label('safety factor', rotation=90, labelpad=3)
 # fig.savefig('images/sim2D.png', format='png', dpi=200)
 plt.show()
 
-# Requirement definition
-
-from dmLib import gaussianFunc
-
 # Define PDFs for input specifications
 
 # For T1, T2

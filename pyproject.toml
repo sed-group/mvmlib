@@ -13,6 +13,7 @@ dependencies = [
 "matplotlib==3.4.3",
 "pyDOE==0.3.8",
 "scikit-fuzzy==0.4.2",
+"smt==1.1.0",
 ]
 
 [project.optional-dependencies]

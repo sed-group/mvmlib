@@ -3,3 +3,4 @@ pyDOE==0.3.8
 scikit-fuzzy==0.4.2
 ipykernel==6.4.1
 flit==3.3.0
+smt==1.1.0

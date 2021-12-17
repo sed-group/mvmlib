@@ -1,10 +1,72 @@
 import numpy as np
 import  scipy.stats as st
 import matplotlib.pyplot as plt
+from typing import Dict, Any, AnyStr, Tuple, List, Union
+
 from .DOELib import Design
 from .utilities import check_folder
 
 """Uncertainty Library for computing different PDFs"""
+def compute_cdf(values:np.ndarray,bins:int=500,cutoff:float=None,buffer_limit:float=None):
+    """
+    Calculate the cumulative distribution function for the excess margin
+
+    Parameters
+    ----------
+    bins : int, optional
+        number of discrete bins used to 
+        construct pdf and pdf curves, by default 500
+    cutoff : float, optional
+        cutoff limit for calculating reliability, by default None
+    buffer_limit : float, optional
+        lower bound for beginning of buffer zone, by default None
+
+    Returns
+    -------
+    values : np.1darray
+        vector of value samples to use for computing the cdf
+    bin_centers : np.1darray
+        array of len(value) - 1 containing the x-axis values of CDF
+    cdf : np.1darray
+        array of len(value) - 1 containing the y-axis values of CDF
+
+    Raises
+    ------
+    AssertionError
+        if only one of `cutoff` or `buffer_limit` is provided
+    """
+    def moving_average(x, w):
+        """
+        N-moving average over 1D array
+
+        Parameters
+        ----------
+        x : np.1darray
+            input array to average
+        w : int
+            number of elements to average
+
+        Returns
+        -------
+        np.1darray
+            avaeraged array
+        """
+        return np.convolve(x, np.ones(w), 'valid') / w
+
+    value_hist = np.histogram(values, bins=bins,density=True)
+    bin_width = np.mean(np.diff(value_hist[1]))
+    bin_centers = moving_average(value_hist[1],2)
+    cdf = np.cumsum(value_hist[0] * bin_width)
+
+    if all([cutoff is not None, buffer_limit is not None]):
+        value_limit = bin_centers[cdf >= cutoff][0]
+        reliability = 1 - cdf[bin_centers >= buffer_limit][0]
+        return bin_centers, cdf, value_limit, reliability
+    elif all([cutoff is None, buffer_limit is None]):
+        return bin_centers, cdf
+    else:
+        raise AssertionError('You must provide both cutoff and buffer_limit, only one of them is provided')
+
 class Distribution(object):
     def __init__(self, pdf:np.ndarray, lb = -1, ub = 1, sort = True, interpolation = True, label=''):
         """
@@ -322,7 +384,7 @@ class Distribution(object):
 
 class gaussianFunc(Distribution):
 
-    def __init__(self,mu,Sigma,label=''):
+    def __init__(self,mu:Union[float,int,np.ndarray],Sigma:Union[float,int,np.ndarray],label=''):
         """
         Contains description and implementation of the multivariate 
         Gaussian PDF
@@ -340,8 +402,13 @@ class gaussianFunc(Distribution):
             string to tag instance with        
         """
 
-        self.mu = mu
-        self.Sigma = Sigma
+        if type(mu) == float or type(mu) == int:
+            mu = np.array([float(mu),])
+        if type(Sigma) == float or type(mu) == int:
+            Sigma = np.array([[float(Sigma),],])
+
+        self.mu     = mu
+        self.Sigma  = Sigma
         lb = self.mu - 3 * np.sqrt(np.max(self.eigvals))
         ub = self.mu + 3 * np.sqrt(np.max(self.eigvals))
 
@@ -501,6 +568,101 @@ class gaussianFunc(Distribution):
             check_folder('images/%s' %(self.label))
             self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
                 format='pdf', dpi=200, bbox_inches='tight')
+
+class VisualizeDist():
+    def __init__(self,values:np.ndarray,cutoff:float=None,buffer_limit:float=None):
+        """
+        Contains PDF and CDF visualization tools
+
+        Parameters
+        ----------
+        values : np.1darray
+            vector of sample observations whose PDF is to be visualized using a histogram
+        cutoff : float, optional
+            cutoff limit for calculating reliability, by default None
+        buffer_limit : float, optional
+            lower bound for beginning of buffer zone, by default None
+        """
+
+        self.values         = values
+        self.cutoff         = cutoff
+        self.buffer_limit   = buffer_limit
+
+    def view(self,xlabel:str='',folder:str='',file:str=None,img_format:str='pdf'):
+        """
+        view 1D or 2D plot of probability distribution of value
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object, 
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+
+        fig, ax = plt.subplots(figsize=(8, 3))
+        ax.hist(self.values, bins=100, density=True)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('density')
+
+        if file is not None:
+            # Save figure to image
+            check_folder('images/%s' %(folder))
+            fig.savefig('images/%s/%s.%s' %(folder,file,img_format), 
+                format=img_format, dpi=200, bbox_inches='tight')
+
+        plt.show()
+
+    def view_cdf(self,xlabel:str='',folder:str='',file:str=None,img_format:str='pdf'):
+        """
+        view 1D or 2D plot of probability distribution of value
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            the xlabel to display on the plot, by default ''
+        savefile : str, optional
+            if provided saves a screenshot of the figure to file in pdf format, by default None
+        """
+
+        # calculate CDF
+        if all([self.cutoff is not None, self.buffer_limit is not None]):
+            bin_centers, cdf, value_limit, reliability = compute_cdf(self.values,cutoff=self.cutoff,buffer_limit=self.buffer_limit)
+            buffer_band = (bin_centers >= self.buffer_limit) & (cdf <= self.cutoff)
+            value_band = cdf >= self.cutoff
+        else:
+            bin_centers, cdf = compute_cdf(self.values)
+
+        fig, ax = plt.subplots(figsize=(8, 3))
+        ax.plot(bin_centers, cdf, '-b')
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel('Cumulative density')
+
+        if all([self.cutoff is not None, self.buffer_limit is not None]):
+
+            ax.vlines([self.buffer_limit,value_limit],[0,0],[1-reliability,self.cutoff],linestyles='dashed')
+            ax.fill_between(bin_centers[buffer_band], 0, cdf[buffer_band], facecolor='Green', alpha=0.4, label='Buffer')
+            ax.fill_between(bin_centers[value_band], 0, cdf[value_band], facecolor='Red', alpha=0.4, label='Excess')
+            
+            tb = ax.text((value_limit + self.buffer_limit) / 2 - 0.2, 0.1, 'Buffer', fontsize=14)
+            te = ax.text((value_limit + bin_centers[-1]) / 2 - 0.2, 0.1, 'Excess', fontsize=14)
+            tb.set_bbox(dict(facecolor='white'))
+            te.set_bbox(dict(facecolor='white'))
+
+        if file is not None:
+            # Save figure to image
+            check_folder('images/%s' %(folder))
+            self.fig.savefig('images/%s/%s.%s' %(folder,file,img_format), 
+                format=img_format, dpi=200, bbox_inches='tight')
+
+        plt.show()
+
 
 if __name__ == "__main__":
 

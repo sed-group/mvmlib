@@ -135,7 +135,7 @@ def test_compute_volume_2D_cov():
     n_levels = 1000
     lb = np.array([-0.5, -1.0,])
     ub = np.array([1.5, 2.0,])
-    s = Design(lb,ub,n_levels,type='fullfact').unscale()
+    s = Design(lb,ub,n_levels,doe_type='fullfact').unscale()
 
     # Monte Carlo integration
     p = test_function.compute_density(s)
@@ -154,7 +154,7 @@ def test_compute_volume_2D_cov():
     # n_levels = 100
     # lb = np.array([-0.5, -1.0,])
     # ub = np.array([1.5, 2.0,])
-    # s = Design(lb,ub,n_levels,type='fullfact').unscale()
+    # s = Design(lb,ub,n_levels,doe_type='fullfact').unscale()
     # p = test_function.compute_density(s)
 
     # X1 = np.reshape(s[:,0],[n_levels,n_levels])
@@ -380,7 +380,7 @@ def test_arbitrary_pdf_rvs(example_mean_std):
 
     assert np.allclose(mean, output_mean, rtol=1e-1)
     assert np.allclose(var, output_var, rtol=1e-1)
-    
+
 if __name__ == "__main__":
     # debug a particular test
     inputs = [10.0,5.0]

@@ -2,6 +2,32 @@
 Changelog
 *********
 
+.. _release-0.4.3:
+
+0.4.3
+=====
+
+:Date: December 18, 2021
+
+Features
+--------
+* Add ``VisualizeDist`` class to ``uncertaintyLib.py`` module
+* Add output storage class for a Margin Analysis Network (MAN) ``Performance``
+* Add output storage class for a Margin Analysis Network (MAN) ``ImpactMatrix``
+* Add method ``train_performance_surrogate`` which uses the library `SMT <https://smt.readthedocs.io/en/latest/index.html>`_ to estimate threshold performances
+* Add method ``compute_impact`` to compute an observation of the Impact on Performance matrix
+* Add method ``view_perf`` to ``MarginNetwork`` class to visualize 2D projections of performance surrogate models
+* Add ``view()`` and ``view_cdf()`` methods to ``Performance`` and ``ImpactMatrix`` classes by inheritance from ``VisualizeDist``
+* ``Design`` class can now take array_like values for argument ``nsamples`` if using ``doe_type='full_fact'``
+
+Incompatible changes
+--------------------
+* move ``compute_cdf()`` method from class ``MarginNode`` to module level method in ``uncertaintyLib.py`` module
+* use property ``.values`` instead of ``excess`` to retrieve observations of excess from ``MarginNode`` object
+* Added dependency on `SMT <https://smt.readthedocs.io/en/latest/index.html>`_
+* ``view()`` and ``view_cdf()`` methods now take optional arguments ``folder``, ``file``, ``img_format``, instead of just ``savefile``
+* Argument ``type`` of ``Design`` initialization changed to ``doe_type`` to avoid overloading python object ``type``
+
 .. _release-0.4.2:
 
 0.4.2
