@@ -277,7 +277,7 @@ class Behaviour():
         return
 
 class Performance(VisualizeDist):
-    def __init__(self,key:str=''):
+    def __init__(self,key:str='',type='less_is_better'):
         """
         Contains all the necessary tools to calculate performance
         and store its values if there is stochasticity
@@ -286,12 +286,21 @@ class Performance(VisualizeDist):
         ----------
         key : str, optional
             string to tag instance with, default = ''
+        type : str, optional
+            specifies the sign of the performance 
+            parameter when calculating the impact on it,
+            possible values: ('less_is_better','more_is_better'), 
+            if more_is_better is selected then the sign is negative,
+            of less_is_better is selected then the sign is positive, by default = 'less_is_better'
         """
 
         self.key                = key
+        self.type               = type
         self._values            = np.empty(0)
         self._value_dist        = None
         self.value              = None
+
+        assert self.type in ['less_is_better','more_is_better']
 
     @property
     def values(self) -> np.ndarray:
@@ -707,7 +716,6 @@ class MarginNetwork():
             by default None
         """
 
-        
         if ext_samples is None:
             # generate training data for response surface using a LHS grid of design parameter space
             design_samples = Design(self.lb_d,self.ub_d,n_samples,"LHS").unscale() # 2D grid
@@ -892,7 +900,16 @@ class MarginNetwork():
 
         #thresh_perf = [len(margin_nodes), len(performances)]
 
-        impact = (performances - thresh_perf) / thresh_perf
+        # Get the sign of the performance parameters
+        signs = np.empty(0)
+        for performance in self.performances:
+            if performance.type == 'less_is_better':
+                sign = 1.0
+            elif performance.type == 'more_is_better':
+                sign = -1.0
+            signs = np.append(signs,sign)
+
+        impact = signs * (performances - thresh_perf) / thresh_perf
 
         #impact = [len(margin_nodes), len(performances)]
 
