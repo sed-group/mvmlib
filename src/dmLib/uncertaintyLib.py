@@ -108,6 +108,7 @@ class Distribution(object):
         self.lb             = lb
         self.ub             = ub
         self.label          = label
+        self.sample         = None
         self._samples       = np.empty((self.ndim,0))
 
         # upper bound cannot be smaller than lower bound
@@ -253,26 +254,26 @@ class Distribution(object):
         return self.cdf[-1]
 
     @property
-    def samples(self):
+    def samples(self) -> np.ndarray:
         """
-        Target vector getter
+        Sample vector getter
 
         Returns
         -------
-        np.1darray
-            vector of target observations
+        np.ndarray
+            vector of sample observations
         """
         return self._samples
 
     @samples.setter
-    def samples(self,s):
+    def samples(self,s:np.ndarray):
         """
-        Appends target observation t to target vector
+        Appends target observation t to samples vector
 
         Parameters
         ----------
-        t : float
-            value to append to target vector
+        s : np.ndarray
+            value to append to samples vector
         """
         self._samples = np.append(self._samples,s,axis=1)
 
@@ -379,8 +380,9 @@ class Distribution(object):
         if self.interpolation:
             index = index + np.random.uniform(size=index.shape)
 
-        self.samples = self.transform(index) # store the samples inside instance
-        return self.transform(index) # return the requested number of samples
+        self.sample = self.transform(index) # store the sample inside instance
+        self.samples = self.sample # append sample to the samples inside instance
+        return self.sample # return the requested number of samples
 
 class gaussianFunc(Distribution):
 
@@ -662,7 +664,6 @@ class VisualizeDist():
                 format=img_format, dpi=200, bbox_inches='tight')
 
         plt.show()
-
 
 if __name__ == "__main__":
 

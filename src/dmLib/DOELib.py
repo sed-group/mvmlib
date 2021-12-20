@@ -4,7 +4,7 @@ from typing import Dict, Any, AnyStr, List, Type, Union
 
 """DOE Library for generating a design"""
 
-def gridsamp(bounds, q):
+def gridsamp(bounds:np.ndarray, q:Union[int,np.ndarray,List[int]]) -> np.ndarray:
     """
     GRIDSAMP  n-dimensional grid over given range
 
@@ -19,7 +19,7 @@ def gridsamp(bounds, q):
 
     Returns
     -------
-    S : np.array
+    S : np.ndarray
         m*n array with points, m = prod(q)
     """
 
@@ -64,24 +64,24 @@ def gridsamp(bounds, q):
         
     return S
 
-def scaling(x,l,u,operation):
+def scaling(x:np.ndarray,l:np.ndarray,u:np.ndarray,operation:int) -> np.ndarray:
     """
     Scaling by a range
 
     Parameters
     ----------
-    x : np.array
+    x : np.ndarray
         2d array of size n * nsamples of datapoints
-    l : np.array
+    l : np.ndarray
         1d array of length n specifying lower range of features
-    u : np.array
+    u : np.ndarray
         1d array of length n = len(l) specifying upper range of features
     operation : int
         The flag type indicates whether to scale (1) or unscale (2)
 
     Returns
     -------
-    x_out : np.array
+    x_out : np.ndarray
         2d array of size n * nsamples of unscaled datapoints
     """
 
@@ -96,7 +96,7 @@ def scaling(x,l,u,operation):
 
 class Design():
 
-    def __init__(self,lb,ub,nsamples:Union[int,List[int],np.ndarray],doe_type):
+    def __init__(self,lb:np.ndarray,ub:np.ndarray,nsamples:Union[int,List[int],np.ndarray],doe_type:str):
         """
         Contains the experimental design limits, 
         samples and other relevant statistics
@@ -144,7 +144,7 @@ class Design():
             elif type(self.nsamples) == int:
                 self.design = gridsamp(bounds, np.array([self.nsamples]))
 
-    def unscale(self): 
+    def unscale(self) -> np.ndarray: 
         """
         Unscale latin hypercube by ub and lb
 
@@ -158,7 +158,7 @@ class Design():
         
         return unscaled_LH
 
-    def scale(self): 
+    def scale(self) -> np.ndarray: 
         """
         return scaled latin hypercube between 0 and 1
 

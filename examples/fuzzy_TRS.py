@@ -118,25 +118,25 @@ Requirement.view(xlabel='Thermal specification $T_1,T_2 \
     \sim \mathcal{N}(\mu,\Sigma)$',savefile='R')
 Requirement.reset()
 
-# for n_threshold
+# for n_decided
 mu = np.array([4.0,])
 Sigma = np.array([[0.3**2,],])
-threshold = gaussianFunc(mu, Sigma, 'T1')
-threshold(10000)
-threshold.view(xlabel='Threshold $N_\mathrm{safety}^\mathrm{threshold}$',savefile='Th')
-threshold.reset()
+decided_safety = gaussianFunc(mu, Sigma, 'T1')
+decided_safety(10000)
+decided_safety.view(xlabel='Decided $n_\mathrm{safety}^\mathrm{decided}$',savefile='Th')
+decided_safety.reset()
 
 # define input specifications
-s1 = InputSpec(Requirement  ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,symbol='T1'            )
-s2 = InputSpec(Requirement  ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,symbol='T2'            )
-s3 = InputSpec(threshold    ,'S3'                   ,description='threshold safety'         ,symbol='n_threshold'   )
+s1 = InputSpec(Requirement.mu[0]    ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,symbol='T1'            ,distribution=Requirement   )
+s2 = InputSpec(Requirement.mu[1]    ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,symbol='T2'            ,distribution=Requirement   )
+s3 = InputSpec(decided_safety.mu    ,'S3'                   ,description='decided safety'           ,symbol='n_decided'                               )
 input_specs = [s1,s2,s3]
 
 # define the behaviour models
 behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1],label='B1')
 print("Sample mean for n_safety = %f" %(behaviour(10000).mean(axis=1))) # should be close to n_safety_value
 print("Sample standard deviation for n_safety = %f" %(behaviour(10000).std(axis=1))) # should be close to n_safety_value
-behaviour.view(xlabel='Response $N_\mathrm{safety}$',savefile='B')
+behaviour.view(xlabel='Behaviour $n_\mathrm{safety}$',savefile='B')
 behaviour.reset()
 
 # this is the n_safety model
@@ -146,7 +146,7 @@ class B1(Behaviour):
         sim.reset()
         _,aggregate,_ = sim.compute(np.array([[T1,T2],]), normalize=True)
         behaviour = Distribution(aggregate,lb=lb[-1],ub=ub[-1])
-        self.decided_value = behaviour()
+        self.target_threshold = behaviour()
 
 b1 = B1('B1')
 behaviours = [b1,]
@@ -157,10 +157,16 @@ margin_nodes = [e1,]
 
 # Defining a MarginNetwork object
 class MAN(MarginNetwork):
+    
+    def randomize(self):
+        Requirement()
+        decided_safety()
+        s1();s2();s3()
+
     def forward(self):
 
         Requirement()
-        threshold()
+        decided_safety()
 
         # retrieve MAN components
         s1 = self.input_specs[0] # stochastic
@@ -170,18 +176,18 @@ class MAN(MarginNetwork):
         e1 = self.margin_nodes[0]
 
         # Execute behaviour models
-        b1(s1(),s2())
-        e1(b1.decided_value,s3())
+        b1(s1.value,s2.value)
+        e1(b1.target_threshold,s3.value)
 
 man = MAN([],input_specs,[],behaviours,margin_nodes,'MAN_1')
 
 for n in range(10000):
     man.forward()
 
-e1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
-    N_\mathrm{safety}^\mathrm{threshold}$')
-e1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
-    N_\mathrm{safety}^\mathrm{threshold}$')
+e1.view(xlabel='Excess $\Delta = n_\mathrm{safety} - \
+    n_\mathrm{safety}^\mathrm{decided}$')
+e1.view_cdf(xlabel='Excess $\Delta = n_\mathrm{safety} - \
+    n_\mathrm{safety}^\mathrm{decided}$')
 
 # for N in range(10,1000,50):
 #     ThermalNode_1(Requirement(N),None)
@@ -189,10 +195,10 @@ e1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
 
 #     Requirement.view(xlabel='Thermal specification $T_1,T_2 \
 #         \sim \mathcal{N}(\mu,\Sigma)$',savefile='R_%i' %(N))
-#     threshold.view(xlabel='Threshold $N_\mathrm{safety}^\mathrm{threshold}$',savefile='Th_%i' %(N))
-#     # behaviour.view(xlabel='Response $N_\mathrm{safety}$',savefile='B_%i' %(N))
+#     threshold.view(xlabel='Decided $n_\mathrm{safety}^\mathrm{decided}$',savefile='Th_%i' %(N))
+#     # behaviour.view(xlabel='Response $n_\mathrm{safety}$',savefile='B_%i' %(N))
 
-#     ThermalNode_1.view(xlabel='Excess $\Delta = N_\mathrm{safety} - \
-#         N_\mathrm{safety}^\mathrm{threshold}$', savefile='E_%i' %(N))
-#     ThermalNode_1.view_cdf(xlabel='Excess $\Delta = N_\mathrm{safety} - \
-#         N_\mathrm{safety}^\mathrm{threshold}$', savefile='E_cdf_%i' %(N))
+#     ThermalNode_1.view(xlabel='Excess $\Delta = n_\mathrm{safety} - \
+#         n_\mathrm{safety}^\mathrm{decided}$', savefile='E_%i' %(N))
+#     ThermalNode_1.view_cdf(xlabel='Excess $\Delta = n_\mathrm{safety} - \
+#         n_\mathrm{safety}^\mathrm{decided}$', savefile='E_cdf_%i' %(N))

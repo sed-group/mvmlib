@@ -2,6 +2,28 @@
 Changelog
 *********
 
+.. _release-0.4.4:
+
+0.4.4
+=====
+
+:Date: December 20, 2021
+
+Features
+--------
+* Add ability to selectively choose how to randomize the MAN by redefining the ``randomize`` method of ``MarginNetwork``
+* Selectively choose when to reset the outputs of the MAN using the ``reset_outputs`` method
+* Can retrieve design parameters, input specs, excess, target thresholds, decided values, and performances using the properties ``design_vector``, ``spec_vector``, ``excess_vector``, ``dv_vector``, ``tt_vector``, and ``perf_vector``, respectively
+* Add output storage class for a Margin Analysis Network (MAN) ``AbsorptionMatrix`` which stores absorption and deterioration
+* Add method ``compute_absorption`` to compute an observation of the change absorption capability matrix and deterioration vector
+* Add ``view()``, ``view_cdf()``, ``view_det()``, ``view_det_cdf()`` methods to ``AbsorptionMatrix`` class by inheritance from ``VisualizeDist``
+  
+Incompatible changes
+--------------------
+* instances of ``InputSpec`` should be called using the ``.value`` property just like ``DesignParam`` and ``FixedParam``
+* ``train_performance_surrogate`` argument ``ext_samples`` now takes training points of (``excess``, ``performance``) instead of (``decided_value``, ``performance``)
+
+
 .. _release-0.4.3:
 
 0.4.3

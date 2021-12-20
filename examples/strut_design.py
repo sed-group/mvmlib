@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from scipy.optimize import minimize_scalar,fsolve
+import sys
 
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
@@ -9,32 +10,33 @@ from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, Ma
 from dmLib import Distribution, gaussianFunc
 
 # define fixed parameters
-i1 = FixedParam(4.17E-05    ,'I1',description='Coefficient of thermal expansion'    ,symbol='alpha' )
+i1 = FixedParam(1.17E-06    ,'I1',description='Coefficient of thermal expansion'    ,symbol='alpha' )
 i2 = FixedParam(156.3E3     ,'I2',description='Youngs modulus'                      ,symbol='E'     )
 i3 = FixedParam(8.19e-06    ,'I3',description='Material density'                    ,symbol='rho'   )
 i4 = FixedParam(346.5       ,'I4',description='Radius of the hub'                   ,symbol='r1'    )
 i5 = FixedParam(536.5       ,'I5',description='Radius of the shroud'                ,symbol='r2'    )
 i6 = FixedParam(1.0         ,'I6',description='Column effective length factor'      ,symbol='K'     )
-fixed_params = [i1,i2,i3,i4,i5,i6]
+i7 = FixedParam(25.0        ,'I7',description='ambient temperature'                 ,symbol='Ts'     )
+fixed_params = [i1,i2,i3,i4,i5,i6,i7]
 
 # define design parameters
-d1 = DesignParam(130.0  ,'D1'   ,universe=(70.0,130.0)  ,description='vane length'  ,symbol='w'     )
-d2 = DesignParam(20.0   ,'D2'   ,universe=(0.5,20.0)    ,description='vane height'  ,symbol='h'     )
-d3 = DesignParam(85.0   ,'D1'   ,universe=(0.0,90.0)    ,description='lean angle'   ,symbol='theta' )
+d1 = DesignParam(100.0  ,'D1'   ,universe=(70.0,130.0)  ,description='vane length'  ,symbol='w'     )
+d2 = DesignParam(15.0   ,'D2'   ,universe=(5.0,20.0)    ,description='vane height'  ,symbol='h'     )
+d3 = DesignParam(20.0   ,'D3'   ,universe=(0.0,30.0)    ,description='lean angle'   ,symbol='theta' )
 design_params = [d1,d2,d3]
 
 # T1,T2 distribution
-mu = np.array([370,580])
+mu = np.array([450,425])
 Sigma = np.array([
     [50, 25],
     [75, 100],
-    ])
+    ]) / 10
 Requirement = gaussianFunc(mu, Sigma, 'temp')
 
 # define input specifications
-s1 = InputSpec(Requirement  ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,symbol='T1'        , change_dir = '-')
-s2 = InputSpec(Requirement  ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,symbol='T2'        , change_dir = '+')
-s3 = InputSpec(460.0        ,'S3'                   ,description='yield stress'             ,symbol='sigma_y'   , change_dir = '-')
+s1 = InputSpec(mu[0]    ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,distribution=Requirement   ,symbol='T1'        , inc = -1.0    , inc_type = 'rel')
+s2 = InputSpec(mu[1]    ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,distribution=Requirement   ,symbol='T2'        , inc = +1.0    , inc_type = 'rel')
+s3 = InputSpec(460.0    ,'S3'                   ,description='yield stress'                                         ,symbol='sigma_y'   , inc = -1.0    , inc_type = 'rel')
 input_specs = [s1,s2,s3]
 
 # define the behaviour models
@@ -62,22 +64,22 @@ class B2(Behaviour):
 
 # this is the axial stress model
 class B3(Behaviour):
-    def __call__(self,alpha,E,T1,T2,w,h,theta):
-        force = (E*w*h*alpha)*(T2-T1)*np.cos(np.deg2rad(theta))
-        sigma_a = (E*alpha)*(T2-T1)*np.cos(np.deg2rad(theta))
-        self.decided_value = [force/1000,sigma_a]
+    def __call__(self,alpha,E,r1,r2,Ts,T1,T2,w,h,theta,L):
+        force = 2*np.pi*(E*w*h*alpha)*((T2*r2)-(T1*r1)-(Ts*(r2-r1)))*np.cos(np.deg2rad(theta)) / L
+        sigma_a = 2*np.pi*(E*alpha)*((T2*r2)-(T1*r1)-(Ts*(r2-r1)))*np.cos(np.deg2rad(theta)) / L
+        self.threshold = [force/1000,sigma_a]
 
 # this is the bending stress model
 class B4(Behaviour):
-    def __call__(self,alpha,E,T1,T2,h,theta,L):
-        sigma_m = ((3*E*h)/(2*L))*(alpha*(T2-T1)*np.sin(np.deg2rad(theta)))
-        self.decided_value = sigma_m
+    def __call__(self,alpha,E,r1,r2,Ts,T1,T2,h,theta,L):
+        sigma_m = 3*np.pi*((E*h)/(L**2))*(alpha*((T2*r2)-(T1*r1)-(Ts*(r2-r1)))*np.sin(np.deg2rad(theta)))
+        self.threshold = sigma_m
 
 # this is the buckling model
 class B5(Behaviour):
     def __call__(self,E,K,w,h,L):
         f_buckling = ((np.pi**2)*E*w*(h**3)) / (12*((K*L)**2))
-        self.threshold = f_buckling/1000
+        self.decided_value = f_buckling/1000
 
 b1 = B1('B1')
 b2 = B2('B2')
@@ -98,9 +100,13 @@ performances = [p1,]
 
 # Define the MAN
 class MAN(MarginNetwork):
-    def forward(self):
 
+    def randomize(self):
         Requirement()
+        s1()
+        s2()
+
+    def forward(self):
 
         # retrieve MAN components
         d1 = self.design_params[0] # w
@@ -117,6 +123,7 @@ class MAN(MarginNetwork):
         i4 = self.fixed_params[3] # r1
         i5 = self.fixed_params[4] # r2
         i6 = self.fixed_params[5] # K
+        i7 = self.fixed_params[6] # Ts
 
         b1 = self.behaviours[0] # calculates length
         b2 = self.behaviours[1] # calculates weight
@@ -133,14 +140,14 @@ class MAN(MarginNetwork):
         # Execute behaviour models
         b1(d3.value,i4.value,i5.value)
         b2(i3.value,d1.value,d2.value,b1.intermediate)
-        b3(i1.value,i2.value,s1(),s2(),d1.value,d2.value,d3.value)
-        b4(i1.value,i2.value,s1(),s2(),d2.value,d3.value,b1.intermediate)
+        b3(i1.value,i2.value,i4.value,i5.value,i7.value,s1.value,s2.value,d1.value,d2.value,d3.value,b1.intermediate)
+        b4(i1.value,i2.value,i4.value,i5.value,i7.value,s1.value,s2.value,d2.value,d3.value,b1.intermediate)
         b5(i2.value,i6.value,d1.value,d2.value,b1.intermediate)
 
         # Compute excesses
-        e1(b3.decided_value[0],b5.threshold)
-        e2(b3.decided_value[1],s3())
-        e3(b4.decided_value,s3())
+        e1(b3.threshold[0],b5.decided_value)
+        e2(b3.threshold[1],s3.value)
+        e3(b4.threshold,s3.value)
 
         # Compute performances
         p1(b2.performance)
@@ -150,14 +157,16 @@ man = MAN(design_params,input_specs,fixed_params,
 
 # Create surrogate model for estimating threshold performance
 man.train_performance_surrogate(n_samples=300,sampling_freq=20)
-man.view_perf(d_indices=[0,1],p_index=0)
-man.view_perf(d_indices=[0,2],p_index=0)
-man.view_perf(d_indices=[1,2],p_index=0)
+man.view_perf(e_indices=[0,1],p_index=0)
+man.view_perf(e_indices=[0,2],p_index=0)
+man.view_perf(e_indices=[1,2],p_index=0)
 
 # Perform Monte-Carlo simulation
-for n in range(10000):
+for n in range(100):
+    man.randomize()
     man.forward()
     man.compute_impact()
+    man.compute_absorption()
 
 # View distribution of excess
 man.margin_nodes[0].view()
@@ -168,5 +177,13 @@ man.margin_nodes[2].view()
 man.impact_matrix.view(0,0)
 man.impact_matrix.view(1,0)
 man.impact_matrix.view(2,0)
+
+man.absorption_matrix.view_det(0)
+man.absorption_matrix.view_det(1)
+man.absorption_matrix.view_det(2)
+
+man.absorption_matrix.view(0,0)
+man.absorption_matrix.view(1,0)
+man.absorption_matrix.view(2,0)
 
 # man.reset()

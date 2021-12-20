@@ -1,14 +1,14 @@
 import skfuzzy as fuzz
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Dict, Any, AnyStr, List
+from typing import Dict, Any, AnyStr, Tuple, Union, List
 
 """
 Fuzzy Library for computing aggregate membership functions for fuzzy variables
 """
 
 class fuzzyFunction():
-    def __init__(self,universe,label=''):
+    def __init__(self,universe:np.ndarray,label:str=''):
         """
         Contrains description and implementation of
         different fuzzy membership functions
@@ -19,14 +19,26 @@ class fuzzyFunction():
             1d array of length n
             n=number of samples
         label : str, optional
-            string to tag instance with
+            string to tag instance with, by default ''
         """
 
-        self.universe = universe
-        self.label = label
+        self.universe   = universe
+        self.label      = label
+
+    def setLabel(self,label:str):
+        """
+        Changes label property of function
+
+        Parameters
+        ----------
+        label : str
+            new label name
+        """
+
+        self.label=label
 
 class triangularFunc(fuzzyFunction):
-    def setFunc(self,low,medium,high):
+    def setFunc(self,low:int,medium:int,high:int):
         """
         Create an instance of the triangular membership function
 
@@ -42,19 +54,7 @@ class triangularFunc(fuzzyFunction):
 
         self.low = low; self.medium = medium; self.high = high
 
-    def setLabel(self,label):
-        """
-        Changes label property of function
-
-        Parameters
-        ----------
-        label : float
-            new label name
-        """
-
-        self.label=label
-
-    def getArray(self):
+    def getArray(self) -> np.ndarray:
         """
         Sample an array of values from membership function
         
@@ -67,18 +67,18 @@ class triangularFunc(fuzzyFunction):
         self.array = fuzz.trimf(self.universe, [self.low, self.medium, self.high])
         return self.array
 
-    def interp(self,input=None):
+    def interp(self,input:Union[float,np.ndarray]=None) -> Union[float,np.ndarray]:
         """
         Interpret membership of input for fuzzy function
 
         Parameters
         ----------
-        input : float OR np.1darray
-            value(s) at which membership is to be interpreted
+        input : Union[float,np.ndarray], optional
+            value(s) at which membership is to be interpreted, by default None
 
         Returns
         -------
-        level : float OR np.1darray
+        level : Union[float,np.ndarray]
             interpreted membership level(s) of the input(s)
         """
 
@@ -90,12 +90,7 @@ class triangularFunc(fuzzyFunction):
         return level
     
 class fuzzyRule():
-    def __init__(
-        self,
-        input_statements : Dict[str, fuzzyFunction],
-        output : fuzzyFunction,
-        label=''
-        ):
+    def __init__(self,input_statements:Dict[str, fuzzyFunction],output:fuzzyFunction,label:str=''):
         """
         Defines a fuzzy rules by connecting fuzzy inputs
         to outputs
@@ -123,7 +118,7 @@ class fuzzyRule():
 
         # TODO : add case for only one set
 
-    def apply(self,inputs):
+    def apply(self,inputs:np.ndarray) -> np.ndarray:
         """
         Apply rule on fuzzy sets
 
@@ -184,12 +179,7 @@ class fuzzyRule():
 
 class fuzzySet():
 
-    def __init__(self,
-        lo : fuzzyFunction,
-        md : fuzzyFunction,
-        hi : fuzzyFunction,
-        label=''
-        ):
+    def __init__(self,lo:fuzzyFunction,md:fuzzyFunction,hi:fuzzyFunction,label:str=''):
         """
         Contains all fuzzy funtions describing the 
         low, medium, and high level membership functions
@@ -219,7 +209,7 @@ class fuzzySet():
 
         # TODO : if different universes raise an error
 
-    def setLabel(self,label):
+    def setLabel(self,label:str):
         """
         Changes label property of fuzzy set and all its membership functions
 
@@ -234,7 +224,7 @@ class fuzzySet():
         self.md.setLabel(label)
         self.hi.setLabel(label)
 
-    def interp(self,inputs):
+    def interp(self,inputs:Union[float,np.ndarray]) -> Tuple[Union[float,np.ndarray], Union[float,np.ndarray], Union[float,np.ndarray]]:
         """
         Interpret membership of input
         
@@ -285,23 +275,18 @@ class fuzzySet():
 
 class fuzzySystem():
 
-    def __init__(self,
-        antecedents : List[fuzzySet],
-        consequent : fuzzySet,
-        rules : List[fuzzyRule],
-        label=''
-        ):
+    def __init__(self,antecedents:List[fuzzySet],consequent:fuzzySet,rules:List[fuzzyRule],label:str=''):
         """
         Contains all fuzzy inputs, outputs, rules,
         and fuzzy logic interpreter
         
         Parameters
         ----------
-        antecedents : list
+        antecedents : List[fuzzySet]
             list of fuzzySet objects defining the inputs
         consequent : fuzzySet
             fuzzySet objects defining the output
-        rules : list
+        rules : List[fuzzyRule]
             fuzzyRule objects
         label: str, optional
             string to tag instance with
@@ -321,10 +306,7 @@ class fuzzySystem():
         self.output = np.zeros(1)
         self.output_activation = np.zeros(1)
 
-    def compute(self,
-        inputs : np.ndarray, 
-        normalize=False
-        ): 
+    def compute(self,inputs:np.ndarray,normalize:bool=False) -> Tuple[Union[float,np.ndarray], np.ndarray, np.ndarray]: 
         """
         Compute fuzzy output of system
 

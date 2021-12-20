@@ -207,37 +207,37 @@ def test_deterministic_ImpactMatrix(perf_model,impact_calc_inputs):
             p1 = self.performances[0]
 
             # Compute excesses
-            e1(dv_vector[0],tt_vector[0])
-            e2(dv_vector[1],tt_vector[1])
-            e3(dv_vector[2],tt_vector[2])
+            e1(tt_vector[0],dv_vector[0])
+            e2(tt_vector[1],dv_vector[1])
+            e3(tt_vector[2],dv_vector[2])
 
             # Compute performances
-            p1(p1_model(dv_vector))
-            p2(p2_model(dv_vector))
+            p1(p1_model(tt_vector))
+            p2(p2_model(tt_vector))
 
     man = MAN([],[],[],[],margin_nodes,performances,'MAN_test')
 
     ######################################################
     # Create training data and train response surface
     n_samples = 100
-    dv_space = Design(np.zeros(dv_vector.shape),np.ones(dv_vector.shape),n_samples,'LHS').unscale()
+    excess_space = Design(np.zeros(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
 
     p_space = np.empty((n_samples,len(performances)))
-    p_space[:,0] = np.apply_along_axis(p1_model,axis=1,arr=dv_space)
-    p_space[:,1] = np.apply_along_axis(p2_model,axis=1,arr=dv_space)
+    p_space[:,0] = np.apply_along_axis(p1_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,1] = np.apply_along_axis(p2_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,ext_samples=(dv_space,p_space))
+    man.train_performance_surrogate(n_samples=100,ext_samples=(excess_space,p_space))
     man.forward()
     man.compute_impact()
 
     # Check outputs
-    input = np.tile(dv_vector,(len(margin_nodes),1))
+    input = np.tile(tt_vector,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
     p[:,0] = np.apply_along_axis(p1_model,axis=1,arr=input)
     p[:,1] = np.apply_along_axis(p2_model,axis=1,arr=input)
 
-    np.fill_diagonal(input,tt_vector)
+    np.fill_diagonal(input,dv_vector)
 
     p_t = np.empty((len(margin_nodes),len(performances)))
     p_t[:,0] = np.apply_along_axis(p1_model,axis=1,arr=input)
@@ -302,26 +302,26 @@ def test_stochastic_ImpactMatrix(perf_model,impact_calc_inputs,noise):
             p1 = self.performances[0]
 
             # Compute excesses
-            e1(dv_vector[0]+noise(),tt_vector[0]+noise())
-            e2(dv_vector[1]+noise(),tt_vector[1]+noise())
-            e3(dv_vector[2]+noise(),tt_vector[2]+noise())
+            e1(tt_vector[0]+noise(),dv_vector[0]+noise())
+            e2(tt_vector[1]+noise(),dv_vector[1]+noise())
+            e3(tt_vector[2]+noise(),dv_vector[2]+noise())
 
             # Compute performances
-            p1(p1_model(dv_vector))
-            p2(p2_model(dv_vector))
+            p1(p1_model(tt_vector))
+            p2(p2_model(tt_vector))
 
     man = MAN([],[],[],[],margin_nodes,performances,'MAN_test')
 
     ######################################################
     # Create training data and train response surface
     n_samples = 100
-    dv_space = Design(np.zeros(dv_vector.shape),np.ones(dv_vector.shape),n_samples,'LHS').unscale()
+    excess_space = Design(-np.ones(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
 
     p_space = np.empty((n_samples,len(performances)))
-    p_space[:,0] = np.apply_along_axis(p1_model,axis=1,arr=dv_space)
-    p_space[:,1] = np.apply_along_axis(p2_model,axis=1,arr=dv_space)
+    p_space[:,0] = np.apply_along_axis(p1_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,1] = np.apply_along_axis(p2_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,ext_samples=(dv_space,p_space))
+    man.train_performance_surrogate(n_samples=100,ext_samples=(excess_space,p_space))
 
     n_runs = 1000
     for n in range(n_runs):
@@ -331,13 +331,13 @@ def test_stochastic_ImpactMatrix(perf_model,impact_calc_inputs,noise):
     mean_impact = np.mean(man.impact_matrix.impacts,axis=2)
 
     # Check outputs
-    input = np.tile(dv_vector,(len(margin_nodes),1))
+    input = np.tile(tt_vector,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
     p[:,0] = np.apply_along_axis(p1_model,axis=1,arr=input)
     p[:,1] = np.apply_along_axis(p2_model,axis=1,arr=input)
 
-    np.fill_diagonal(input,tt_vector)
+    np.fill_diagonal(input,dv_vector)
 
     p_t = np.empty((len(margin_nodes),len(performances)))
     p_t[:,0] = np.apply_along_axis(p1_model,axis=1,arr=input)
@@ -354,6 +354,23 @@ def test_stochastic_ImpactMatrix(perf_model,impact_calc_inputs,noise):
     assert np.allclose(mean_impact, test_impact, rtol=1e-1)
 
     ######################################################
+    # Check reset functionality
+
+    for performance in man.performances:
+        assert len(performance.values) == n_runs
+
+    for node in man.margin_nodes:
+        assert len(node.values) == n_runs
+
+    man.reset(5)
+
+    for performance in man.performances:
+        assert len(performance.values) == n_runs - 5
+
+    for node in man.margin_nodes:
+        assert len(node.values) == n_runs - 5
+
+    ######################################################
     # Check visualization
-    # man.view_perf(d_indices=[1,2],p_index=1)
+    # man.view_perf(e_indices=[1,2],p_index=1)
     # man.impact_matrix.view(2,1)
