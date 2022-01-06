@@ -9,11 +9,11 @@ uncertainty modelling
 """
 
 __version__ = '0.4.4'
-__all__=['triangularFunc', 'fuzzySet', 'fuzzyRule','fuzzySystem', 'gaussianFunc', 'Distribution',
+__all__=['triangularFunc', 'fuzzySet', 'fuzzyRule','fuzzySystem', 'gaussianFunc', 'uniformFunc', 'Distribution',
     'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode','InputSpec', 'FixedParam', 'DesignParam', 'Behaviour', 
     'Performance', 'ImpactMatrix', 'MarginNetwork']
 
 from .fuzzyLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
-from .uncertaintyLib import gaussianFunc, Distribution, VisualizeDist, compute_cdf
+from .uncertaintyLib import gaussianFunc, uniformFunc, Distribution, VisualizeDist, compute_cdf
 from .DOELib import Design
 from .designMarginsLib import InputSpec, FixedParam, DesignParam, Behaviour, MarginNode, Performance, ImpactMatrix, MarginNetwork

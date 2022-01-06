@@ -7,36 +7,41 @@ import sys
 from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
 from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork
-from dmLib import Distribution, gaussianFunc
+from dmLib import Distribution, gaussianFunc, uniformFunc
 
 # define fixed parameters
 i1 = FixedParam(1.17E-06    ,'I1',description='Coefficient of thermal expansion'    ,symbol='alpha' )
-i2 = FixedParam(156.3E3     ,'I2',description='Youngs modulus'                      ,symbol='E'     )
+i2 = FixedParam(175.3E3     ,'I2',description='Youngs modulus'                      ,symbol='E'     )
 i3 = FixedParam(8.19e-06    ,'I3',description='Material density'                    ,symbol='rho'   )
 i4 = FixedParam(346.5       ,'I4',description='Radius of the hub'                   ,symbol='r1'    )
 i5 = FixedParam(536.5       ,'I5',description='Radius of the shroud'                ,symbol='r2'    )
-i6 = FixedParam(1.0         ,'I6',description='Column effective length factor'      ,symbol='K'     )
+i6 = FixedParam(1.3         ,'I6',description='Column effective length factor'      ,symbol='K'     )
 i7 = FixedParam(25.0        ,'I7',description='ambient temperature'                 ,symbol='Ts'     )
 fixed_params = [i1,i2,i3,i4,i5,i6,i7]
 
 # define design parameters
 d1 = DesignParam(100.0  ,'D1'   ,universe=(70.0,130.0)  ,description='vane length'  ,symbol='w'     )
 d2 = DesignParam(15.0   ,'D2'   ,universe=(5.0,20.0)    ,description='vane height'  ,symbol='h'     )
-d3 = DesignParam(20.0   ,'D3'   ,universe=(0.0,30.0)    ,description='lean angle'   ,symbol='theta' )
+d3 = DesignParam(10.0   ,'D3'   ,universe=(0.0,30.0)    ,description='lean angle'   ,symbol='theta' )
 design_params = [d1,d2,d3]
 
-# T1,T2 distribution
-mu = np.array([450,425])
-Sigma = np.array([
-    [50, 25],
-    [75, 100],
-    ]) / 10
-Requirement = gaussianFunc(mu, Sigma, 'temp')
+# T1,T2 distribution (Gaussian)
+# mu = np.array([450,425])
+# Sigma = np.array([
+#     [100, 25],
+#     [75, 100],
+#     ]) / 1
+# Requirement = gaussianFunc(mu, Sigma, 'temp')
+
+# T1,T2 distribution (Uniform)
+center = np.array([450,425])
+Range = np.array([100, 100])/3
+Requirement = uniformFunc(center, Range, 'temp')
 
 # define input specifications
-s1 = InputSpec(mu[0]    ,'S1'   ,cov_index=0    ,description='nacelle temperature'      ,distribution=Requirement   ,symbol='T1'        , inc = -1.0    , inc_type = 'rel')
-s2 = InputSpec(mu[1]    ,'S2'   ,cov_index=1    ,description='gas surface temperature'  ,distribution=Requirement   ,symbol='T2'        , inc = +1.0    , inc_type = 'rel')
-s3 = InputSpec(460.0    ,'S3'                   ,description='yield stress'                                         ,symbol='sigma_y'   , inc = -1.0    , inc_type = 'rel')
+s1 = InputSpec(center[0],'S1'   ,cov_index=0    ,description='nacelle temperature'      ,distribution=Requirement   ,symbol='T1'        , inc = -1e-0    , inc_type = 'rel')
+s2 = InputSpec(center[1],'S2'   ,cov_index=1    ,description='gas surface temperature'  ,distribution=Requirement   ,symbol='T2'        , inc = +1e-0    , inc_type = 'rel')
+s3 = InputSpec(460.0    ,'S3'                   ,description='yield stress'                                         ,symbol='sigma_y'   , inc = -1e-0    , inc_type = 'rel')
 input_specs = [s1,s2,s3]
 
 # define the behaviour models
@@ -44,16 +49,7 @@ input_specs = [s1,s2,s3]
 # this is the length model
 class B1(Behaviour):
     def __call__(self,theta,r1,r2):
-        def f(L):
-            return (L**2) + 2*r1*L*np.cos(np.deg2rad(theta)) - ((r2**2) - (r1**2))
-        
-        def f_prime(L):
-            return 2*L + 2*r1*np.cos(np.deg2rad(theta))
-        
-        lb = r2-r1
-        ub = np.sqrt(r2**2 - r1**2)
-        # length=minimize_scalar(f,bounds=(lb,ub),method='bounded')
-        length=fsolve(f,lb + (ub-lb)*0.5)[0]
+        length=-r1*np.cos(np.deg2rad(theta)) + np.sqrt(r2**2 - (r1*np.sin(np.deg2rad(theta)))**2)
         self.intermediate = length
 
 # this is the weight model
@@ -157,12 +153,18 @@ man = MAN(design_params,input_specs,fixed_params,
 
 # Create surrogate model for estimating threshold performance
 man.train_performance_surrogate(n_samples=300,sampling_freq=20)
+man.forward()
 man.view_perf(e_indices=[0,1],p_index=0)
 man.view_perf(e_indices=[0,2],p_index=0)
 man.view_perf(e_indices=[1,2],p_index=0)
 
 # Perform Monte-Carlo simulation
-for n in range(100):
+n_epochs = 10000
+for n in range(n_epochs):
+    
+    sys.stdout.write("Progress: %d%%   \r" %((n/n_epochs)* 100))
+    sys.stdout.flush()
+
     man.randomize()
     man.forward()
     man.compute_impact()
@@ -185,5 +187,10 @@ man.absorption_matrix.view_det(2)
 man.absorption_matrix.view(0,0)
 man.absorption_matrix.view(1,0)
 man.absorption_matrix.view(2,0)
+
+man.absorption_matrix.view(0,1)
+man.absorption_matrix.view(1,1)
+man.absorption_matrix.view(2,1)
+
 
 # man.reset()

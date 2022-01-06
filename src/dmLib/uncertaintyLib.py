@@ -112,7 +112,7 @@ class Distribution(object):
         self._samples       = np.empty((self.ndim,0))
 
         # upper bound cannot be smaller than lower bound
-        assert(self._ub > self._lb).all()
+        assert(self._ub >= self._lb).all()
         # Check that the interval is square
         assert ((self._ub - self._lb) == (self._ub[0] - self._lb[0])).all()
 
@@ -460,7 +460,7 @@ class gaussianFunc(Distribution):
         Returns
         -------
         Z : np.1darray
-            array of shape n_samples * n_dims of PDF values
+            array of shape n_samples of PDF values
         """
 
         n_samples = samples.shape[0]
@@ -537,6 +537,121 @@ class gaussianFunc(Distribution):
         N = np.sqrt((2*np.pi)**self.ndim * Sigma_det)
 
         return np.exp(-r**2 / 2)/N
+
+    def view(self,xlabel='',savefile=None):
+        """
+        view 1D or 2D plot of distribution for visual checks
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            variable names to be shown on plot axes, by default ''
+        savefile : str, optional
+            if provided saves an image of the figure in directory 
+            /images/self.label/, by default None
+
+        Raises
+        ------
+        ValueError
+            if called when ndim is > 2
+        """
+        super().view(xlabel=xlabel,savefile=savefile) # call parent distribution class
+
+        if self.ndim == 1: # add trace of normal distribution to plot
+        
+            x = np.linspace(self.lb.squeeze(), self.ub.squeeze(),100) # 1D grid
+            p = self.compute_density(x[:,None]) # get density values
+            self.ax.plot(x,p)
+            plt.draw()
+            plt.pause(0.0001)
+
+        if savefile is not None:
+            # Save figure to image
+            check_folder('images/%s' %(self.label))
+            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
+                format='pdf', dpi=200, bbox_inches='tight')
+
+class uniformFunc(Distribution):
+
+    def __init__(self,center:Union[float,int,np.ndarray],Range:Union[float,int,np.ndarray],label=''):
+        """
+        Contains description and implementation of the multivariate 
+        Gaussian PDF
+
+        Parameters
+        ----------
+        center : np.1darray
+            1d array of length n_dims containing uniform distribution centers
+        Range : np.ndarray
+            1d array of length n_dims containing spread along each dimension
+        label : str, optional
+            string to tag instance with        
+        """
+
+        if type(center) == float or type(center) == int:
+            center = np.array([float(center),])
+        if type(Range) == float or type(center) == int:
+            Range = np.array([[float(Range),],])
+
+        self.center     = center
+        self.Range      = Range
+        lb = self.center - 1.5 * np.linalg.norm(Range)
+        ub = self.center + 1.5 * np.linalg.norm(Range)
+
+        x = Design(lb,ub,50,"fullfact").unscale() # 2D grid
+        p = self.compute_density(x) # get density values
+        pdf = p.reshape((50,)*self.ndim)
+        
+        super().__init__(pdf,lb=lb,ub=ub,label=label) # Initialize a distribution object for calling random samples
+
+    @property
+    def ndim(self):
+        """
+        Returns the number of dimensions 
+        from the input data
+
+        Returns
+        -------
+        int
+            number of dimensions
+        """
+
+        return len(self.center)
+
+    def compute_density(self,samples):
+        """
+        Return the multivariate Gaussian probability density 
+        distribution on array samples.
+
+        Parameters
+        ----------
+        samples : np.ndarray
+            array of shape n_samples * n_dims at which PDF will be evaluated
+
+        Returns
+        -------
+        Z : np.1darray
+            array of shape n_samples of PDF values
+        """
+
+        n_samples = samples.shape[0]
+        density = np.zeros(n_samples)
+        density[np.all(samples <= (self.center + self.Range), axis=1) & np.all(samples >= (self.center-self.Range), axis=1)] = 1/self.compute_volume()
+
+        return density
+
+    def compute_volume(self) -> float:
+        """
+        The volume of the rectangle given by Range
+
+        Returns
+        -------
+        V : float
+            volume of hyperrectangle
+
+        """
+
+        return np.prod(2*self.Range)
 
     def view(self,xlabel='',savefile=None):
         """

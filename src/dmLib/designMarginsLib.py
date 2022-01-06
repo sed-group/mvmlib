@@ -3,7 +3,7 @@ from typing import Dict, Any, AnyStr, Tuple, List, Union
 import matplotlib.pyplot as plt
 from smt.surrogate_models import KRG
 
-from .uncertaintyLib import Distribution,gaussianFunc,VisualizeDist
+from .uncertaintyLib import Distribution,gaussianFunc,uniformFunc,VisualizeDist
 from .DOELib import Design
 from .utilities import check_folder
 
@@ -61,7 +61,7 @@ class FixedParam():
 
 class DesignParam(FixedParam):
     def __init__(self,value:Union[float,int,str],key:str,
-        universe:Union[tuple,list],description:str='',symbol:str=''):
+        universe:Union[Tuple[Union[int,float],Union[int,float]],List[Union[int,float]]],description:str='',symbol:str=''):
         """
         Contains description of an input parameter to the MAN
         is inherited by DesignParam, and FixedParam
@@ -72,7 +72,7 @@ class DesignParam(FixedParam):
             the value of the input spec
         key : str
             unique identifier
-        universe : Union[tuple,list]
+        universe : Union[Tuple[Union[int,float],Union[int,float]],List[Union[int,float]]]
             the possible values the design parameter can take, 
             If tuple must be of length 2 (upper and lower bound)
             type(value) must be float, or int
@@ -98,7 +98,7 @@ class DesignParam(FixedParam):
         self.value = self.original
 
 class InputSpec(VisualizeDist):
-    def __init__(self,value:Union[float,int,Distribution,gaussianFunc],
+    def __init__(self,value:Union[float,int,Distribution,gaussianFunc,uniformFunc],
         key: str,description:str='',symbol:str='',distribution:Distribution=None, 
         cov_index:int=0, inc:float=5.0, inc_type:str='rel'):
         """
@@ -148,7 +148,7 @@ class InputSpec(VisualizeDist):
         self._values        = np.empty(0)
 
         # Check if input spec if stochastic
-        if type(distribution) in [Distribution,gaussianFunc]:
+        if type(distribution) in [Distribution,gaussianFunc,uniformFunc]:
             self.stochastic = True
         else:
             self.stochastic = False
@@ -407,7 +407,8 @@ class Performance(VisualizeDist):
         values : np.1darray
             Vector of values
         """
-        self._value_dist = Distribution(values, lb=min(values),ub=max(values))
+        value_hist = np.histogram(values, bins=50,density=True)
+        self._value_dist = Distribution(value_hist[0], lb=min(value_hist[1]),ub=max(value_hist[1]))
 
     def view(self,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
         """
@@ -462,10 +463,12 @@ class Performance(VisualizeDist):
         if N is not None:
             assert N <= len(self._values)
             self._values    = self._values[:-N].copy()
+            self.value      = self.values[-1].copy()
+            self.value_dist = self.values
         else:
             self._values    = np.empty(0)
-
-        self._value_dist    = None
+            self._value_dist    = None
+            self.value          = None
 
     def __call__(self,performance:np.ndarray):
         """
@@ -478,8 +481,9 @@ class Performance(VisualizeDist):
             The length of this vector equals the number of samples
         """
 
-        self.value  = performance # store performance
-        self.values = performance # add to list of performance samples
+        self.value      = performance # store performance
+        self.values     = performance # add to list of performance samples
+        self.value_dist = self.values
 
 class MarginNode(Performance):
     def __init__(self,key:str='',cutoff:float=0.9,buffer_limit:float=0.0,type:str='must_exceed'):
@@ -576,9 +580,13 @@ class MarginNode(Performance):
         if N is not None:
             self._targets           = self._targets[:-N].copy()
             self._decided_values    = self._decided_values[:-N].copy()
+            self.target             = self.targets[-1].copy()
+            self.decided_value      = self.decided_values[-1].copy()
         else:
             self._targets           = np.empty(0)
             self._decided_values    = np.empty(0)
+            self.target             = None
+            self.decided_value      = None
 
     def __call__(self,target_threshold:np.ndarray,decided_value:np.ndarray):
         """
@@ -608,7 +616,7 @@ class MarginNode(Performance):
 
         self.value             = e                 # store excess
         self.values            = e                 # add to list of excesses
-
+        self.value_dist         = self.values      # populate pdf
 class ImpactMatrix(VisualizeDist):
     def __init__(self,n_margins:int,n_performances:int):
         """
@@ -1113,7 +1121,7 @@ class MarginNetwork():
             vector = np.append(vector,item.value)
         return vector
 
-    def train_performance_surrogate(self,n_samples:int=100,sampling_freq:int=1,ext_samples:Tuple[np.ndarray]=None):
+    def train_performance_surrogate(self,n_samples:int=100,sampling_freq:int=1,ext_samples:Tuple[np.ndarray,np.ndarray]=None):
         """
         Constructs a surrogate model y(x), where x are the excess values and 
         y are the performance parameters that can be used to calculate threshold 
@@ -1126,7 +1134,7 @@ class MarginNetwork():
         sampling_freq : int, optional
             If > than 1 then the decided value is calculated as the average of N samples 
             by calling the forward() N times and averaging the decided values, where N = sampling_freq, by default 1
-        ext_samples : tuple[np.ndarray], optional
+        ext_samples : tuple[np.ndarray,np.ndarray], optional
             if sample data provided externally then use directly to fit the response surface, 
             Tuple must of length 2, ext_samples[0] must of shape (N_samples,len(margin_nodes)),
             ext_samples[1] must of shape (N_samples,len(performances)),
@@ -1147,7 +1155,7 @@ class MarginNetwork():
                 excess_samples = np.empty((0,len(self.margin_nodes)))
                 perf_samples = np.empty((0,len(self.performances)))
                 for n in range(sampling_freq):
-                    self.randomize() # Randomize the MAN
+                    # self.randomize() # Randomize the MAN
                     self.forward() # Run one pass of the MAN
 
                     excess_samples = np.vstack((excess_samples,self.excess_vector.reshape(1,excess_samples.shape[1])))
@@ -1176,7 +1184,7 @@ class MarginNetwork():
         self.ub_excess = np.max(xt,axis=0)
 
         self.reset()
-        self.sm_perf = KRG(theta0=[1e-2])
+        self.sm_perf = KRG(theta0=[1e-2],print_prediction=False)
         self.sm_perf.set_training_values(xt, yt)
         self.sm_perf.train()
 
@@ -1326,6 +1334,7 @@ class MarginNetwork():
         # Deterioration computation
 
         spec_limit = np.empty(0)
+        signs = np.empty(0)
         for spec in self.input_specs:
 
             self.forward() # do not randomize the man for deterioration
@@ -1336,8 +1345,8 @@ class MarginNetwork():
                 inc = (spec.original * spec.inc) / 100
             elif spec.inc_type == 'abs':
                 inc = spec.inc
-
-            while all(self.excess_vector >= 0) and delta_E <= 1e3 and abs(delta_E) >= 1e-3:
+            
+            while all(self.excess_vector >= 0) and delta_E <= 1e3 and n_inc <= 1e4:
                 
                 excess_last_inc = self.excess_vector
 
@@ -1347,11 +1356,12 @@ class MarginNetwork():
 
                 delta_E = np.min(self.excess_vector - excess_last_inc)
 
-            spec_limit = np.append(spec_limit,spec.value + inc)
-
+            spec_limit = np.append(spec_limit,spec.value)
+            signs = np.append(signs, np.sign(inc))
             self.reset(n_inc)
 
-        deterioration = (spec_limit - self.nominal_spec_vector) / self.nominal_spec_vector
+        deterioration = np.max((signs*(spec_limit - self.nominal_spec_vector) / self.nominal_spec_vector, np.zeros(len(self.input_specs))), axis=0)
+        deterioration[deterioration==0] = np.nan # replace with nans for division
 
         # Absorption computation
 
@@ -1362,7 +1372,7 @@ class MarginNetwork():
 
         deterioration_matrix = np.tile(deterioration,(len(self.margin_nodes),1))
 
-        #target_thresholds = [len(margin_nodes), len(input_specs)]
+        #deterioration_matrix = [len(margin_nodes), len(input_specs)]
 
         # Compute performances at the spec limit for each margin node
 
@@ -1376,7 +1386,8 @@ class MarginNetwork():
 
             self.reset(1)
 
-        absorption = (change_matrix - target_thresholds) / (target_thresholds * deterioration_matrix)
+        absorption = np.maximum(abs(change_matrix - target_thresholds) / (target_thresholds * deterioration_matrix), np.zeros_like(change_matrix) )
+        absorption[absorption==np.nan] = 0 # replace undefined absorptions with 0
 
         #absorption = [len(margin_nodes), len(input_specs)]
 

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib import Design, gaussianFunc, Distribution
+from dmLib import Design, gaussianFunc, uniformFunc, Distribution
 
 # Input set 1
 @pytest.fixture
@@ -13,7 +13,7 @@ def example_mean_std():
 
     return mean, sd
 
-def test_compute_density():
+def test_compute_density_gaussian():
     """
     testing the multivariate Gaussian function for 
     probability density computation
@@ -53,6 +53,27 @@ def test_compute_density():
     output = N * np.exp(-z / (2 * (1-rho**2)))
 
     assert np.allclose(test, output, rtol=1e-05)
+
+def test_compute_density_uniform():
+    """
+    testing the multivariate uniform distribution function 
+    probability density computation
+    """
+
+    center = np.array([0.5, 0.5]) # means vector
+    range = np.array([0.5,0.5]) # range vector
+
+    lb = np.array([0.0, 0.0,])
+    ub = np.array([1.0, 1.0,])
+    s = Design(lb,ub,5,'fullfact').unscale()
+
+    test_function = uniformFunc(center,range)
+
+    test = test_function.compute_density(s)
+
+    # Calculate probability density for a bivariate uniform distribution
+
+    assert np.allclose(test, 1.0, rtol=1e-05)
 
 def test_compute_volume_2D():
     """
@@ -234,7 +255,7 @@ def test_gaussian_pdf_rvs(example_mean_std):
     random generation capability
     """
     # # DEBUG:
-    example_mean_std = [10.0,5.0]
+    # example_mean_std = [10.0,5.0]
 
     ######################################################
 
@@ -281,6 +302,70 @@ def test_gaussian_pdf_rvs(example_mean_std):
         raise ValueError("Number of dimensions in function output \
             and the test values is not the same")
 
+    assert np.allclose(mean, output_mean, rtol=1e-1)
+    assert np.allclose(var, output_var, rtol=1e-1)
+
+    # # View distribution
+    # import matplotlib.pyplot as plt
+    # plt.scatter(*dist(1000))
+    # plt.show()
+
+def test_uniform_pdf_rvs(example_mean_std):
+    """
+    test the multivariate uniform pdf function 
+    random generation capability
+    """
+    # # DEBUG:
+    # example_mean_std = [10.0,5.0]
+
+    ######################################################
+
+    center,range = example_mean_std
+    range = range*3
+
+    # 1D example
+    x = np.linspace(-100,100,100) # 2D grid
+    dist = uniformFunc(center,range)
+    p = dist.compute_density(x[:,None]) # get density values
+
+    output_mean = dist(10000).mean(axis=1).squeeze() # should be close to 10.0
+    output_sd = dist(10000).var(axis=1).squeeze() # should be close to (b-a)^2 /12
+
+    if (output_mean.ndim == 0) & (output_sd.ndim == 0):
+        output_mean = float(output_mean)
+        output_sd = float(output_sd)
+    else:
+        raise ValueError("Number of dimensions in function output \
+            and the test values is not the same")
+
+    # # View distribution
+    # import matplotlib.pyplot as plt
+    # plt.hist(dist(10000).squeeze(), bins=100, density=True)
+    # # plt.plot(np.linspace(-6,6),pdf)
+    # plt.show()
+
+    var = ((2*range)**2)/12
+    assert np.math.isclose(center, output_mean, rel_tol=1e-1)
+    assert np.math.isclose(var, output_sd, rel_tol=1e-1)
+
+    # 2D example
+    mean,sd = example_mean_std
+
+    center = center * np.ones(2)
+    range = range * np.ones(2)
+
+    x = Design(-100*np.ones(2),100*np.ones(2),50,"fullfact").unscale() # 2D grid
+    dist = uniformFunc(center,range)
+    p = dist.compute_density(x) # get density values
+
+    output_mean = dist(10000).mean(axis=1) # should be close to 10.0
+    output_var = np.diag(dist(10000).var(axis=1)) # should be close to 5.0
+
+    if (output_mean.ndim != 1) | (output_var.ndim != 2):
+        raise ValueError("Number of dimensions in function output \
+            and the test values is not the same")
+
+    var =  np.eye(2) * ((2*range)**2)/12
     assert np.allclose(mean, output_mean, rtol=1e-1)
     assert np.allclose(var, output_var, rtol=1e-1)
 

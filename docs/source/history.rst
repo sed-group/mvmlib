@@ -2,6 +2,28 @@
 Changelog
 *********
 
+.. _release-0.4.5:
+
+0.4.5
+=====
+
+:Date: January 06, 2022
+
+Features
+--------
+
+* Add distribution type ``uniformFunc`` for multivariate uniform distributions
+
+Fixes
+-----
+
+* Fix ``MarginNode.value`` property to retrieve the last available sample after calling the ``reset(N)`` method 
+* Fix ``value_dist`` property of ``Performance`` and ``MarginNode`` classes to construct histogram of samples and then initialize a ``Distribution`` class from them
+* Force absorption computing to ignore 0 deteriorations by outputting a ``np.nan``
+* Make absorption computation sign independent
+* Add relevant tests for absorption and deterioration computation
+* Simplified length calculation procedure in ``strut_design.py`` example by using analytical expression instead of ``fsolve`` in ``B1`` model
+
 .. _release-0.4.4:
 
 0.4.4
@@ -11,6 +33,7 @@ Changelog
 
 Features
 --------
+
 * Add ability to selectively choose how to randomize the MAN by redefining the ``randomize`` method of ``MarginNetwork``
 * Selectively choose when to reset the outputs of the MAN using the ``reset_outputs`` method
 * Can retrieve design parameters, input specs, excess, target thresholds, decided values, and performances using the properties ``design_vector``, ``spec_vector``, ``excess_vector``, ``dv_vector``, ``tt_vector``, and ``perf_vector``, respectively
@@ -20,9 +43,9 @@ Features
   
 Incompatible changes
 --------------------
+
 * instances of ``InputSpec`` should be called using the ``.value`` property just like ``DesignParam`` and ``FixedParam``
 * ``train_performance_surrogate`` argument ``ext_samples`` now takes training points of (``excess``, ``performance``) instead of (``decided_value``, ``performance``)
-
 
 .. _release-0.4.3:
 
@@ -33,6 +56,7 @@ Incompatible changes
 
 Features
 --------
+
 * Add ``VisualizeDist`` class to ``uncertaintyLib.py`` module
 * Add output storage class for a Margin Analysis Network (MAN) ``Performance``
 * Add output storage class for a Margin Analysis Network (MAN) ``ImpactMatrix``
@@ -44,6 +68,7 @@ Features
 
 Incompatible changes
 --------------------
+
 * move ``compute_cdf()`` method from class ``MarginNode`` to module level method in ``uncertaintyLib.py`` module
 * use property ``.values`` instead of ``excess`` to retrieve observations of excess from ``MarginNode`` object
 * Added dependency on `SMT <https://smt.readthedocs.io/en/latest/index.html>`_
@@ -59,6 +84,7 @@ Incompatible changes
 
 Features
 --------
+
 * Add building block for a Margin Analysis Network (MAN) as a class object ``InputSpec``
 * Add building block for a Margin Analysis Network (MAN) as a class object ``FixedParam``
 * Add building block for a Margin Analysis Network (MAN) as a class object ``DesignParam``
