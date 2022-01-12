@@ -2,6 +2,32 @@
 Changelog
 *********
 
+.. _release-0.4.6:
+
+0.4.6
+=====
+
+:Date: January 14, 2022
+
+Features
+--------
+
+* Add utilization calculation as part of the ``compute_absorption`` method
+* Add utilization storage to ``AbsorptionMatrix`` class
+* Add ``compute_MVP`` method to ``MarginNetwork`` class to show margin value map
+* Add ``nearest`` method to ``dmLib`` to allow calculation of the distance metric for the MVP
+
+Fixes
+-----
+
+* Adapt ``train_performance_surrogate``, ``view_perf``, and ``compute_impact`` to include scaling functionality when training Kriging model
+* Add input specifications samples as input to performance surrogate in ``train_performance_surrogate`` to accommodate variability input specifications
+
+Incompatible changes
+--------------------
+
+* ``InputSpec`` now requires the argument ``universe`` upon initialization
+
 .. _release-0.4.5:
 
 0.4.5

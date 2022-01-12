@@ -2,12 +2,46 @@ import numpy as np
 from typing import Dict, Any, AnyStr, Tuple, List, Union
 import matplotlib.pyplot as plt
 from smt.surrogate_models import KRG
+import scipy.stats as st
 
 from .uncertaintyLib import Distribution,gaussianFunc,uniformFunc,VisualizeDist
-from .DOELib import Design
+from .DOELib import Design, scaling
 from .utilities import check_folder
 
 """Design margins library for computing buffer and excess"""
+
+def nearest(p1:np.ndarray, p2:np.ndarray, s:np.ndarray) -> Tuple[np.ndarray,float]:
+    """
+    Find the nearest point to s along a line given by p1 and p2
+    https://stackoverflow.com/a/47198877
+    https://stackoverflow.com/a/39840218
+    https://math.stackexchange.com/questions/13176/how-to-find-a-point-on-a-line-closest-to-another-given-point
+
+    Parameters
+    ----------
+    p1 : np.ndarray
+        first point on the line
+    p2 : np.ndarray
+        second point on the line
+    s : np.ndarray
+        point to calculate distance to
+
+    Returns
+    -------
+    np.ndarray
+        coordinates of the nearest point
+    """
+    x1, y1 = p1
+    x2, y2 = p2
+    xs, ys = s
+    dx, dy = x2-x1, y2-y1
+    det = dx*dx + dy*dy
+    a = (dy*(ys-y1)+dx*(xs-x1))/det
+
+    # calculate distance
+    d = (np.cross(p2-p1, s-p1))/np.linalg.norm(p2-p1)
+
+    return np.array((x1+a*dx, y1+a*dy)), d
 
 class FixedParam():
     def __init__(self,value:Union[float,int,str],key:str,
@@ -99,7 +133,7 @@ class DesignParam(FixedParam):
 
 class InputSpec(VisualizeDist):
     def __init__(self,value:Union[float,int,Distribution,gaussianFunc,uniformFunc],
-        key: str,description:str='',symbol:str='',distribution:Distribution=None, 
+        key: str,universe:Tuple[float,float],description:str='',symbol:str='',distribution:Distribution=None, 
         cov_index:int=0, inc:float=5.0, inc_type:str='rel'):
         """
         Contains description of an input specification
@@ -112,6 +146,10 @@ class InputSpec(VisualizeDist):
             if type is Distribution then a sample is drawn
         key : str
             unique identifier
+        universe : Tuple[float,float]
+            the possible values the design parameter can take, 
+            must be of length 2 (upper and lower bound)
+            type(value) must be float
         description : str, optional
             description string, by default ''
         symbol : str, optional
@@ -143,6 +181,7 @@ class InputSpec(VisualizeDist):
         self.inc            = inc
         self.inc_type       = inc_type
         self.original       = value
+        self.universe       = universe
 
         self._value         = value
         self._values        = np.empty(0)
@@ -617,6 +656,7 @@ class MarginNode(Performance):
         self.value             = e                 # store excess
         self.values            = e                 # add to list of excesses
         self.value_dist         = self.values      # populate pdf
+        
 class ImpactMatrix(VisualizeDist):
     def __init__(self,n_margins:int,n_performances:int):
         """
@@ -754,6 +794,10 @@ class AbsorptionMatrix(VisualizeDist):
 
         #_absorptions [len(margin_nodes), len(inputs_specs), n_samples]
 
+        self._utilizations      = np.empty((self.n_margins,self.n_specs,0))
+
+        #_utilizations [len(margin_nodes), len(inputs_specs), n_samples]
+
         self._deteriorations    = np.empty((self.n_specs,0))
 
         #_deteriorations [len(inputs_specs), n_samples]
@@ -778,10 +822,35 @@ class AbsorptionMatrix(VisualizeDist):
         Parameters
         ----------
         a : ndarray
-            value to append to impacts 3D matrix
+            value to append to absorptions 3D matrix
         """
         assert a.shape == self._absorptions.shape[:2]
         self._absorptions = np.dstack((self._absorptions,a))
+
+    @property
+    def utilizations(self) -> np.ndarray:
+        """
+        Utilizations 3D matrix getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of utilization matrix observations
+        """
+        return self._utilizations
+
+    @utilizations.setter
+    def utilizations(self,u:np.ndarray):
+        """
+        Appends utilization matrix a to utilizations 3D matrix
+
+        Parameters
+        ----------
+        u : ndarray
+            value to append to utilization 3D matrix
+        """
+        assert u.shape == self._utilizations.shape[:2]
+        self._utilizations = np.dstack((self._utilizations,u))
 
     @property
     def deteriorations(self) -> np.ndarray:
@@ -822,6 +891,10 @@ class AbsorptionMatrix(VisualizeDist):
         self._absorptions       = np.empty((self.n_margins,self.n_specs,0))
 
         #_absorptions [len(margin_nodes), len(inputs_specs), n_samples]
+
+        self._utilizations      = np.empty((self.n_margins,self.n_specs,0))
+
+        #_utilizations [len(margin_nodes), len(inputs_specs), n_samples]
 
         self._deteriorations    = np.empty((self.n_specs,0))
 
@@ -911,7 +984,7 @@ class AbsorptionMatrix(VisualizeDist):
         super().__init__(self.deteriorations[i_input_spec,:]) # instantiate the self.values attribute
         super().view_cdf(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
 
-    def __call__(self,deterioration:np.ndarray,absorption:np.ndarray):
+    def __call__(self,deterioration:np.ndarray,absorption:np.ndarray,utilization:np.ndarray):
         """
         Append impact matrix to stored impacts and store as current value
 
@@ -923,15 +996,21 @@ class AbsorptionMatrix(VisualizeDist):
         absorption : np.ndarray
             An observation of the absorption matrix
             The size of this matrix should be (n_margins,n_input_specs)
+        utilization : np.ndarray
+            An observation of the utilization matrix
+            The size of this matrix should be (n_margins,n_input_specs)
         """
 
         assert absorption.shape == self._absorptions.shape[:2]
+        assert utilization.shape == self._utilizations.shape[:2]
         assert deterioration.ndim == 1 and len(deterioration) == self._deteriorations.shape[0]
         self.deterioration  = deterioration # store deterioration vector
         self.deteriorations = deterioration # add to deterioration vector samples
         self.absorption     = absorption # store absorption matrix
         self.absorptions    = absorption # add to list of absorption matrix samples
-
+        self.utilization    = utilization # store utilization matrix
+        self.utilizations   = utilization # add to list of utilization matrix samples
+        
 class MarginNetwork():
     def __init__(self,design_params:List[DesignParam],input_specs:List[InputSpec],
         fixed_params:List[FixedParam],behaviours:List[Behaviour],
@@ -939,8 +1018,8 @@ class MarginNetwork():
         """
         The function that will be used to calculate a forward pass of the MAN
         and associated metrics of the MVM
-            - The first metric is change absorption capability (CAC)
-            - The second metric is the impact on performance (IoP)
+        - The first metric is change absorption capability (CAC)
+        - The second metric is the impact on performance (IoP)
         This class should be inherited and the forward method should be implemented by the user
         to describe how the input params are related to the output params (DDs,TTs, and performances)
 
@@ -956,7 +1035,7 @@ class MarginNetwork():
             list of Behaviour instances
         margin_nodes : List[MarginNode]
             list of MarginNode instances
-         margin_nodes : List[Performance]
+        margin_nodes : List[Performance]
             list of Performance instances
         key : str, optional
             string to tag instance with, default = ''
@@ -980,9 +1059,28 @@ class MarginNetwork():
         ub = np.array([])
         # Get upper and lower bound for continuous variables
         for design_param in self.design_params:
-            lb = np.append(lb,design_param.universe[0])
-            ub = np.append(ub,design_param.universe[1])
+            assert min(design_param.universe) < max(design_param.universe), \
+                'max of universe of design parameter %s must be greater than min' %design_param.key
+            
+            lb = np.append(lb,min(design_param.universe))
+            ub = np.append(ub,max(design_param.universe))
+
         self.lb_d, self.ub_d = lb, ub
+
+        # Input specification space
+        lb = np.array([])
+        ub = np.array([])
+        for input_spec in self.input_specs:
+            assert min(input_spec.universe) < max(input_spec.universe), \
+                'max of universe of input spec %s must be greater than min' %input_spec.key
+            
+            lb = np.append(lb,min(input_spec.universe))
+            ub = np.append(ub,max(input_spec.universe))
+
+        self.lb_s, self.ub_s = lb, ub
+
+        self.lb_i = np.append(self.lb_d,self.lb_s)
+        self.ub_i = np.append(self.ub_d,self.ub_s)
 
     @property
     def design_vector(self) -> np.ndarray:
@@ -1041,7 +1139,7 @@ class MarginNetwork():
             value to set the input specs of the MAN to
         """
         assert d.ndim == 1
-        assert len(d) == self.input_specs
+        assert len(d) == len(self.input_specs)
 
         for value,item in zip(d,self.input_specs):
             item.value = value
@@ -1060,6 +1158,37 @@ class MarginNetwork():
         for item in self.input_specs:
             vector = np.append(vector,item.original)
         return vector
+
+    @property
+    def nominal_design_vector(self) -> np.ndarray:
+        """
+        returns a vector of nominal design parameter
+
+        Returns
+        -------
+        np.ndarray
+            vector of nominal design parameters
+        """
+        vector = np.empty(0)
+        for item in self.design_params:
+            vector = np.append(vector,item.original)
+        return vector
+
+    @nominal_design_vector.setter
+    def nominal_design_vector(self,d:np.ndarray):
+        """
+        Adjusts all the nominal design parameters according to the vector d provided
+        These values are not affected by the ``reset`` method
+        Parameters
+        ----------
+        d : ndarray
+            value to set the nominal design parameters of the MAN to
+        """
+        assert d.ndim == 1
+        assert len(d) == len(self.design_params)
+
+        for value,item in zip(d,self.design_params):
+            item.original = value
 
     @property
     def excess_vector(self) -> np.ndarray:
@@ -1121,7 +1250,7 @@ class MarginNetwork():
             vector = np.append(vector,item.value)
         return vector
 
-    def train_performance_surrogate(self,n_samples:int=100,sampling_freq:int=1,ext_samples:Tuple[np.ndarray,np.ndarray]=None):
+    def train_performance_surrogate(self,n_samples:int=100,sampling_freq:int=1,bandwidth:List[float]=[1e-2,],ext_samples:Tuple[np.ndarray,np.ndarray]=None):
         """
         Constructs a surrogate model y(x), where x are the excess values and 
         y are the performance parameters that can be used to calculate threshold 
@@ -1134,6 +1263,8 @@ class MarginNetwork():
         sampling_freq : int, optional
             If > than 1 then the decided value is calculated as the average of N samples 
             by calling the forward() N times and averaging the decided values, where N = sampling_freq, by default 1
+        bandwidth : float, optional
+            The kernel bandwidth used in Kriging, by default 1e-2
         ext_samples : tuple[np.ndarray,np.ndarray], optional
             if sample data provided externally then use directly to fit the response surface, 
             Tuple must of length 2, ext_samples[0] must of shape (N_samples,len(margin_nodes)),
@@ -1142,15 +1273,18 @@ class MarginNetwork():
         """
 
         if ext_samples is None:
-            # generate training data for response surface using a LHS grid of design parameter space
-            design_samples = Design(self.lb_d,self.ub_d,n_samples,"LHS").unscale() # 2D grid
+            # generate training data for response surface using a LHS grid of design parameter and input specification space
+            input_samples = Design(self.lb_i,self.ub_i,n_samples,"LHS").unscale() # 2D grid
 
-            xt = np.empty((0,len(self.margin_nodes))) # decided values
+            xt = np.empty((0,len(self.margin_nodes)+len(self.input_specs))) # excess + input secs
             yt = np.empty((0,len(self.performances))) # Performance parameters
 
-            for design in design_samples:
+            for input_i in input_samples:
+                design = input_i[:len(self.design_params)]
+                spec = input_i[len(self.design_params):]
 
-                self.design_vector = design # Set design parameters to their respective values
+                self.design_vector  = design # Set design parameters to their respective values
+                self.spec_vector    = spec # Set input specifications to their respective values
                 
                 excess_samples = np.empty((0,len(self.margin_nodes)))
                 perf_samples = np.empty((0,len(self.performances)))
@@ -1164,7 +1298,11 @@ class MarginNetwork():
                 excess_samples = np.mean(excess_samples,axis=0)
                 perf_samples = np.mean(perf_samples,axis=0)
 
-                xt = np.vstack((xt,excess_samples.reshape(1,xt.shape[1])))
+                # concatenate input specifications
+                x_i = np.append(excess_samples,spec)
+                x_i = x_i.reshape(1,xt.shape[1])
+
+                xt = np.vstack((xt,x_i))
                 yt = np.vstack((yt,perf_samples.reshape(1,yt.shape[1])))
 
         elif ext_samples is not None:
@@ -1172,7 +1310,7 @@ class MarginNetwork():
             assert len(ext_samples) == 2
             for value in ext_samples:
                 assert type(value) == np.ndarray
-            assert ext_samples[0].shape[1] == len(self.margin_nodes)
+            assert ext_samples[0].shape[1] == len(self.margin_nodes) + len(self.input_specs)
             assert ext_samples[1].shape[1] == len(self.performances)
             assert ext_samples[0].shape[0] == ext_samples[1].shape[0]
 
@@ -1180,11 +1318,15 @@ class MarginNetwork():
             yt = ext_samples[1]
 
         # Get lower and upper bounds of excess values
-        self.lb_excess = np.min(xt,axis=0)
-        self.ub_excess = np.max(xt,axis=0)
+        self.lb_inputs = np.min(xt,axis=0)
+        self.ub_inputs = np.max(xt,axis=0)
+        xt = scaling(xt,self.lb_inputs,self.ub_inputs,operation=1)
 
         self.reset()
-        self.sm_perf = KRG(theta0=[1e-2],print_prediction=False)
+        assert len(bandwidth) == 1 or len(bandwidth) == xt.shape[1], \
+            'bandwidth list size must be at least %i or 1' %xt.shape[1]
+            
+        self.sm_perf = KRG(theta0=bandwidth,print_prediction=False)
         self.sm_perf.set_training_values(xt, yt)
         self.sm_perf.train()
 
@@ -1231,14 +1373,18 @@ class MarginNetwork():
         for margin_node in self.margin_nodes:
             lb_excess = np.append(lb_excess,margin_node.value)
             ub_excess = np.append(ub_excess,margin_node.value+1e-3)
-        lb_excess[e_indices] = self.lb_excess[e_indices]
-        ub_excess[e_indices] = self.ub_excess[e_indices]
+        lb_excess[e_indices] = self.lb_inputs[e_indices]
+        ub_excess[e_indices] = self.ub_inputs[e_indices]
 
-        excess_space = Design(lb_excess,ub_excess,sampling_vector,'fullfact').unscale()
-        perf_estimate = self.sm_perf.predict_values(excess_space)
+        excess_doe = Design(lb_excess,ub_excess,sampling_vector,'fullfact')
+        values = np.hstack((excess_doe.unscale(),
+            np.tile(self.nominal_spec_vector,(excess_doe.unscale().shape[0],1))))
+        values = scaling(values,self.lb_inputs,self.ub_inputs,operation=1)
+        
+        perf_estimate = self.sm_perf.predict_values(values)
 
-        x = excess_space[:,e_indices[0]].reshape((n_levels,n_levels))
-        y = excess_space[:,e_indices[1]].reshape((n_levels,n_levels))
+        x = excess_doe.unscale()[:,e_indices[0]].reshape((n_levels,n_levels))
+        y = excess_doe.unscale()[:,e_indices[1]].reshape((n_levels,n_levels))
         z = perf_estimate[:,p_index].reshape((n_levels,n_levels))
 
         if label_1 is None:
@@ -1267,7 +1413,7 @@ class MarginNetwork():
 
         plt.show()
 
-    def compute_impact(self,use_estimate:bool=True):
+    def compute_impact(self,use_estimate:bool=False):
         """
         Computes the impact on performance (IoP) matrix of the MVM that has a size
         [n_margins, n_performances] and appends its the impacts matrix if called 
@@ -1278,15 +1424,18 @@ class MarginNetwork():
         ----------
         use_estimate : bool, optional
             uses the trained surrogate model from `train_performance_surrogate` 
-            to estimate performance at the threshold design, by default True
+            to estimate performance at the threshold design, by default False
         """
 
-        excess_values = self.excess_vector.reshape(1,-1) # turn it into a 2D matrix
+        excess_values   = self.excess_vector.reshape(1,-1) # turn it into a 2D matrix
+        input_specs     = self.spec_vector.reshape(1,-1) # turn it into a 2D matrix
 
         # Compute performances at decided values first
         if use_estimate:
             # Use surrogate model
-            performances = self.sm_perf.predict_values(excess_values)
+            value = np.hstack((excess_values,input_specs))
+            value = scaling(value,self.lb_inputs,self.ub_inputs,operation=1)
+            performances = self.sm_perf.predict_values(value)
         else:
             # Get performances from behaviour models
             performances = self.perf_vector
@@ -1296,15 +1445,20 @@ class MarginNetwork():
         #performances = [len(margin_nodes), len(performances)]
 
         # Compute performances at target threshold for each margin node
-        input = np.tile(excess_values,(len(self.margin_nodes),1)) # Create a square matrix
+        input_excess = np.tile(excess_values,(len(self.margin_nodes),1)) # Create a square matrix
 
-        #input = [len(margin_nodes), len(margin_nodes)]
+        #input_excess = [len(margin_nodes), len(margin_nodes)]
 
-        np.fill_diagonal(input, np.zeros(len(self.margin_nodes)), wrap=False) # works in place
+        np.fill_diagonal(input_excess, np.zeros(len(self.margin_nodes)), wrap=False) # works in place
 
-        #input = [len(margin_nodes), len(margin_nodes)]
+        #input_excess = [len(margin_nodes), len(margin_nodes)]
 
-        thresh_perf = self.sm_perf.predict_values(input)
+        # concatenate input specifications
+        values = np.hstack((input_excess,
+            np.tile(self.nominal_spec_vector,(input_excess.shape[0],1))))
+        values = scaling(values,self.lb_inputs,self.ub_inputs,operation=1)
+        
+        thresh_perf = self.sm_perf.predict_values(values)
 
         #thresh_perf = [len(margin_nodes), len(performances)]
 
@@ -1376,22 +1530,140 @@ class MarginNetwork():
 
         # Compute performances at the spec limit for each margin node
 
-        change_matrix = np.empty((len(self.margin_nodes),0))
+        new_thresholds = np.empty((len(self.margin_nodes),0))
         for input_spec,input_spec_limit in zip(self.input_specs,spec_limit):
             input_spec.value = input_spec_limit
             self.forward()
 
-            change_vector = np.reshape(self.tt_vector,(len(self.margin_nodes),-1))
-            change_matrix = np.hstack((change_matrix,change_vector))
+            new_thresholds_vector = np.reshape(self.tt_vector,(len(self.margin_nodes),-1))
+            new_thresholds = np.hstack((new_thresholds,new_thresholds_vector))
 
             self.reset(1)
 
-        absorption = np.maximum(abs(change_matrix - target_thresholds) / (target_thresholds * deterioration_matrix), np.zeros_like(change_matrix) )
+        absorption = np.maximum(abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix), np.zeros_like(new_thresholds) )
         absorption[absorption==np.nan] = 0 # replace undefined absorptions with 0
 
         #absorption = [len(margin_nodes), len(input_specs)]
 
-        self.absorption_matrix(deterioration=deterioration,absorption=absorption) # store the results
+        # utilization computation
+
+        decided_value = np.reshape(self.dv_vector,(len(self.margin_nodes),-1))
+        decided_values = np.tile(decided_value,(1,len(self.input_specs)))
+
+        #decided_values = [len(margin_nodes), len(input_specs)]
+
+        utilization = 1 - ((decided_values - new_thresholds) / (decided_values - target_thresholds))
+
+        #utilization = [len(margin_nodes), len(input_specs)]
+
+        self.absorption_matrix(deterioration=deterioration,absorption=absorption,utilization=utilization) # store the results
+
+    def compute_MVP(self,plot_type:str='scatter',show_neutral=False) -> float:
+        """
+        computes the margin value map after running all Monte Carlo computations
+
+        Parameters
+        ----------
+        plot_type : str, optional
+            possible values are ('scatter','mean','density')
+            if 'scatter' is selected, simply plots all the sample absorptions and impacts,
+            if 'mean' is selected, plots all the mean of all sample absorptions and impacts,
+            if 'density' is selected, plots a Gaussian KDE of the sample absorptions and impacts,
+            by default True
+        show_neutral : bool, optional
+            If true displays the distance from the mean and the neutral 45 deg line
+
+        Returns
+        -------
+        float
+            The aggregate distance from the neutral line
+        """
+
+        color = np.random.random((100,3))
+        
+        # Extract x and y
+        x = np.mean(self.impact_matrix.impacts,axis=1).ravel() # average along performance parameters (assumes equal weighting)
+        y = np.mean(self.absorption_matrix.absorptions,axis=1).ravel() # average along input specs (assumes equal weighting)
+        
+        c = np.empty((0,3))
+        for i in range(len(self.margin_nodes)):
+            c_node = np.tile(color[i],(self.absorption_matrix.absorptions.shape[2],1))
+            c = np.vstack((c,c_node))
+
+        # Define the borders
+        deltaX = (np.nanmax(x) - np.nanmin(x))/10
+        deltaY = (np.nanmax(y) - np.nanmin(y))/10
+        xmin = np.nanmin(x) - deltaX
+        ymax = np.nanmax(y) + deltaY
+        xmax = np.nanmax(x) + deltaX
+        ymin = np.nanmin(y) - deltaY
+
+        # create empty figure
+        fig, ax = plt.subplots(figsize=(7, 8))
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+        ax.set_xlabel('Impact on performance')
+        ax.set_ylabel('Change absoption capability')
+
+        if plot_type == 'scatter':
+
+            ax.scatter(x, y, s=50, c=c)
+
+        elif plot_type == 'mean':
+
+            c = np.empty((0,3))
+            for i in range(len(self.margin_nodes)):
+                c = np.vstack((c,color[i]))
+
+            # Extract x and y
+            x = np.nanmean(self.impact_matrix.impacts,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
+            y = np.nanmean(self.absorption_matrix.absorptions,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
+
+            ax.scatter(x, y, s=50, c=c)
+
+        elif plot_type == 'density':
+
+            # Create meshgrid
+            xx, yy = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+
+            # fit a Gaussian KDE
+            values = np.vstack([x, y])
+            values = values[:,~np.isnan(values).any(axis=0)] # drop nans
+            kernel = st.gaussian_kde(values)
+
+            # Predict at meshgrid points
+            positions = np.vstack([xx.ravel(), yy.ravel()])
+            f = np.reshape(kernel(positions).T, xx.shape)
+
+            # plot the KDE contours
+            # c2 = ax.contourf( X1, X2, Z, colors=['#1EAA37'], alpha=0.0)
+            cfset = ax.contourf(xx, yy, f, alpha=0.25, cmap=plt.cm.Blues)
+            cset = ax.contour(xx, yy, f, colors='b')
+
+        # distance computation
+        dist = 0
+        x = np.nanmean(self.impact_matrix.impacts,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
+        y = np.nanmean(self.absorption_matrix.absorptions,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
+        p1 = np.array([xmin,ymin])
+        p2 = np.array([xmax,ymax])
+
+        if show_neutral:
+            ax.plot([0, 1], [0, 1], transform=ax.transAxes, color='k',linestyle=(5,(10,5)))
+
+        for i in range(len(self.margin_nodes)):
+            s = np.array([x[i],y[i]])
+
+            pn,d = nearest(p1,p2,s)
+            dist += d
+
+            if show_neutral:
+                x_d = [s[0],pn[0]]
+                y_d = [s[1],pn[1]]
+                ax.plot(x_d,y_d,marker='.',linestyle='--',color=color[i])
+
+        plt.show()
+        
+        return d
 
     def randomize(self, *args, **kwargs):
         """

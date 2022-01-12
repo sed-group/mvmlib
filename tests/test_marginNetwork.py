@@ -3,8 +3,10 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from typing import List, Tuple
+from scipy.optimize import fsolve, minimize
 
-from dmLib import Design, gaussianFunc, uniformFunc, MarginNode, Performance, MarginNetwork, InputSpec, Behaviour, compute_cdf
+from dmLib import Design, gaussianFunc, uniformFunc, MarginNode, Performance, MarginNetwork, InputSpec, Behaviour, compute_cdf, nearest
+
 
 # Input set 1
 @pytest.fixture
@@ -50,8 +52,8 @@ def Absorption_test_inputs():
 def deterministic_specs():
     # Define input specs
     centers = np.array([1.2,1.0])
-    s1 = InputSpec(centers[0],'S1',symbol='T1',inc = -1e-0,inc_type='rel')
-    s2 = InputSpec(centers[1],'S2',symbol='T2',inc = -1e-0,inc_type='rel')
+    s1 = InputSpec(centers[0],'S1',universe=(0.0,2.0),symbol='T1',inc = -1e-0,inc_type='rel')
+    s2 = InputSpec(centers[1],'S2',universe=(0.0,2.0),symbol='T2',inc = -1e-0,inc_type='rel')
     input_specs = [s1,s2]
 
     return centers,input_specs
@@ -62,8 +64,8 @@ def stochastic_specs():
     centers = np.array([1.2,1.0])
     ranges = np.ones(2) * 0.1
     dist = uniformFunc(centers,ranges)
-    s1 = InputSpec(centers[0],'S1',symbol='T1',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=0)
-    s2 = InputSpec(centers[1],'S2',symbol='T2',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=1)
+    s1 = InputSpec(centers[0],'S1',universe=(0.0,2.0),symbol='T1',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=0)
+    s2 = InputSpec(centers[1],'S2',universe=(0.0,2.0),symbol='T2',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=1)
     input_specs = [s1,s2]
 
     return dist,centers,ranges,input_specs
@@ -320,7 +322,7 @@ def test_deterministic_ImpactMatrix(man_components,Impact_test_inputs):
 
     man.train_performance_surrogate(n_samples=100,ext_samples=(excess_space,p_space))
     man.forward()
-    man.compute_impact()
+    man.compute_impact(use_estimate=True)
 
     # Check outputs
     input = np.tile(tt_vector,(len(margin_nodes),1))
@@ -452,7 +454,7 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
     n_runs = 1000
     for n in range(n_runs):
         man.forward()
-        man.compute_impact()
+        man.compute_impact(use_estimate=True)
 
     mean_impact = np.mean(man.impact_matrix.impacts,axis=2)
 
@@ -609,6 +611,7 @@ def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_
     man.compute_absorption()
 
     mean_absorption = np.mean(man.absorption_matrix.absorptions,axis=2)
+    mean_utilization = np.mean(man.absorption_matrix.utilizations,axis=2)
 
     # Check outputs
 
@@ -649,20 +652,33 @@ def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_
 
     new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
     new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
-    change_matrix = np.empty((len(margin_nodes),0))
-    change_matrix = np.hstack((change_matrix,new_tt_1))
-    change_matrix = np.hstack((change_matrix,new_tt_2))
+    new_thresholds = np.empty((len(margin_nodes),0))
+    new_thresholds = np.hstack((new_thresholds,new_tt_1))
+    new_thresholds = np.hstack((new_thresholds,new_tt_2))
 
-    #change_matrix = [len(margin_nodes), len(input_specs)]
+    #new_thresholds = [len(margin_nodes), len(input_specs)]
 
-    test_absorption =abs(change_matrix - target_thresholds) / (target_thresholds * deterioration_matrix)
+    test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
     # test_absorption = np.array([
     #     [ 1.04132231  , 0.20661157],
     #     [ 0.375       , 0.625     ],
     #     [0.54545455   , 0.45454545]
     #     ])
 
+    #test_absorption = [len(margin_nodes), len(input_specs)]
+
+    # compute utilization
+    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_values = np.tile(decided_value,(1,len(input_specs)))
+
+    #decided_values = [len(margin_nodes), len(input_specs)]
+
+    test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
+
+    #test_utilization = [len(margin_nodes), len(input_specs)]
+
     assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
+    assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
 
     ######################################################
     # Check visualization
@@ -790,7 +806,8 @@ def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_i
         man.forward()
         man.compute_absorption()
 
-    mean_absoprtion = np.mean(man.absorption_matrix.absorptions,axis=2)
+    mean_absorption = np.mean(man.absorption_matrix.absorptions,axis=2)
+    mean_utilization= np.mean(man.absorption_matrix.utilizations,axis=2)
 
     # Check outputs
     
@@ -831,18 +848,30 @@ def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_i
 
     new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
     new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
-    change_matrix = np.empty((len(margin_nodes),0))
-    change_matrix = np.hstack((change_matrix,new_tt_1))
-    change_matrix = np.hstack((change_matrix,new_tt_2))
+    new_thresholds = np.empty((len(margin_nodes),0))
+    new_thresholds = np.hstack((new_thresholds,new_tt_1))
+    new_thresholds = np.hstack((new_thresholds,new_tt_2))
 
-    #change_matrix = [len(margin_nodes), len(input_specs)]
+    #new_thresholds = [len(margin_nodes), len(input_specs)]
 
-    test_absorption =abs(change_matrix - target_thresholds) / (target_thresholds * deterioration_matrix)
+    test_absorption =abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
     # test_absorption = np.array([
     #     [ 1.04132231  , 0.20661157],
     #     [ 0.375       , 0.625     ],
     #     [0.54545455   , 0.45454545]
     #     ])
+
+    #test_absorption = [len(margin_nodes), len(input_specs)]
+
+    # compute utilization
+    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_values = np.tile(decided_value,(1,len(input_specs)))
+
+    #decided_values = [len(margin_nodes), len(input_specs)]
+
+    test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
+
+    #test_utilization = [len(margin_nodes), len(input_specs)]
 
     ######################################################
     # Check visualization
@@ -857,4 +886,30 @@ def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_i
     # man.absorption_matrix.view(1,1)
     # man.absorption_matrix.view(2,1)
 
-    assert np.allclose(mean_absoprtion, test_absorption, rtol=1e-0)
+    assert np.allclose(mean_absorption, test_absorption, rtol=1e-0)
+    assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
+
+def test_nearest():
+    """
+    Check calculation to the nearest point along a line to an arbitrary point
+    """
+
+    p1 = np.array([1,1])
+    p2 = np.array([5,2])
+    s = np.array([3,3])
+    ######################################################
+    
+    pn, d = nearest(p1,p2,s)
+    
+    ######################################################
+    
+    r_t = lambda t : p1 + t*(p2-p1) # parameteric equation of the line
+    f = lambda  t: np.dot(s-r_t(t),p2-p1)
+
+    t_sol=fsolve(f,0.5)
+
+    pn_test = r_t(t_sol)
+    d_test = np.linalg.norm(pn_test - s)
+
+    assert all(pn == pn_test)
+    assert np.isclose(d, d_test, rtol=1e-1)

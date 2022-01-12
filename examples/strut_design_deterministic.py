@@ -8,6 +8,7 @@ from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
 from dmLib import Design
 from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork
 from dmLib import Distribution, gaussianFunc, uniformFunc
+from dmLib import nearest
 
 # define fixed parameters
 i1 = FixedParam(7.17E-06    ,'I1',description='Coefficient of thermal expansion'    ,symbol='alpha'     )
@@ -18,6 +19,7 @@ i5 = FixedParam(536.5       ,'I5',description='Radius of the shroud'            
 i6 = FixedParam(1.0         ,'I6',description='Column effective length factor'      ,symbol='K'         )
 i7 = FixedParam(25.0        ,'I7',description='ambient temperature'                 ,symbol='Ts'        )
 i8 = FixedParam(460.0       ,'I8',description='yield stress'                        ,symbol='sigma_y'   )
+
 fixed_params = [i1,i2,i3,i4,i5,i6,i7,i8]
 
 # define design parameters
@@ -26,24 +28,16 @@ d2 = DesignParam(15.0   ,'D2'   ,universe=(5.0,20.0)    ,description='vane heigh
 d3 = DesignParam(10.0   ,'D3'   ,universe=(0.0,30.0)    ,description='lean angle'   ,symbol='theta' )
 design_params = [d1,d2,d3]
 
-# T1,T2 distribution (Gaussian)
+# T1,T2 distribution (Uniform)
 center = np.array([450,425])
-Sigma = np.array([
-    [100, 25],
-    [75, 100],
-    ]) / (20*3)
-Requirement = gaussianFunc(center, Sigma, 'temp')
-
-# # T1,T2 distribution (Uniform)
-# center = np.array([450,425])
-# Range = np.array([100, 100])/20
-# Requirement = uniformFunc(center, Range, 'temp')
+Range = np.array([100, 100])/20
+Requirement = uniformFunc(center, Range, 'temp')
 
 # define input specifications
-s1 = InputSpec(center[0],'S1',universe=(325,550),cov_index=0,description='nacelle temperature',
-    distribution=Requirement,symbol='T1',inc = -1e-0,inc_type='rel')
-s2 = InputSpec(center[1],'S2',universe=(325,550),cov_index=1,description='gas surface temperature'
-    ,distribution=Requirement,symbol='T2', inc = +1e-0,inc_type='rel')
+s1 = InputSpec(450,'S1',universe=(325,550),description='nacelle temperature',
+    symbol='T1',inc = -1e-0,inc_type='rel')
+s2 = InputSpec(425,'S2',universe=(325,550),description='gas surface temperature',
+    symbol='T2',inc=+1e-0,inc_type='rel')
 input_specs = [s1,s2]
 
 # define the behaviour models
@@ -98,11 +92,6 @@ performances = [p1,]
 
 # Define the MAN
 class MAN(MarginNetwork):
-
-    def randomize(self):
-        Requirement()
-        s1()
-        s2()
 
     def forward(self):
 
@@ -160,45 +149,28 @@ man.view_perf(e_indices=[0,1],p_index=0)
 man.view_perf(e_indices=[0,2],p_index=0)
 man.view_perf(e_indices=[1,2],p_index=0)
 
-# Perform Monte-Carlo simulation
-n_epochs = 10
-for n in range(n_epochs):
-    
-    sys.stdout.write("Progress: %d%%   \r" %((n/n_epochs)* 100))
-    sys.stdout.flush()
+# Run a forward pass of the MAN
+man.forward()
+man.compute_impact()
+man.compute_absorption()
 
-    man.randomize()
-    man.forward()
-    man.compute_impact()
-    man.compute_absorption()
+# View value of excess
+print(man.excess_vector)
 
-# View distribution of excess
-man.margin_nodes[0].view()
-man.margin_nodes[1].view()
-man.margin_nodes[2].view()
+# View Impact on Performance
+print(man.impact_matrix.impact)
 
-# View distribution of Impact on Performance
-man.impact_matrix.view(0,0)
-man.impact_matrix.view(1,0)
-man.impact_matrix.view(2,0)
+# View Deterioration
+print(man.absorption_matrix.deterioration)
 
-man.absorption_matrix.view_det(0)
-man.absorption_matrix.view_det(1)
-
-man.absorption_matrix.view(0,0)
-man.absorption_matrix.view(1,0)
-man.absorption_matrix.view(2,0)
-
-man.absorption_matrix.view(0,1)
-man.absorption_matrix.view(1,1)
-man.absorption_matrix.view(2,1)
+# View Absorption capability
+print(man.absorption_matrix.absorption)
 
 # display the margin value plot
-man.compute_MVP('scatter')
+d = man.compute_MVP('scatter',show_neutral=True)
 
 # Effect of alternative designs
-n_designs=100
-n_epochs = 10
+n_designs = 100
 design_doe = Design(man.lb_d,man.ub_d,n_designs,'LHS')
 
 # create empty figure
@@ -206,28 +178,82 @@ fig, ax = plt.subplots(figsize=(7, 8))
 ax.set_xlabel('Impact on performance')
 ax.set_ylabel('Change absoption capability')
 
-for d,design in enumerate(design_doe.unscale()):
+X = np.empty((1,len(man.margin_nodes)))
+Y = np.empty((1,len(man.margin_nodes)))
+for i,design in enumerate(design_doe.unscale()):
     man.nominal_design_vector = design
     man.reset()
     man.reset_outputs()
 
-    # Perform Monte-Carlo simulation
-    for n in range(n_epochs):
-        
-        sys.stdout.write("Progress: %d%%   \r" %(((d*n_epochs + n)/(n_designs*n_epochs)* 100)))
-        sys.stdout.flush()
+    # Display progress bar
+    sys.stdout.write("Progress: %d%%   \r" %((i/n_designs)* 100))
+    sys.stdout.flush()
 
-        man.randomize()
-        man.forward()
-        man.compute_impact()
-        man.compute_absorption()
-    
+    # Perform MAN computations
+    man.forward()
+    man.compute_impact()
+    man.compute_absorption()
+
     # Extract x and y
     x = np.mean(man.impact_matrix.impacts,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
     y = np.mean(man.absorption_matrix.absorptions,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
 
+    if not all(np.isnan(y)):
+        X = np.vstack((X,x))
+        Y = np.vstack((Y,y))
+
     # plot the results
     color = np.random.random((1,3))
     ax.scatter(x,y,c=color)
+
+plt.show()
+
+# Calculate distance metric
+p1 = np.array([X.min(),Y.min()])
+p2 = np.array([X.max(),Y.max()])
+p1 = p1 - 0.1*abs(p2 - p1)
+p2 = p2 + 0.1*abs(p2 - p1)
+
+distances = np.empty(0)
+for i,(x,y) in enumerate(zip(X,Y)):
+
+    dist = 0
+    for node in range(len(x)):
+        s = np.array([x[node],y[node]])
+        pn,d = nearest(p1,p2,s)
+        dist += d
+
+    distances = np.append(distances,dist)
+
+# display distances only for three designs
+X_plot = X[0:3,:]
+Y_plot = Y[0:3,:]
+
+# create empty figure
+colors = ['#FF0000','#27BE1E','#0000FF']
+fig, ax = plt.subplots(figsize=(7, 8))
+ax.set_xlabel('Impact on performance')
+ax.set_ylabel('Change absoption capability')
+ax.set_xlim(p1[0],p2[0])
+ax.set_ylim(p1[1],p2[1])
+
+p = ax.plot([0, 1], [0, 1], transform=ax.transAxes, color='k',linestyle=(5,(10,5)))
+
+distances = np.empty(0)
+for i,(x,y) in enumerate(zip(X_plot,Y_plot)):
+
+    ax.scatter(x,y,c=colors[i])
+
+    dist = 0
+    for node in range(len(x)):
+        s = np.array([x[node],y[node]])
+        pn,d = nearest(p1,p2,s)
+        dist += d
+
+        x_d = [s[0],pn[0]]
+        y_d = [s[1],pn[1]]
+        ax.plot(x_d,y_d,marker='.',linestyle='--',color=colors[i])
+
+    distances = np.append(distances,dist)
 
 plt.show()
