@@ -8,12 +8,14 @@ uncertainty modelling
 
 """
 
-__version__ = '0.4.6'
-__all__=['triangularFunc', 'fuzzySet', 'fuzzyRule','fuzzySystem', 'gaussianFunc', 'uniformFunc', 'Distribution',
-    'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode','InputSpec', 'FixedParam', 'DesignParam', 'Behaviour', 
-    'Performance', 'ImpactMatrix', 'MarginNetwork']
+__version__ = '0.4.7'
+__all__ = ['TriangularFunc', 'FuzzySet', 'FuzzyRule', 'FuzzySystem', 'GaussianFunc', 'UniformFunc', 'Distribution',
+           'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode', 'InputSpec', 'FixedParam', 'DesignParam',
+           'Behaviour',
+           'MatrixParam', 'ScalarParam', 'VectorParam', 'Performance', 'MarginNetwork', 'nearest']
 
-from .fuzzyLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
-from .uncertaintyLib import gaussianFunc, uniformFunc, Distribution, VisualizeDist, compute_cdf
+from .fuzzyLib import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
+from .uncertaintyLib import GaussianFunc, UniformFunc, Distribution, VisualizeDist, compute_cdf
 from .DOELib import Design
-from .designMarginsLib import InputSpec, FixedParam, DesignParam, Behaviour, MarginNode, Performance, ImpactMatrix, MarginNetwork, nearest
+from .designMarginsLib import Cache, InputSpec, FixedParam, DesignParam, Behaviour, MarginNode, MatrixParam, \
+    Performance, MarginNetwork, ScalarParam, VectorParam, nearest

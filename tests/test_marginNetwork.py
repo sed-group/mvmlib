@@ -5,26 +5,26 @@ import matplotlib.pyplot as plt
 from typing import List, Tuple
 from scipy.optimize import fsolve, minimize
 
-from dmLib import Design, gaussianFunc, uniformFunc, MarginNode, Performance, MarginNetwork, InputSpec, Behaviour, compute_cdf, nearest
+from dmLib import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, InputSpec, Behaviour, compute_cdf, nearest
 
 
 # Input set 1
 @pytest.fixture
-def stochastic_inputs() -> Tuple[gaussianFunc,gaussianFunc]:
+def stochastic_inputs() -> Tuple[GaussianFunc, GaussianFunc]:
     # Target threshold
     mu = np.array([4.0,])
     Sigma = np.array([[0.3**2,],])
-    threshold = gaussianFunc(mu, Sigma, 'T1')
+    threshold = GaussianFunc(mu, Sigma, 'T1')
 
     # decided value (capability)
     mu = np.array([4.6,])
     Sigma = np.array([[0.3**2,],])
-    decided_value = gaussianFunc(mu, Sigma, 'B1')
+    decided_value = GaussianFunc(mu, Sigma, 'B1')
 
     return threshold, decided_value
 
 @pytest.fixture
-def deterministic_inputs():
+def deterministic_inputs() -> Tuple[float,float]:
     # Target threshold
     threshold = 4.0
 
@@ -34,7 +34,7 @@ def deterministic_inputs():
     return threshold, decided_value
 
 @pytest.fixture
-def Impact_test_inputs():
+def Impact_test_inputs() -> Tuple[np.ndarray,np.ndarray]:
     # test decided values and target thresholds for checking impact matrix calculation
     dv_vector = np.array([0.5,0.5,0.25])
     tt_vector = np.array([0.25,0.25,0.75])
@@ -42,14 +42,14 @@ def Impact_test_inputs():
     return dv_vector,tt_vector
 
 @pytest.fixture
-def Absorption_test_inputs():
+def Absorption_test_inputs() -> np.ndarray:
     # test decided values for checking absorption matrix calculation
     dv_vector = np.array([4.0,2.0,2.0])
 
     return dv_vector
 
 @pytest.fixture
-def deterministic_specs():
+def deterministic_specs() -> Tuple[np.ndarray,List[InputSpec]]:
     # Define input specs
     centers = np.array([1.2,1.0])
     s1 = InputSpec(centers[0],'S1',universe=(0.0,2.0),symbol='T1',inc = -1e-0,inc_type='rel')
@@ -59,11 +59,11 @@ def deterministic_specs():
     return centers,input_specs
 
 @pytest.fixture
-def stochastic_specs():
+def stochastic_specs() -> Tuple[UniformFunc, np.ndarray, np.ndarray, List[InputSpec]]:
     # Define input specs
     centers = np.array([1.2,1.0])
     ranges = np.ones(2) * 0.1
-    dist = uniformFunc(centers,ranges)
+    dist = UniformFunc(centers, ranges)
     s1 = InputSpec(centers[0],'S1',universe=(0.0,2.0),symbol='T1',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=0)
     s2 = InputSpec(centers[1],'S2',universe=(0.0,2.0),symbol='T2',inc = -1e-0,inc_type='rel',distribution=dist,cov_index=1)
     input_specs = [s1,s2]
@@ -71,7 +71,7 @@ def stochastic_specs():
     return dist,centers,ranges,input_specs
 
 @pytest.fixture
-def man_components():
+def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]]:
     # Define behaviour models
     class B1(Behaviour):
         def __call__(self,s1,s2):
@@ -107,19 +107,19 @@ def man_components():
     performances = [p1,p2]
 
     # Define margin nodes
-    e1 = MarginNode('E1',type='must_exceed')
-    e2 = MarginNode('E2',type='must_exceed')
-    e3 = MarginNode('E3',type='must_exceed')
+    e1 = MarginNode('E1', direction='must_exceed')
+    e2 = MarginNode('E2', direction='must_exceed')
+    e3 = MarginNode('E3', direction='must_exceed')
     margin_nodes = [e1,e2,e3]
 
     return behaviours, performances, margin_nodes
 
 @pytest.fixture
-def noise():
+def noise() -> GaussianFunc:
     # Gaussian noise for adding stochasticity
-    return gaussianFunc(0.0,0.00125)
+    return GaussianFunc(0.0, 0.00125)
 
-def test_deterministic_MarginNode(deterministic_inputs):
+def test_deterministic_MarginNode(deterministic_inputs:Tuple[float,float]):
     """
     Tests the MarginNode excess calculation method for deterministic threshold and behaviour
     """
@@ -142,15 +142,15 @@ def test_deterministic_MarginNode(deterministic_inputs):
     # Check excess calculation for one sample
     ThermalNode = MarginNode('EM1')
     ThermalNode(decided_value,threshold)
-    assert ThermalNode.values == np.array([decided_value-threshold])
+    assert ThermalNode.excess.values == np.array([decided_value-threshold])
 
     ######################################################
     # Check return for multiple inputs
     ThermalNode.reset()
     ThermalNode(np.ones(10)*decided_value,np.ones(10)*threshold)
-    assert (ThermalNode.values == np.ones(10) * (decided_value-threshold)).all()
+    assert (ThermalNode.excess.values == np.ones(10) * (decided_value-threshold)).all()
 
-def test_stochastic_MarginNode(stochastic_inputs):
+def test_stochastic_MarginNode(stochastic_inputs:Tuple[GaussianFunc, GaussianFunc]):
     """
     Tests the MarginNode excess calculation method for stochastic threshold and behaviour
     """
@@ -177,8 +177,8 @@ def test_stochastic_MarginNode(stochastic_inputs):
     ######################################################
     # Check excess calculation for one sample
     ThermalNode = MarginNode('EM1')
-    ThermalNode(decided_value(),threshold())
-    assert ThermalNode.values == decided_value.samples-threshold.samples
+    ThermalNode(decided_value.random(),threshold.random())
+    assert all(ThermalNode.excess.values == decided_value.samples-threshold.samples)
 
     ######################################################
     # Check sampling accuracy of mean and standard deviaction of excess
@@ -190,16 +190,16 @@ def test_stochastic_MarginNode(stochastic_inputs):
     mu_excess = decided_value.mu - threshold.mu # calculate composite random variable mean
     Sigma_excess = decided_value.Sigma + (((-1)**2) * threshold.Sigma) # calculate composite random variable variance
 
-    ThermalNode(decided_value(10000),threshold(10000))
+    ThermalNode(decided_value.random(10000),threshold.random(10000))
     
     # Check that means and variances of excess
-    assert np.math.isclose(np.mean(ThermalNode.values), mu_excess.squeeze(), rel_tol=1e-1)
-    assert np.math.isclose(np.var(ThermalNode.values), Sigma_excess.squeeze(), rel_tol=1e-1)
+    assert np.math.isclose(np.mean(ThermalNode.excess.values), mu_excess.squeeze(), rel_tol=1e-1)
+    assert np.math.isclose(np.var(ThermalNode.excess.values), Sigma_excess.squeeze(), rel_tol=1e-1)
 
     ######################################################
     # Check that CDF computation is correct
-    ThermalNode(decided_value(10000),threshold(10000))
-    bin_centers, cdf, excess_limit, reliability = compute_cdf(ThermalNode.values,bins=500,
+    ThermalNode(decided_value.random(10000),threshold.random(10000))
+    bin_centers, cdf, excess_limit, reliability = compute_cdf(ThermalNode.excess.values,bins=500,
         cutoff=ThermalNode.cutoff,buffer_limit=ThermalNode.buffer_limit)
 
     test_excess_pdf = norm(loc=mu_excess,scale=np.sqrt(Sigma_excess))
@@ -220,7 +220,8 @@ def test_stochastic_MarginNode(stochastic_inputs):
     # ThermalNode.value_dist(1000)
     # ThermalNode.value_dist.view()
 
-def test_deterministic_ImpactMatrix(man_components,Impact_test_inputs):
+def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+    Impact_test_inputs:Tuple[np.ndarray,np.ndarray]):
     """
     Tests the ImpactMatrix calculation method for deterministic threshold and decided values
     """
@@ -282,6 +283,9 @@ def test_deterministic_ImpactMatrix(man_components,Impact_test_inputs):
 
     # Define the MAN
     class MAN(MarginNetwork):
+        def randomize(self):
+            pass
+
         def forward(self):
 
             # retrieve MAN components
@@ -345,9 +349,10 @@ def test_deterministic_ImpactMatrix(man_components,Impact_test_inputs):
     #     [-0.61538462, -0.22222222]
     #     ])
 
-    assert np.allclose(man.impact_matrix.impact, test_impact, rtol=1e-3)
+    assert np.allclose(man.impact_matrix.value, test_impact, rtol=1e-3)
 
-def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
+def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                                 Impact_test_inputs:Tuple[np.ndarray,np.ndarray], noise:GaussianFunc):
     """
     Tests the ImpactMatrix calculation method for stochastic threshold and decided values
     """
@@ -411,6 +416,9 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
 
     # Define the MAN
     class MAN(MarginNetwork):
+        def randomize(self):
+            pass
+
         def forward(self):
 
             # retrieve MAN components
@@ -430,9 +438,9 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
             b2(dv_vector[0],dv_vector[1],dv_vector[2])
 
             # Compute excesses
-            e1(tt_vector[0]+noise(),dv_vector[0]+noise())
-            e2(tt_vector[1]+noise(),dv_vector[1]+noise())
-            e3(tt_vector[2]+noise(),dv_vector[2]+noise())
+            e1(tt_vector[0]+noise.random(),dv_vector[0]+noise.random())
+            e2(tt_vector[1]+noise.random(),dv_vector[1]+noise.random())
+            e3(tt_vector[2]+noise.random(),dv_vector[2]+noise.random())
 
             # Compute performances
             p1(b2.performance[0])
@@ -456,7 +464,7 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
         man.forward()
         man.compute_impact(use_estimate=True)
 
-    mean_impact = np.mean(man.impact_matrix.impacts,axis=2)
+    mean_impact = np.mean(man.impact_matrix.values,axis=2)
 
     # Check outputs
     input = np.tile(tt_vector,(len(margin_nodes),1))
@@ -488,7 +496,9 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
         assert len(performance.values) == n_runs
 
     for node in man.margin_nodes:
-        assert len(node.values) == n_runs
+        assert len(node.excess.values) == n_runs
+        assert len(node.decided_value.values) == n_runs
+        assert len(node.target.values) == n_runs
 
     man.reset(5)
 
@@ -496,14 +506,17 @@ def test_stochastic_ImpactMatrix(man_components,Impact_test_inputs,noise):
         assert len(performance.values) == n_runs - 5
 
     for node in man.margin_nodes:
-        assert len(node.values) == n_runs - 5
+        assert len(node.excess.values) == n_runs - 5
+        assert len(node.decided_value.values) == n_runs - 5
+        assert len(node.target.values) == n_runs - 5
 
     ######################################################
     # Check visualization
     # man.view_perf(e_indices=[1,2],p_index=1)
     # man.impact_matrix.view(2,1)
 
-def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_test_inputs):
+def test_deterministic_Absorption(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+    deterministic_specs:Tuple[np.ndarray,List[InputSpec]],Absorption_test_inputs:np.ndarray):
     """
     Tests the Absorption calculation method for deterministic specifications
     """
@@ -568,7 +581,9 @@ def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_
 
     # Define the MAN
     class MAN(MarginNetwork):
-
+        def randomize(self):
+            pass
+        
         def forward(self):
             
             # retrieve input specs
@@ -610,8 +625,8 @@ def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_
     man.forward()
     man.compute_absorption()
 
-    mean_absorption = np.mean(man.absorption_matrix.absorptions,axis=2)
-    mean_utilization = np.mean(man.absorption_matrix.utilizations,axis=2)
+    mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+    mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
 
     # Check outputs
 
@@ -690,7 +705,9 @@ def test_deterministic_Absorption(man_components,deterministic_specs,Absorption_
     # man.absorption_matrix.view(1,1)
     # man.absorption_matrix.view(2,1)
 
-def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_inputs):
+def test_stochastic_Absorption(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                               stochastic_specs:Tuple[UniformFunc, np.ndarray, np.ndarray, List[InputSpec]],
+                               Absorption_test_inputs:np.ndarray):
     """
     Tests the Absorption calculation method for stochastic specifications
     """
@@ -757,9 +774,9 @@ def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_i
 
     class MAN(MarginNetwork):
         def randomize(self):
-            dist()
-            s1()
-            s2()
+            dist.random()
+            s1.random()
+            s2.random()
 
         def forward(self):
 
@@ -806,8 +823,8 @@ def test_stochastic_Absorption(man_components,stochastic_specs,Absorption_test_i
         man.forward()
         man.compute_absorption()
 
-    mean_absorption = np.mean(man.absorption_matrix.absorptions,axis=2)
-    mean_utilization= np.mean(man.absorption_matrix.utilizations,axis=2)
+    mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+    mean_utilization= np.mean(man.utilization_matrix.values,axis=2)
 
     # Check outputs
     

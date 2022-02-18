@@ -1,16 +1,19 @@
-import numpy as np
-from typing import Dict, Any, AnyStr, Tuple, List, Union
-import matplotlib.pyplot as plt
-from smt.surrogate_models import KRG
-import scipy.stats as st
+from abc import ABC, abstractmethod
+from typing import Tuple, List, Union
 
-from .uncertaintyLib import Distribution,gaussianFunc,uniformFunc,VisualizeDist
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.stats as st
+from smt.surrogate_models import KRG
+
 from .DOELib import Design, scaling
+from .uncertaintyLib import Distribution, GaussianFunc, UniformFunc, VisualizeDist
 from .utilities import check_folder
 
 """Design margins library for computing buffer and excess"""
 
-def nearest(p1:np.ndarray, p2:np.ndarray, s:np.ndarray) -> Tuple[np.ndarray,float]:
+
+def nearest(p1: np.ndarray, p2: np.ndarray, s: np.ndarray) -> Tuple[np.ndarray, float]:
     """
     Find the nearest point to s along a line given by p1 and p2
     https://stackoverflow.com/a/47198877
@@ -34,18 +37,434 @@ def nearest(p1:np.ndarray, p2:np.ndarray, s:np.ndarray) -> Tuple[np.ndarray,floa
     x1, y1 = p1
     x2, y2 = p2
     xs, ys = s
-    dx, dy = x2-x1, y2-y1
-    det = dx*dx + dy*dy
-    a = (dy*(ys-y1)+dx*(xs-x1))/det
+    dx, dy = x2 - x1, y2 - y1
+    det = dx * dx + dy * dy
+    a = (dy * (ys - y1) + dx * (xs - x1)) / det
 
     # calculate distance
-    d = (np.cross(p2-p1, s-p1))/np.linalg.norm(p2-p1)
+    d = (np.cross(p2 - p1, s - p1)) / np.linalg.norm(p2 - p1)
 
-    return np.array((x1+a*dx, y1+a*dy)), d
+    return np.array((x1 + a * dx, y1 + a * dy)), d
 
-class FixedParam():
-    def __init__(self,value:Union[float,int,str],key:str,
-        description:str='',symbol:str=''):
+
+class Cache(ABC):
+
+    def __init__(self, key: str, dims: List[int]):
+        """
+        Stores observations data. This class is an attribute of the MarginNetwork class, 
+        Cache subclasses are instantiated by the MarginNetwork class during its initialization
+
+        Parameters
+        ----------
+        key : str
+            unique identifier
+        dims : List[int]
+            The dimension along each axis (if empty then a float is assumed)
+        """
+        self.key = key
+        self.dims = dims
+
+        self.value = None
+        self._values = np.empty(self.dims + [0, ])
+        self.ndim = self._values.ndim
+
+    @property
+    @abstractmethod
+    def values(self):
+        pass
+
+    @values.setter
+    @abstractmethod
+    def values(self, value):
+        pass
+
+    @abstractmethod
+    def view(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def view_cdf(self, *args, **kwargs):
+        pass
+
+    def reset(self, n: int):
+        """
+        Resets accumulated random observations and value distributions
+
+        Parameters
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, by default None
+        """
+
+        if n is not None:
+            assert n <= len(self._values)
+            self._values = self._values[..., :-n].copy()  # select along last dimension
+            self.value = self.values[..., -1].copy()
+        else:
+            self._values = np.empty(self.dims + [0, ])
+            self.value = None
+
+    def __call__(self, value: Union[float, np.ndarray]):
+        """
+        Set the value of the parameter
+
+        Parameters
+        ----------
+        value : Union[float,np.ndarray]
+            values of the parameter.
+            The length of this vector equals the number of samples
+        """
+
+        self.value = value  # store value
+        self.values = value  # add to list of samples
+
+
+class ScalarParam(Cache):
+    def __init__(self, key: str, dims: List[int]):
+        """
+        Stores observations data. This class is an attribute of the MarginNetwork class, 
+        Cache subclasses are instantiated by the MarginNetwork class during its initialization
+
+        Parameters
+        ----------
+        key : str
+            unique identifier
+        dims : List[int]
+            The dimension along each axis (if empty then a float is assumed)
+        """
+        super().__init__(key, dims)
+
+        self._value_dist = None
+
+    @property
+    def values(self) -> np.ndarray:
+        """
+        value vector getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of observations
+        """
+        return self._values
+
+    @values.setter
+    def values(self, v: Union[float, np.ndarray]):
+        """
+        Appends observation v to values vector
+
+        Parameters
+        ----------
+        v : Union[float,np.ndarray]
+            value to append to response vector
+        """
+        if type(v) == np.ndarray:
+            assert v.ndim == 1
+
+        self._values = np.append(self._values, v)
+
+    @property
+    def value_dist(self) -> Distribution:
+        """
+        Value Distribution object
+
+        Returns
+        -------
+        dmLib.Distribution
+            instance of dmLib.Distribution holding value pdf
+        """
+        return self._value_dist
+
+    @value_dist.setter
+    def value_dist(self, values: np.ndarray):
+        """
+        Creates value Distribution object
+
+        Parameters
+        ----------
+        values : np.ndarray
+            Vector of values
+        """
+        value_hist = np.histogram(values, bins=50, density=True)
+        self._value_dist = Distribution(value_hist[0], lb=min(value_hist[1]), ub=max(value_hist[1]))
+
+    def view(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+        """
+        Views the distribution of the parameter
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object, 
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = '%s' % self.key
+
+        vis = VisualizeDist(values=self.values)
+        vis.view(xlabel=xlabel, folder=self.key, file=file, img_format=img_format)
+
+    def view_cdf(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+        """
+        Views the cumulative distribution of the parameter
+
+        Parameters
+        ----------
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object, 
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = '%s' % self.key
+
+        vis = VisualizeDist(values=self.values)
+        vis.view_cdf(xlabel=xlabel, folder=self.key, file=file, img_format=img_format)
+
+    def reset(self, n: int):
+        """
+        Resets accumulated random observations and value distributions
+
+        Parameters
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, by default None
+        """
+
+        super().reset(n)
+        if n is not None:
+            self.value_dist = self.values
+        else:
+            self._value_dist = None
+
+    def __call__(self, value: Union[float, np.ndarray]):
+        """
+        Set the value of the parameter
+
+        Parameters
+        ----------
+        value : Union[float,np.ndarray]
+            values of the parameter.
+            The length of this vector equals the number of samples
+        """
+
+        super().__call__(value)
+        self.value_dist = self.values
+
+
+class VectorParam(Cache):
+    """
+    Stores observations of a vector. This class is an attribute of the MarginNetwork class, 
+    MatrixParam is instantiated by the MarginNetwork class during its initialization
+    """
+
+    @property
+    def values(self) -> np.ndarray:
+        """
+        Impact 3D matrix getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of matrix observations
+        """
+        return self._values
+
+    @values.setter
+    def values(self, v: np.ndarray):
+        """
+        Appends observation matrix i to 3D matrix
+
+        Parameters
+        ----------
+        v : ndarray
+            value to append to vector
+            can be 1 dimensional vector or a 2 dimensional column vector
+        """
+
+        assert v.shape[0] == self.dims[0]
+        if v.ndim == 1:
+            v = v.reshape(self.dims + [1, ])  # reshape 1D arrays to 2D
+        self._values = np.hstack((self._values, v))
+
+    def view(self, row: int, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+        """
+        Views the distribution of the desired vector component
+
+        Parameters
+        ----------
+        row : int
+            index of the row of vector
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object,
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = 'R%i' % (row + 1,)
+
+        vis = VisualizeDist(values=self.values[row, :])
+        vis.view(xlabel=xlabel, folder=folder, file=file, img_format=img_format)
+
+    def view_cdf(self, row: int, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+        """
+        Views the distribution of the desired vector component
+
+        Parameters
+        ----------
+        row : int
+            index of the row of vector
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object,
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = 'R%i' % (row + 1)
+
+        vis = VisualizeDist(values=self.values[row, :])
+        vis.view_cdf(xlabel=xlabel, folder=folder, file=file, img_format=img_format)
+
+
+class MatrixParam(Cache):
+    """
+    Stores observations of a matrix. This class is an attribute of the MarginNetwork class, 
+    MatrixParam is instantiated by the MarginNetwork class during its initialization
+    """
+
+    @property
+    def values(self) -> np.ndarray:
+        """
+        Impact 3D matrix getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of matrix observations
+        """
+        return self._values
+
+    @values.setter
+    def values(self, v: np.ndarray):
+        """
+        Appends observation matrix i to 3D matrix
+
+        Parameters
+        ----------
+        v : ndarray
+            value to append to 3D matrix
+        """
+        assert v.shape == self._values.shape[:self.ndim - 1]
+        self._values = np.dstack((self._values, v))
+
+    def view(self, row: int, col: int, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+        """
+        Views the distribution of the desired matrix element
+
+        Parameters
+        ----------
+        row : int
+            index of the row of matrix
+        col : int
+            index of the column of matrix
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object,
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = 'R%i,C%i' % (row + 1, col + 1)
+
+        vis = VisualizeDist(values=self.values[row, col, :])
+        vis.view(xlabel=xlabel, folder=folder, file=file, img_format=img_format)
+
+    def view_cdf(self, row: int, col: int, xlabel: str = None, folder: str = '', file: str = None,
+                 img_format: str = 'pdf'):
+        """
+        Views the distribution of the desired matrix element
+
+        Parameters
+        ----------
+        row : int
+            index of the row of matrix
+        col : int
+            index of the column of matrix
+        xlabel : str, optional
+            axis label of value , if not provided uses the key of the object,
+            by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
+        """
+        if xlabel is None:
+            xlabel = 'R%i,C%i' % (row + 1, col + 1)
+
+        vis = VisualizeDist(values=self.values[row, col, :])
+        vis.view_cdf(xlabel=xlabel, folder=folder, file=file, img_format=img_format)
+
+
+class ParamFactory:
+    """
+    Constructs different parameters based on given dimensions
+    """
+
+    @staticmethod
+    def build_param(key: str, dims: List[int]) -> Union[ScalarParam, VectorParam, MatrixParam]:
+        """
+        Returns appropriate parameter class based on supplied dimensions
+
+        Parameters
+        ----------
+        key : str
+            unique string identifier
+        dims : List[int]
+            The dimensions of the parameter
+
+        Returns
+        -------
+        Union[ScalarParam,VectorParam,MatrixParam]
+            an instance of the correct class
+        """
+        if len(dims) == 0:
+            return ScalarParam(key, dims)
+        elif len(dims) == 1:
+            return VectorParam(key, dims)
+        elif len(dims) == 2:
+            return MatrixParam(key, dims)
+
+
+class FixedParam:
+    def __init__(self, value: Union[float, int, str], key: str,
+                 description: str = '', symbol: str = ''):
         """
         Contains description of an input parameter to the MAN
         is inherited by DesignParam
@@ -62,40 +481,17 @@ class FixedParam():
             shorthand symbol, by default ''
         """
 
-        self.description    = description
-        self.symbol         = symbol
-        self.key            = key
-        self.type           = type(value)
-        self._value         = value
+        self.description = description
+        self.symbol = symbol
+        self.key = key
+        self.type = type(value)
+        self.value = value
 
-    @property
-    def value(self) -> float:
-        """
-        returns the stored value
 
-        Returns
-        -------
-        float
-            current value
-        """
-        return self._value
-
-    @value.setter
-    def value(self,v:float):
-        """
-        adjusts the current value
-
-        Parameters
-        ----------
-        v : float
-            value to set the parameter to
-        """
-
-        self._value = v
-
-class DesignParam(FixedParam):
-    def __init__(self,value:Union[float,int,str],key:str,
-        universe:Union[Tuple[Union[int,float],Union[int,float]],List[Union[int,float]]],description:str='',symbol:str=''):
+class DesignParam:
+    def __init__(self, value: Union[float, int, str], key: str,
+                 universe: Union[Tuple[Union[int, float], Union[int, float]], List[Union[int, float]]],
+                 description: str = '', symbol: str = ''):
         """
         Contains description of an input parameter to the MAN
         is inherited by DesignParam, and FixedParam
@@ -115,15 +511,19 @@ class DesignParam(FixedParam):
         symbol : str, optional
             shorthand symbol, by default ''
         """
-        super().__init__(value,key,description,symbol)
-        
+        self.description = description
+        self.symbol = symbol
+        self.key = key
+        self.type = type(value)
+        self.value = value
+
         if type(universe) == tuple:
             assert len(universe) == 2
-            assert self.type in [float,int]
+            assert self.type in [float, int]
         elif type(universe) == list:
             assert len(universe) > 0
-        self.original   = value
-        self.universe   = universe
+        self.original = value
+        self.universe = universe
 
     def reset(self):
         """
@@ -131,17 +531,19 @@ class DesignParam(FixedParam):
         """
         self.value = self.original
 
-class InputSpec(VisualizeDist):
-    def __init__(self,value:Union[float,int,Distribution,gaussianFunc,uniformFunc],
-        key: str,universe:Tuple[float,float],description:str='',symbol:str='',distribution:Distribution=None, 
-        cov_index:int=0, inc:float=5.0, inc_type:str='rel'):
+
+class InputSpec(ScalarParam):
+    def __init__(self, value: Union[float, int, Distribution, GaussianFunc, UniformFunc],
+                 key: str, universe: Tuple[float, float], description: str = '', symbol: str = '',
+                 distribution: Distribution = None,
+                 cov_index: int = 0, inc: float = 5.0, inc_type: str = 'rel'):
         """
         Contains description of an input specification
         could deterministic or stochastic
 
         Parameters
         ----------
-        value : Union[float,int,Distribution,gaussianFunc]
+        value : Union[float,int,Distribution,GaussianFunc]
             the value of the input spec, 
             if type is Distribution then a sample is drawn
         key : str
@@ -157,10 +559,10 @@ class InputSpec(VisualizeDist):
         distribution : Distribution, optional
             if a Distribution object is provided, then the spec can sampled by calling it
             Example:
-            >>> from dmLib import InputSpec, gaussianFunc
-            >>> dist = gaussianFunc(1.0, 0.1)
-            >>> s1 = InputSpec(1.0, 'S1', dist)
-            >>> sample = s1()
+            >>> from dmLib import InputSpec, GaussianFunc
+            >>> dist = GaussianFunc(1.0, 0.1)
+            >>> s1 = InputSpec(1.0, 'S1', (0.0, 1.0), distribution=dist)
+            >>> sample = s1.random()
         cov_index : int, optional
             which random variable to draw from 
             if multivariate distribution is provided, by default 0
@@ -173,135 +575,52 @@ class InputSpec(VisualizeDist):
             if 'abs' then the increment is applied directly on the input spec, by default 'rel'
         """
 
-        self.description    = description
-        self.symbol         = symbol
-        self.key            = key
-        self.distribution   = distribution
-        self.cov_index      = cov_index
-        self.inc            = inc
-        self.inc_type       = inc_type
-        self.original       = value
-        self.universe       = universe
+        super().__init__(key=key, dims=[])
 
-        self._value         = value
-        self._values        = np.empty(0)
+        self.description = description
+        self.symbol = symbol
+        self.distribution = distribution
+        self.cov_index = cov_index
+        self.inc = inc
+        self.inc_type = inc_type
+        self.original = value
+        self.universe = universe
 
-        # Check if input spec if stochastic
-        if type(distribution) in [Distribution,gaussianFunc,uniformFunc]:
+        self.value = value
+
+        # Check if input spec is stochastic
+        if type(distribution) in [Distribution, GaussianFunc, UniformFunc]:
             self.stochastic = True
         else:
             self.stochastic = False
 
         # Check if input spec is co-dependant on another
-        if type(value) == gaussianFunc:
+        if type(value) == GaussianFunc:
             self.ndim = value.ndim
         else:
             self.ndim = 1
 
         assert self.cov_index <= self.ndim
 
-    @property
-    def values(self) -> np.ndarray:
+    def reset(self, n: int = None):
         """
-        sample vector getter
-
-        Returns
-        -------
-        np.ndarray
-            vector of sample observations
-        """
-        return self._values # return 
-
-    @values.setter
-    def values(self,v:Union[float,np.ndarray]):
-        """
-        Appends value observation v to sample vector
+        Resets accumulated random observations and value distributions
 
         Parameters
-        ----------
-        v : Union[float,np.ndarray]
-            value to append to sample vector
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, by default None
         """
-        self._values = np.append(self._values,v)
+        super().reset(n)
+        self.value = self.original
 
-    @property
-    def value(self) -> float:
-        """
-        Value getter
-
-        Returns
-        -------
-        float
-            Last value observation
-        """
-
-        return self._value # return the requested stored value
-
-    @value.setter
-    def value(self,v:float):
-        """
-        Value observation v to store
-
-        Parameters
-        ----------
-        v : float
-            Value observation to store
-        """
-        self._value = v
-
-    def reset(self):
-        """
-        Resets the stored samples
-        """
-        self._value     = self.original
-
-    def view(self,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the distribution of the performance parameter
-
-        Parameters
-        ----------
-        xlabel : str, optional
-            axis label of value , if not provided uses the key of the object, 
-            by default None
-        folder : str, optional
-            folder in which to store image, by default ''
-        file : str, optional
-            name of image file, if not provide then an image is not saved, by default None
-        img_format : str, optional
-            format of the image to be stored, by default 'pdf'
-        """
-        if xlabel is None:
-            xlabel = '%s' %self.key
-        super().view(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def view_cdf(self,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the cumulative distribution of the performance parameter
-
-        Parameters
-        ----------
-        xlabel : str, optional
-            axis label of value , if not provided uses the key of the object, 
-            by default None
-        folder : str, optional
-            folder in which to store image, by default ''
-        file : str, optional
-            name of image file, if not provide then an image is not saved, by default None
-        img_format : str, optional
-            format of the image to be stored, by default 'pdf'
-        """
-        if xlabel is None:
-            xlabel = '%s' %self.key
-        super().view_cdf(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def __call__(self,N:int=1) -> np.ndarray:
+    def random(self, n: int = 1) -> np.ndarray:
         """
         draw random samples from value
 
         Parameters
         ----------
-        N : int, optional
+        n : int, optional
             Number of random samples to draw
             default is one sample
 
@@ -313,69 +632,19 @@ class InputSpec(VisualizeDist):
         """
 
         if self.stochastic:
-            assert self.distribution.samples.shape[1] >= N
-            sampled_values = self.distribution.samples[self.cov_index,-N:] # retrieve last N samples
-            self.value = self.distribution.samples[self.cov_index,-1] # retrieve last sample from distribution
-            self.original = self.distribution.samples[self.cov_index,-1] # retrieve last sample from distribution
+            assert self.distribution.samples.shape[1] >= n
+            sampled_values = self.distribution.samples[self.cov_index, -n:]  # retrieve last N samples
+            self.value = self.distribution.samples[self.cov_index, -1]  # retrieve last sample from distribution
+            self.original = self.distribution.samples[self.cov_index, -1]  # retrieve last sample from distribution
         else:
-            sampled_values = self.original * np.ones(N)
+            sampled_values = self.original * np.ones(n)
 
         self.values = sampled_values
-        return sampled_values # return the requested number of samples
+        return sampled_values  # return the requested number of samples
 
-class Behaviour():
-    def __init__(self,key:str=''):
-        """
-        This class stores the method for calculating its outputs
-            - Intermediate parameters
-            - Performance parameters
-            - Decided values
-            - target thresholds
 
-        Parameters
-        ----------
-        key : str, optional
-            string to tag instance with, default = ''
-        """
-        self.key            = key
-        self.intermediate   = None
-        self.performance    = None
-        self.decided_value  = None
-        self.threshold      = None
-
-    def reset(self):
-        """
-        Resets the stored variables
-        """
-        self.intermediate   = None
-        self.performance    = None
-        self.decided_value  = None
-        self.threshold      = None
-
-    def __call__(self, *args, **kwargs):
-        """
-        The function that will be used to calculate the outputs of the behaviour model
-            - Can be a deterministic model
-            - Can be a stochastic model (by calling a defined dmLib.Distribution instance)
-        This method must be redefined by the user for every instance
-
-        Example
-        -------
-        >>> # [in the plugin file]
-        >>> from dmLib import Behaviour
-        >>> class myBehaviour(Behaviour):
-        >>>     def behaviour(self,r,d):
-        >>>         # some specific model-dependent behaviour
-        >>>         self.intermediate   = d
-        >>>         self.performance    = r*2+1 / d
-        >>>         self.decided_value  = r**2
-        >>>         self.threshold      = r/d
-        """
-        # default code for the default behaviour
-        return
-
-class Performance(VisualizeDist):
-    def __init__(self,key:str='',type='less_is_better'):
+class Performance(ScalarParam):
+    def __init__(self, key: str = '', direction: str = 'less_is_better'):
         """
         Contains all the necessary tools to calculate performance
         and store its values if there is stochasticity
@@ -384,7 +653,7 @@ class Performance(VisualizeDist):
         ----------
         key : str, optional
             string to tag instance with, default = ''
-        type : str, optional
+        direction : str, optional
             specifies the sign of the performance 
             parameter when calculating the impact on it,
             possible values: ('less_is_better','more_is_better'), 
@@ -392,140 +661,14 @@ class Performance(VisualizeDist):
             of less_is_better is selected then the sign is positive, by default = 'less_is_better'
         """
 
-        self.key                = key
-        self.type               = type
-        self._values            = np.empty(0)
-        self._value_dist        = None
-        self.value              = None
+        super().__init__(key=key, dims=[])
+        self.direction = direction
 
-        assert self.type in ['less_is_better','more_is_better']
+        assert self.direction in ['less_is_better', 'more_is_better']
 
-    @property
-    def values(self) -> np.ndarray:
-        """
-        Excess vector getter
 
-        Returns
-        -------
-        np.1darray
-            vector of observations
-        """
-        return self._values
-
-    @values.setter
-    def values(self,v:Union[float,np.ndarray]):
-        """
-        Appends observation v to values vector
-
-        Parameters
-        ----------
-        v : Union[float,np.ndarray]
-            value to append to response vector
-        """
-        self._values = np.append(self._values,v)
-
-    @property
-    def value_dist(self) -> Distribution:
-        """
-        Value Distribution object
-
-        Returns
-        -------
-        dmLib.Distribution
-            instance of dmLib.Distribution holding value pdf
-        """
-        return self._value_dist
-
-    @value_dist.setter
-    def value_dist(self,values:np.ndarray):
-        """
-        Creates value Distribution object
-
-        Parameters
-        ----------
-        values : np.1darray
-            Vector of values
-        """
-        value_hist = np.histogram(values, bins=50,density=True)
-        self._value_dist = Distribution(value_hist[0], lb=min(value_hist[1]),ub=max(value_hist[1]))
-
-    def view(self,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the distribution of the performance parameter
-
-        Parameters
-        ----------
-        xlabel : str, optional
-            axis label of value , if not provided uses the key of the object, 
-            by default None
-        folder : str, optional
-            folder in which to store image, by default ''
-        file : str, optional
-            name of image file, if not provide then an image is not saved, by default None
-        img_format : str, optional
-            format of the image to be stored, by default 'pdf'
-        """
-        if xlabel is None:
-            xlabel = '%s' %self.key
-        super().view(xlabel=xlabel,folder=self.key,file=file,img_format=img_format)
-
-    def view_cdf(self,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the cumulative distribution of the performance parameter
-
-        Parameters
-        ----------
-        xlabel : str, optional
-            axis label of value , if not provided uses the key of the object, 
-            by default None
-        folder : str, optional
-            folder in which to store image, by default ''
-        file : str, optional
-            name of image file, if not provide then an image is not saved, by default None
-        img_format : str, optional
-            format of the image to be stored, by default 'pdf'
-        """
-        if xlabel is None:
-            xlabel = '%s' %self.key
-        super().view_cdf(xlabel=xlabel,folder=self.key,file=file,img_format=img_format)
-
-    def reset(self,N:int=None):
-        """
-        Resets accumulated random observations in performance, and value distributions
-
-        Parameters
-        -----------
-        N : int, optional
-            if provided deletes only the last n_samples, by default None
-        """
-
-        if N is not None:
-            assert N <= len(self._values)
-            self._values    = self._values[:-N].copy()
-            self.value      = self.values[-1].copy()
-            self.value_dist = self.values
-        else:
-            self._values    = np.empty(0)
-            self._value_dist    = None
-            self.value          = None
-
-    def __call__(self,performance:np.ndarray):
-        """
-        Set the value of the performance parameter
-
-        Parameters
-        ----------
-        performance : np.1darray
-            values of the performance parameter.
-            The length of this vector equals the number of samples
-        """
-
-        self.value      = performance # store performance
-        self.values     = performance # add to list of performance samples
-        self.value_dist = self.values
-
-class MarginNode(Performance):
-    def __init__(self,key:str='',cutoff:float=0.9,buffer_limit:float=0.0,type:str='must_exceed'):
+class MarginNode:
+    def __init__(self, key: str = '', cutoff: float = 0.9, buffer_limit: float = 0.0, direction: str = 'must_exceed'):
         """
         Contains description and implementation 
         of a Margin Node object which is the building block
@@ -541,480 +684,121 @@ class MarginNode(Performance):
         buffer_limit : float, optional
             lower bound for beginning of buffer zone,
             default = 0.0
-        type : str, optional
+        direction : str, optional
             possible values('must_exceed','must_not_exceed'), by default 'must_exceed'
         """
-        Performance.__init__(self,key)
-        # no need to call initializer of VisualizeDist (self.values are already defined by this class)
-        self.cutoff             = cutoff
-        self.buffer_limit       = buffer_limit
-        self.type               = type
-        self._targets           = np.empty(0)
-        self._decided_values    = np.empty(0)
-        self.target             = None
-        self.decided_value      = None
 
-        assert self.type in ['must_exceed','must_not_exceed']
+        self.key = key
+        self.direction = direction
+        self.cutoff = cutoff
+        self.buffer_limit = buffer_limit
 
-    @property
-    def targets(self) -> np.ndarray:
-        """
-        Target vector getter
+        self.target = ParamFactory.build_param(key=self.key, dims=[])
+        self.decided_value = ParamFactory.build_param(key=self.key, dims=[])
+        self.excess = ParamFactory.build_param(key=self.key, dims=[])
 
-        Returns
-        -------
-        np.1darray
-            vector of target observations
-        """
-        return self._targets
+        assert self.direction in ['must_exceed', 'must_not_exceed']
 
-    @targets.setter
-    def targets(self,t:Union[float,np.ndarray]):
-        """
-        Appends target observation t to target vector
-
-        Parameters
-        ----------
-        t : Union[float,np.ndarray]
-            value to append to target vector
-        """
-        self._targets = np.append(self._targets,t)
-
-    @property
-    def decided_values(self) -> np.ndarray:
-        """
-        Response vector getter
-
-        Returns
-        -------
-        np.1darray
-            vector of response observations
-        """
-        return self._decided_values
-
-    @decided_values.setter
-    def decided_values(self,r:Union[float,np.ndarray]):
-        """
-        Appends response observation r to target vector
-
-        Parameters
-        ----------
-        r : Union[float,np.ndarray]
-            value to append to response vector
-        """
-        self._decided_values = np.append(self._decided_values,r)
-
-    def reset(self,N:int=None):
+    def reset(self, n: int = None):
         """
         Resets accumulated random observations in target, 
-        response, and excess attributes
+        decided value, and excess attributes
 
         Parameters
         -----------
-        N : int, optional
+        n : int, optional
             if provided deletes only the last n_samples, by default None
         """
-        super().reset(N)
+        self.target.reset(n)
+        self.decided_value.reset(n)
+        self.excess.reset(n)
 
-        if N is not None:
-            self._targets           = self._targets[:-N].copy()
-            self._decided_values    = self._decided_values[:-N].copy()
-            self.target             = self.targets[-1].copy()
-            self.decided_value      = self.decided_values[-1].copy()
-        else:
-            self._targets           = np.empty(0)
-            self._decided_values    = np.empty(0)
-            self.target             = None
-            self.decided_value      = None
-
-    def __call__(self,target_threshold:np.ndarray,decided_value:np.ndarray):
+    def __call__(self, target_threshold: np.ndarray, decided_value: np.ndarray):
         """
         Calculate excess given the target threshold and decided value
 
         Parameters
         ----------
-        target_threshold : np.1darray
+        target_threshold : np.ndarray
             target thresholds to the margin node describing the capability of the design.
             The length of this vector equals the number of samples
-        decided_value : np.1darray
+        decided_value : np.ndarray
             The decided values that the design needs to achieve
             The length of this vector equals the number of samples
         """
-            
-        self.decided_values     = decided_value     # add to list of decided values
-        self.targets            = target_threshold  # add to list of targets
-        self.decided_value      = decided_value     # store decided value
-        self.target             = target_threshold  # store target
 
-        if self.type == 'must_exceed':
+        self.decided_value(decided_value)  # add to list of decided values
+        self.target(target_threshold)  # add to list of targets
+
+        if self.direction == 'must_exceed':
             e = target_threshold - decided_value
-        elif self.type == 'must_not_exceed':
+        elif self.direction == 'must_not_exceed':
             e = decided_value - target_threshold
         else:
-            raise Exception('Wrong margin type (%s) specified. Possible values are "must_Exceed", "must_not_exceed".' %(str(self.type)))
+            raise Exception(
+                'Wrong margin type (%s) specified. Possible values are "must_Exceed", "must_not_exceed".' % (
+                    str(self.direction)))
 
-        self.value             = e                 # store excess
-        self.values            = e                 # add to list of excesses
-        self.value_dist         = self.values      # populate pdf
-        
-class ImpactMatrix(VisualizeDist):
-    def __init__(self,n_margins:int,n_performances:int):
+        self.excess(e)
+
+
+class Behaviour(ABC):
+    def __init__(self, key: str = ''):
         """
-        Stores observations of impact matrix. This class is an attribute of the MarginNetwork class, 
-        ImpactMatrix is instantiated by the MarginNetwork class during its initialization
+        This class stores the method for calculating its outputs
+            - Intermediate parameters
+            - Performance parameters
+            - Decided values
+            - target thresholds
 
         Parameters
         ----------
-        n_margins : int
-            number of margin nodes
-        n_performances : int
-            number of performance parameters
+        key : str, optional
+            string to tag instance with, default = ''
         """
-        # no need to call initializer of VisualizeDist (self.values are already defined by this class)
-        self.n_margins      = n_margins
-        self.n_performances = n_performances
-        self.impact         = None
-        self._impacts       = np.empty((self.n_margins,self.n_performances,0))
-
-        #_impacts [len(margin_nodes), len(performances), n_samples]
-
-    @property
-    def impacts(self) -> np.ndarray:
-        """
-        Impact 3D matrix getter
-
-        Returns
-        -------
-        np.ndarray
-            vector of impact matrix observations
-        """
-        return self._impacts
-
-    @impacts.setter
-    def impacts(self,i:np.ndarray):
-        """
-        Appends observation matrix i to impacts 3D matrix
-
-        Parameters
-        ----------
-        i : ndarray
-            value to append to impacts 3D matrix
-        """
-        assert i.shape == self._impacts.shape[:2]
-        self._impacts = np.dstack((self._impacts,i))
+        self.key = key
+        self.intermediate = None
+        self.performance = None
+        self.decided_value = None
+        self.threshold = None
 
     def reset(self):
         """
-        Resets accumulated random observations in response, and value distributions, and impact matrix
+        Resets the stored variables
         """
+        self.intermediate = None
+        self.performance = None
+        self.decided_value = None
+        self.threshold = None
 
-        self._impacts   = np.empty((self.n_margins,self.n_performances,0))
-
-        #_impacts [len(margin_nodes), len(performances), n_samples]   
-    
-    def view(self,i_margin:int,i_performance:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
+    @abstractmethod
+    def __call__(self, *args, **kwargs):
         """
-        Views the distribution of the desired margin/performance impact pair
+        The function that will be used to calculate the outputs of the behaviour model
+            - Can be a deterministic model
+            - Can be a stochastic model (by calling a defined dmLib.Distribution instance)
+        This method must be redefined by the user for every instance
 
-        Parameters
-        ----------
-        i_margin : int
-            index of the margin node (row of impact matrix)
-        i_performance : int
-            index of the performance parameter (column of impact matrix)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(E<index>,P<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'IoP (E%i,P%i)' %(i_margin+1,i_performance+1)
-
-        super().__init__(self.impacts[i_margin,i_performance,:]) # instantiate the self.values attribute
-        super().view(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def view_cdf(self,i_margin:int,i_performance:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the cumulative distribution of the desired margin/performance impact pair
-
-        Parameters
-        ----------
-        i_margin : int
-            index of the margin node (row of impact matrix)
-        i_performance : int
-            index of the performance parameter (column of impact matrix)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(E<index>,P<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'IoP (E%i,P%i)' %(i_margin+1,i_performance+1)
-
-        super().__init__(self.impacts[i_margin,i_performance,:]) # instantiate the self.values attribute
-        super().view_cdf(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def __call__(self,impact:np.ndarray):
-        """
-        Append impact matrix to stored impacts and store as current value
-
-        Parameters
-        ----------
-        impact : np.ndarray
-            An observation of the impact matrix
-            The size of this vector should be (n_margins,n_performances)
-        """
-
-        assert impact.shape == self._impacts.shape[:2]
-        self.impact     = impact # store impact matrix
-        self.impacts    = impact # add to list of impact matrix samples
-
-class AbsorptionMatrix(VisualizeDist):
-    def __init__(self,n_margins:int,n_specs:int):
-        """
-        Stores observations of absorption and deterioration matrices. This class is an attribute of the MarginNetwork class, 
-        AbsorptionMatrix is instantiated by the MarginNetwork class during its initialization
-
-        Parameters
-        ----------
-        n_margins : int
-            number of margin nodes
-        n_specs : int
-            number of input specifications
-        """
-        # no need to call initializer of VisualizeDist (self.values are already defined by this class)
-        self.n_margins          = n_margins
-        self.n_specs            = n_specs
-        self.absorption         = None
-        self.deterioration      = None
-
-        self._absorptions       = np.empty((self.n_margins,self.n_specs,0))
-
-        #_absorptions [len(margin_nodes), len(inputs_specs), n_samples]
-
-        self._utilizations      = np.empty((self.n_margins,self.n_specs,0))
-
-        #_utilizations [len(margin_nodes), len(inputs_specs), n_samples]
-
-        self._deteriorations    = np.empty((self.n_specs,0))
-
-        #_deteriorations [len(inputs_specs), n_samples]
-
-    @property
-    def absorptions(self) -> np.ndarray:
-        """
-        Absorption 3D matrix getter
-
-        Returns
+        Example
         -------
-        np.ndarray
-            vector of absorption matrix observations
+        >>> # [in the plugin file]
+        >>> from dmLib import Behaviour
+        >>> class MyBehaviour(Behaviour):
+        >>>     def __call__(self,r,d):
+        >>>         # some specific model-dependent behaviour
+        >>>         self.intermediate = d
+        >>>         self.performance = r*2+1 / d
+        >>>         self.decided_value = r**2
+        >>>         self.threshold = r/d
         """
-        return self._absorptions
+        # default code for the default behaviour
+        return
 
-    @absorptions.setter
-    def absorptions(self,a:np.ndarray):
-        """
-        Appends absorption matrix a to absorptions 3D matrix
 
-        Parameters
-        ----------
-        a : ndarray
-            value to append to absorptions 3D matrix
-        """
-        assert a.shape == self._absorptions.shape[:2]
-        self._absorptions = np.dstack((self._absorptions,a))
-
-    @property
-    def utilizations(self) -> np.ndarray:
-        """
-        Utilizations 3D matrix getter
-
-        Returns
-        -------
-        np.ndarray
-            vector of utilization matrix observations
-        """
-        return self._utilizations
-
-    @utilizations.setter
-    def utilizations(self,u:np.ndarray):
-        """
-        Appends utilization matrix a to utilizations 3D matrix
-
-        Parameters
-        ----------
-        u : ndarray
-            value to append to utilization 3D matrix
-        """
-        assert u.shape == self._utilizations.shape[:2]
-        self._utilizations = np.dstack((self._utilizations,u))
-
-    @property
-    def deteriorations(self) -> np.ndarray:
-        """
-        Deterioration 2D matrix getter
-
-        Returns
-        -------
-        np.ndarray
-            vector of deterioration matrix observations
-        """
-        return self._deteriorations
-
-    @deteriorations.setter
-    def deteriorations(self,d:np.ndarray):
-        """
-        Appends deterioration vector d to deteriorations 2D matrix
-
-        Parameters
-        ----------
-        d : ndarray
-            value to append to deteriorations 2D matrix
-        """
-
-        if d.ndim == 1:
-            assert len(d) == self.n_specs
-            d = d.reshape((self.n_specs,1)) # reshape 1D arrays to 2D
-        elif d.ndim == 2:
-            assert d.shape[0] == self.n_specs
-
-        self._deteriorations = np.hstack((self._deteriorations,d))
-
-    def reset(self):
-        """
-        Resets accumulated random observations in absorption, and deterioration
-        """
-
-        self._absorptions       = np.empty((self.n_margins,self.n_specs,0))
-
-        #_absorptions [len(margin_nodes), len(inputs_specs), n_samples]
-
-        self._utilizations      = np.empty((self.n_margins,self.n_specs,0))
-
-        #_utilizations [len(margin_nodes), len(inputs_specs), n_samples]
-
-        self._deteriorations    = np.empty((self.n_specs,0))
-
-        #_deteriorations [len(inputs_specs), n_samples]
-    
-    def view(self,i_margin:int,i_input_spec:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the distribution of the desired margin/input_spec absorption pair
-
-        Parameters
-        ----------
-        i_margin : int
-            index of the margin node (row of absorption matrix)
-        i_input_spec : int
-            index of the input specification (column of absorption matrix)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(E<index>,S<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'CAC (E%i,S%i)' %(i_margin+1,i_input_spec+1)
-
-        super().__init__(self.absorptions[i_margin,i_input_spec,:]) # instantiate the self.values attribute
-        super().view(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def view_cdf(self,i_margin:int,i_input_spec:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the cumulative distribution of the desired margin/input_spec absorption pair
-
-        Parameters
-        ----------
-        i_margin : int
-            index of the margin node (row of absorption matrix)
-        i_input_spec : int
-            index of the input specification (column of absorption matrix)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(E<index>,S<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'CAC (E%i,C%i)' %(i_margin+1,i_input_spec+1)
-
-        super().__init__(self.absorptions[i_margin,i_input_spec,:]) # instantiate the self.values attribute
-        super().view_cdf(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def view_det(self,i_input_spec:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the distribution of the desired deterioration
-
-        Parameters
-        ----------
-        i_input_spec : int
-            index of the input specification (entry of deterioration vector)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(S<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'deterioration (S%i)' %(i_input_spec+1)
-
-        super().__init__(self.deteriorations[i_input_spec,:]) # instantiate the self.values attribute
-        super().view(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def view_det_cdf(self,i_input_spec:int,xlabel:str=None,folder:str='',file:str=None,img_format:str='pdf'):
-        """
-        Views the cumulative distribution of the desired deterioration
-
-        Parameters
-        ----------
-        i_input_spec : int
-            index of the input specification (column of deterioration vector)
-        xlabel : str, optional
-            the x-axis label to display on the plot, if not provided simply prints 
-            `(S<index>)` on the x-axis label, by default None
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
-        """
-        if xlabel is None:
-            xlabel = 'deterioration (S%i)' %(i_input_spec+1)
-
-        super().__init__(self.deteriorations[i_input_spec,:]) # instantiate the self.values attribute
-        super().view_cdf(xlabel=xlabel,folder=folder,file=file,img_format=img_format)
-
-    def __call__(self,deterioration:np.ndarray,absorption:np.ndarray,utilization:np.ndarray):
-        """
-        Append impact matrix to stored impacts and store as current value
-
-        Parameters
-        ----------
-        deterioration : np.ndarray
-            An observation of the deterioration vector
-            The size of this vector should be (n_performances)
-        absorption : np.ndarray
-            An observation of the absorption matrix
-            The size of this matrix should be (n_margins,n_input_specs)
-        utilization : np.ndarray
-            An observation of the utilization matrix
-            The size of this matrix should be (n_margins,n_input_specs)
-        """
-
-        assert absorption.shape == self._absorptions.shape[:2]
-        assert utilization.shape == self._utilizations.shape[:2]
-        assert deterioration.ndim == 1 and len(deterioration) == self._deteriorations.shape[0]
-        self.deterioration  = deterioration # store deterioration vector
-        self.deteriorations = deterioration # add to deterioration vector samples
-        self.absorption     = absorption # store absorption matrix
-        self.absorptions    = absorption # add to list of absorption matrix samples
-        self.utilization    = utilization # store utilization matrix
-        self.utilizations   = utilization # add to list of utilization matrix samples
-        
-class MarginNetwork():
-    def __init__(self,design_params:List[DesignParam],input_specs:List[InputSpec],
-        fixed_params:List[FixedParam],behaviours:List[Behaviour],
-        margin_nodes:List[MarginNode],performances:List[Performance],key:str=''):
+class MarginNetwork(ABC):
+    def __init__(self, design_params: List[DesignParam], input_specs: List[InputSpec],
+                 fixed_params: List[FixedParam], behaviours: List[Behaviour],
+                 margin_nodes: List[MarginNode], performances: List[Performance], key: str = ''):
         """
         The function that will be used to calculate a forward pass of the MAN
         and associated metrics of the MVM
@@ -1040,19 +824,25 @@ class MarginNetwork():
         key : str, optional
             string to tag instance with, default = ''
         """
-        self.key                = key
-        
+        self.sm_perf = None
+        self.fig = None
+        self.lb_inputs = None
+        self.ub_inputs = None
+        self.key = key
+
         # Inputs
-        self.design_params      = design_params
-        self.input_specs        = input_specs
-        self.fixed_params       = fixed_params
-        self.behaviours         = behaviours
+        self.design_params = design_params
+        self.input_specs = input_specs
+        self.fixed_params = fixed_params
+        self.behaviours = behaviours
 
         # Outputs
-        self.margin_nodes       = margin_nodes
-        self.performances       = performances
-        self.impact_matrix      = ImpactMatrix(len(margin_nodes),len(performances))
-        self.absorption_matrix  = AbsorptionMatrix(len(margin_nodes),len(input_specs))
+        self.margin_nodes = margin_nodes
+        self.performances = performances
+        self.deterioration_vector = ParamFactory.build_param(key=self.key, dims=[len(input_specs)])
+        self.impact_matrix = ParamFactory.build_param(key=self.key, dims=[len(margin_nodes), len(performances), ])
+        self.absorption_matrix = ParamFactory.build_param(key=self.key, dims=[len(margin_nodes), len(input_specs), ])
+        self.utilization_matrix = ParamFactory.build_param(key=self.key, dims=[len(margin_nodes), len(input_specs), ])
 
         # Design parameter space
         lb = np.array([])
@@ -1060,10 +850,10 @@ class MarginNetwork():
         # Get upper and lower bound for continuous variables
         for design_param in self.design_params:
             assert min(design_param.universe) < max(design_param.universe), \
-                'max of universe of design parameter %s must be greater than min' %design_param.key
-            
-            lb = np.append(lb,min(design_param.universe))
-            ub = np.append(ub,max(design_param.universe))
+                'max of universe of design parameter %s must be greater than min' % design_param.key
+
+            lb = np.append(lb, min(design_param.universe))
+            ub = np.append(ub, max(design_param.universe))
 
         self.lb_d, self.ub_d = lb, ub
 
@@ -1072,15 +862,15 @@ class MarginNetwork():
         ub = np.array([])
         for input_spec in self.input_specs:
             assert min(input_spec.universe) < max(input_spec.universe), \
-                'max of universe of input spec %s must be greater than min' %input_spec.key
-            
-            lb = np.append(lb,min(input_spec.universe))
-            ub = np.append(ub,max(input_spec.universe))
+                'max of universe of input spec %s must be greater than min' % input_spec.key
+
+            lb = np.append(lb, min(input_spec.universe))
+            ub = np.append(ub, max(input_spec.universe))
 
         self.lb_s, self.ub_s = lb, ub
 
-        self.lb_i = np.append(self.lb_d,self.lb_s)
-        self.ub_i = np.append(self.ub_d,self.ub_s)
+        self.lb_i = np.append(self.lb_d, self.lb_s)
+        self.ub_i = np.append(self.ub_d, self.ub_s)
 
     @property
     def design_vector(self) -> np.ndarray:
@@ -1094,11 +884,11 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.design_params:
-            vector = np.append(vector,item.value)
+            vector = np.append(vector, item.value)
         return vector
 
     @design_vector.setter
-    def design_vector(self,d:np.ndarray):
+    def design_vector(self, d: np.ndarray):
         """
         Adjusts all the design parameters according to the vector d provided
 
@@ -1110,7 +900,7 @@ class MarginNetwork():
         assert d.ndim == 1
         assert len(d) == len(self.design_params)
 
-        for value,item in zip(d,self.design_params):
+        for value, item in zip(d, self.design_params):
             item.value = value
 
     @property
@@ -1125,11 +915,11 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.input_specs:
-            vector = np.append(vector,item.value)
+            vector = np.append(vector, item.value)
         return vector
 
     @spec_vector.setter
-    def spec_vector(self,d:np.ndarray):
+    def spec_vector(self, d: np.ndarray):
         """
         Adjusts all the input specs according to the  vector d provided
 
@@ -1141,7 +931,7 @@ class MarginNetwork():
         assert d.ndim == 1
         assert len(d) == len(self.input_specs)
 
-        for value,item in zip(d,self.input_specs):
+        for value, item in zip(d, self.input_specs):
             item.value = value
 
     @property
@@ -1156,7 +946,7 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.input_specs:
-            vector = np.append(vector,item.original)
+            vector = np.append(vector, item.original)
         return vector
 
     @property
@@ -1171,11 +961,11 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.design_params:
-            vector = np.append(vector,item.original)
+            vector = np.append(vector, item.original)
         return vector
 
     @nominal_design_vector.setter
-    def nominal_design_vector(self,d:np.ndarray):
+    def nominal_design_vector(self, d: np.ndarray):
         """
         Adjusts all the nominal design parameters according to the vector d provided
         These values are not affected by the ``reset`` method
@@ -1187,7 +977,7 @@ class MarginNetwork():
         assert d.ndim == 1
         assert len(d) == len(self.design_params)
 
-        for value,item in zip(d,self.design_params):
+        for value, item in zip(d, self.design_params):
             item.original = value
 
     @property
@@ -1202,7 +992,7 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.margin_nodes:
-            vector = np.append(vector,item.value)
+            vector = np.append(vector, item.excess.value)
         return vector
 
     @property
@@ -1217,7 +1007,7 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.margin_nodes:
-            vector = np.append(vector,item.decided_value)
+            vector = np.append(vector, item.decided_value.value)
         return vector
 
     @property
@@ -1232,7 +1022,7 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.margin_nodes:
-            vector = np.append(vector,item.target)
+            vector = np.append(vector, item.target.value)
         return vector
 
     @property
@@ -1247,10 +1037,12 @@ class MarginNetwork():
         """
         vector = np.empty(0)
         for item in self.performances:
-            vector = np.append(vector,item.value)
+            vector = np.append(vector, item.value)
         return vector
 
-    def train_performance_surrogate(self,n_samples:int=100,sampling_freq:int=1,bandwidth:List[float]=[1e-2,],ext_samples:Tuple[np.ndarray,np.ndarray]=None):
+    def train_performance_surrogate(self, n_samples: int = 100, sampling_freq: int = 1,
+                                    bandwidth: List[float] = [1e-2],
+                                    ext_samples: Tuple[np.ndarray, np.ndarray] = None):
         """
         Constructs a surrogate model y(x), where x are the excess values and 
         y are the performance parameters that can be used to calculate threshold 
@@ -1263,49 +1055,50 @@ class MarginNetwork():
         sampling_freq : int, optional
             If > than 1 then the decided value is calculated as the average of N samples 
             by calling the forward() N times and averaging the decided values, where N = sampling_freq, by default 1
-        bandwidth : float, optional
-            The kernel bandwidth used in Kriging, by default 1e-2
+        bandwidth : List[float], optional
+            The kernel bandwidth used in Kriging, by default [1e-2,]
         ext_samples : tuple[np.ndarray,np.ndarray], optional
             if sample data provided externally then use directly to fit the response surface, 
-            Tuple must of length 2, ext_samples[0] must of shape (N_samples,len(margin_nodes)),
-            ext_samples[1] must of shape (N_samples,len(performances)),
+            Tuple must have length 2, ext_samples[0] must have shape (N_samples,len(margin_nodes)),
+            ext_samples[1] must have shape (N_samples,len(performances)),
             by default None
         """
 
         if ext_samples is None:
-            # generate training data for response surface using a LHS grid of design parameter and input specification space
-            input_samples = Design(self.lb_i,self.ub_i,n_samples,"LHS").unscale() # 2D grid
+            # generate training data for response surface using an LHS grid of design parameter and input
+            # specification space
+            input_samples = Design(self.lb_i, self.ub_i, n_samples, "LHS").unscale()  # 2D grid
 
-            xt = np.empty((0,len(self.margin_nodes)+len(self.input_specs))) # excess + input secs
-            yt = np.empty((0,len(self.performances))) # Performance parameters
+            xt = np.empty((0, len(self.margin_nodes) + len(self.input_specs)))  # excess + input secs
+            yt = np.empty((0, len(self.performances)))  # Performance parameters
 
             for input_i in input_samples:
                 design = input_i[:len(self.design_params)]
                 spec = input_i[len(self.design_params):]
 
-                self.design_vector  = design # Set design parameters to their respective values
-                self.spec_vector    = spec # Set input specifications to their respective values
-                
-                excess_samples = np.empty((0,len(self.margin_nodes)))
-                perf_samples = np.empty((0,len(self.performances)))
+                self.design_vector = design  # Set design parameters to their respective values
+                self.spec_vector = spec  # Set input specifications to their respective values
+
+                excess_samples = np.empty((0, len(self.margin_nodes)))
+                perf_samples = np.empty((0, len(self.performances)))
                 for n in range(sampling_freq):
                     # self.randomize() # Randomize the MAN
-                    self.forward() # Run one pass of the MAN
+                    self.forward()  # Run one pass of the MAN
 
-                    excess_samples = np.vstack((excess_samples,self.excess_vector.reshape(1,excess_samples.shape[1])))
-                    perf_samples = np.vstack((perf_samples,self.perf_vector.reshape(1,perf_samples.shape[1])))
+                    excess_samples = np.vstack((excess_samples, self.excess_vector.reshape(1, excess_samples.shape[1])))
+                    perf_samples = np.vstack((perf_samples, self.perf_vector.reshape(1, perf_samples.shape[1])))
 
-                excess_samples = np.mean(excess_samples,axis=0)
-                perf_samples = np.mean(perf_samples,axis=0)
+                excess_samples = np.mean(excess_samples, axis=0)
+                perf_samples = np.mean(perf_samples, axis=0)
 
                 # concatenate input specifications
-                x_i = np.append(excess_samples,spec)
-                x_i = x_i.reshape(1,xt.shape[1])
+                x_i = np.append(excess_samples, spec)
+                x_i = x_i.reshape(1, xt.shape[1])
 
-                xt = np.vstack((xt,x_i))
-                yt = np.vstack((yt,perf_samples.reshape(1,yt.shape[1])))
+                xt = np.vstack((xt, x_i))
+                yt = np.vstack((yt, perf_samples.reshape(1, yt.shape[1])))
 
-        elif ext_samples is not None:
+        else:
             assert type(ext_samples) == tuple
             assert len(ext_samples) == 2
             for value in ext_samples:
@@ -1318,20 +1111,21 @@ class MarginNetwork():
             yt = ext_samples[1]
 
         # Get lower and upper bounds of excess values
-        self.lb_inputs = np.min(xt,axis=0)
-        self.ub_inputs = np.max(xt,axis=0)
-        xt = scaling(xt,self.lb_inputs,self.ub_inputs,operation=1)
+        self.lb_inputs = np.min(xt, axis=0)
+        self.ub_inputs = np.max(xt, axis=0)
+        xt = scaling(xt, self.lb_inputs, self.ub_inputs, operation=1)
 
         self.reset()
         assert len(bandwidth) == 1 or len(bandwidth) == xt.shape[1], \
-            'bandwidth list size must be at least %i or 1' %xt.shape[1]
-            
-        self.sm_perf = KRG(theta0=bandwidth,print_prediction=False)
+            'bandwidth list size must be at least %i or 1' % xt.shape[1]
+
+        self.sm_perf = KRG(theta0=bandwidth, print_prediction=False)
         self.sm_perf.set_training_values(xt, yt)
         self.sm_perf.train()
 
-    def view_perf(self,e_indices:List[int],p_index:int,label_1:str=None,label_2:str=None,
-        label_p:str=None,n_levels:int=100,folder:str='',file:str=None,img_format:str='pdf'):
+    def view_perf(self, e_indices: List[int], p_index: int, label_1: str = None, label_2: str = None,
+                  label_p: str = None, n_levels: int = 100, folder: str = '', file: str = None,
+                  img_format: str = 'pdf'):
         """
         Shows the estimated performance 
 
@@ -1347,7 +1141,7 @@ class MarginNetwork():
         label_2 : str, optional
             axis label of excess value 2, if not provided uses the key of MarginNode, 
             by default None
-        label_2 : str, optional
+        label_p : str, optional
             z-axis label of performance parameter, if not provided uses the key of Performance object, 
             by default None
         n_levels : int, optional
@@ -1371,52 +1165,52 @@ class MarginNetwork():
 
         lb_excess, ub_excess = np.empty(0), np.empty(0)
         for margin_node in self.margin_nodes:
-            lb_excess = np.append(lb_excess,margin_node.value)
-            ub_excess = np.append(ub_excess,margin_node.value+1e-3)
+            lb_excess = np.append(lb_excess, margin_node.excess.value)
+            ub_excess = np.append(ub_excess, margin_node.excess.value + 1e-3)
         lb_excess[e_indices] = self.lb_inputs[e_indices]
         ub_excess[e_indices] = self.ub_inputs[e_indices]
 
-        excess_doe = Design(lb_excess,ub_excess,sampling_vector,'fullfact')
+        excess_doe = Design(lb_excess, ub_excess, sampling_vector, 'fullfact')
         values = np.hstack((excess_doe.unscale(),
-            np.tile(self.nominal_spec_vector,(excess_doe.unscale().shape[0],1))))
-        values = scaling(values,self.lb_inputs,self.ub_inputs,operation=1)
-        
+                            np.tile(self.nominal_spec_vector, (excess_doe.unscale().shape[0], 1))))
+        values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
+
         perf_estimate = self.sm_perf.predict_values(values)
 
-        x = excess_doe.unscale()[:,e_indices[0]].reshape((n_levels,n_levels))
-        y = excess_doe.unscale()[:,e_indices[1]].reshape((n_levels,n_levels))
-        z = perf_estimate[:,p_index].reshape((n_levels,n_levels))
+        x = excess_doe.unscale()[:, e_indices[0]].reshape((n_levels, n_levels))
+        y = excess_doe.unscale()[:, e_indices[1]].reshape((n_levels, n_levels))
+        z = perf_estimate[:, p_index].reshape((n_levels, n_levels))
 
         if label_1 is None:
-            label_1 = 'E_%s' %self.margin_nodes[e_indices[0]].key
+            label_1 = 'E_%s' % self.margin_nodes[e_indices[0]].key
         if label_2 is None:
-            label_2 = 'E_%s' %self.margin_nodes[e_indices[1]].key
+            label_2 = 'E_%s' % self.margin_nodes[e_indices[1]].key
         if label_p is None:
             label_p = self.performances[p_index].key
 
-        surf = ax.contourf(x, y, z, cmap=plt.cm.jet,)
+        ax.contourf(x, y, z, cmap=plt.cm.jet, )
         ax.set_xlabel(label_1)
         ax.set_ylabel(label_2)
 
         cbar = plt.cm.ScalarMappable(cmap=plt.cm.jet)
         cbar.set_array(z)
 
-        boundaries = np.linspace(np.min(perf_estimate[:,p_index]), np.max(perf_estimate[:,p_index]), 51)
+        boundaries = np.linspace(np.min(perf_estimate[:, p_index]), np.max(perf_estimate[:, p_index]), 51)
         cbar_h = fig.colorbar(cbar, boundaries=boundaries)
         cbar_h.set_label(label_p, rotation=90, labelpad=3)
 
         if file is not None:
             # Save figure to image
-            check_folder('images/%s' %(folder))
-            self.fig.savefig('images/%s/%s.%s' %(folder,file,img_format), 
-                format=img_format, dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % folder)
+            self.fig.savefig('images/%s/%s.%s' % (folder, file, img_format),
+                             format=img_format, dpi=200, bbox_inches='tight')
 
         plt.show()
 
-    def compute_impact(self,use_estimate:bool=False):
+    def compute_impact(self, use_estimate: bool = False):
         """
         Computes the impact on performance (IoP) matrix of the MVM that has a size
-        [n_margins, n_performances] and appends its the impacts matrix if called 
+        [n_margins, n_performances] and appends its impact matrix if called
         multiple times without a reset(). 
         Must be called after executing at least one `forward()` pass
 
@@ -1427,138 +1221,148 @@ class MarginNetwork():
             to estimate performance at the threshold design, by default False
         """
 
-        excess_values   = self.excess_vector.reshape(1,-1) # turn it into a 2D matrix
-        input_specs     = self.spec_vector.reshape(1,-1) # turn it into a 2D matrix
+        excess_values = self.excess_vector.reshape(1, -1)  # turn it into a 2D matrix
+        input_specs = self.spec_vector.reshape(1, -1)  # turn it into a 2D matrix
 
         # Compute performances at decided values first
         if use_estimate:
             # Use surrogate model
-            value = np.hstack((excess_values,input_specs))
-            value = scaling(value,self.lb_inputs,self.ub_inputs,operation=1)
+            value = np.hstack((excess_values, input_specs))
+            value = scaling(value, self.lb_inputs, self.ub_inputs, operation=1)
             performances = self.sm_perf.predict_values(value)
         else:
             # Get performances from behaviour models
             performances = self.perf_vector
 
-        performances = np.tile(performances,(len(self.margin_nodes),1))
+        performances = np.tile(performances, (len(self.margin_nodes), 1))
 
-        #performances = [len(margin_nodes), len(performances)]
+        # performances = [len(margin_nodes), len(performances)]
 
         # Compute performances at target threshold for each margin node
-        input_excess = np.tile(excess_values,(len(self.margin_nodes),1)) # Create a square matrix
+        input_excess = np.tile(excess_values, (len(self.margin_nodes), 1))  # Create a square matrix
 
-        #input_excess = [len(margin_nodes), len(margin_nodes)]
+        # input_excess = [len(margin_nodes), len(margin_nodes)]
 
-        np.fill_diagonal(input_excess, np.zeros(len(self.margin_nodes)), wrap=False) # works in place
+        np.fill_diagonal(input_excess, np.zeros(len(self.margin_nodes)), wrap=False)  # works in place
 
-        #input_excess = [len(margin_nodes), len(margin_nodes)]
+        # input_excess = [len(margin_nodes), len(margin_nodes)]
 
         # concatenate input specifications
         values = np.hstack((input_excess,
-            np.tile(self.nominal_spec_vector,(input_excess.shape[0],1))))
-        values = scaling(values,self.lb_inputs,self.ub_inputs,operation=1)
-        
+                            np.tile(self.nominal_spec_vector, (input_excess.shape[0], 1))))
+        values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
+
         thresh_perf = self.sm_perf.predict_values(values)
 
-        #thresh_perf = [len(margin_nodes), len(performances)]
+        # thresh_perf = [len(margin_nodes), len(performances)]
 
         # Get the sign of the performance parameters
         signs = np.empty(0)
         for performance in self.performances:
-            if performance.type == 'less_is_better':
+            if performance.direction == 'less_is_better':
                 sign = 1.0
-            elif performance.type == 'more_is_better':
+            elif performance.direction == 'more_is_better':
                 sign = -1.0
-            signs = np.append(signs,sign)
+            else:
+                sign = 0.0
+                Exception('Performance direction : %s is invalid' % str(performance.direction))
+            signs = np.append(signs, sign)
 
         impact = signs * (performances - thresh_perf) / thresh_perf
 
-        #impact = [len(margin_nodes), len(performances)]
+        # impact = [len(margin_nodes), len(performances)]
 
-        self.impact_matrix(impact) # Store impact matrix
+        self.impact_matrix(impact)  # Store impact matrix
 
     def compute_absorption(self):
         """
         Computes the change absorption capability (CAC) matrix of the MVM that has a size
-        [n_margins, n_input_specs] and appends its the absorption matrix if called 
+        [n_margins, n_input_specs] and appends its absorption matrix if called
         multiple times without a reset(). 
         Also stores and appends the deterioration vectors
         """
-        
+
         # Deterioration computation
 
         spec_limit = np.empty(0)
         signs = np.empty(0)
         for spec in self.input_specs:
 
-            self.forward() # do not randomize the man for deterioration
+            self.forward()  # do not randomize the man for deterioration
             n_inc = 1
-            delta_E = 1.0
+            delta_e = 1.0
 
             if spec.inc_type == 'rel':
                 inc = (spec.original * spec.inc) / 100
             elif spec.inc_type == 'abs':
                 inc = spec.inc
-            
-            while all(self.excess_vector >= 0) and delta_E <= 1e3 and n_inc <= 1e4:
-                
+            else:
+                inc = spec.inc
+                Warning('increment type %s, is invalid using absolute value' % str(spec.inc))
+
+            while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4:
                 excess_last_inc = self.excess_vector
 
                 spec.value += inc
-                self.forward() # do not randomize the man for deterioration
+                self.forward()  # do not randomize the man for deterioration
                 n_inc += 1
 
-                delta_E = np.min(self.excess_vector - excess_last_inc)
+                delta_e = np.min(self.excess_vector - excess_last_inc)
 
-            spec_limit = np.append(spec_limit,spec.value)
+            spec_limit = np.append(spec_limit, spec.value)
             signs = np.append(signs, np.sign(inc))
             self.reset(n_inc)
 
-        deterioration = np.max((signs*(spec_limit - self.nominal_spec_vector) / self.nominal_spec_vector, np.zeros(len(self.input_specs))), axis=0)
-        deterioration[deterioration==0] = np.nan # replace with nans for division
+        deterioration = np.max((signs * (spec_limit - self.nominal_spec_vector) / self.nominal_spec_vector,
+                                np.zeros(len(self.input_specs))), axis=0)
+        deterioration[deterioration == 0] = np.nan  # replace with nans for division
 
         # Absorption computation
 
-        nominal_threshold = np.reshape(self.tt_vector,(len(self.margin_nodes),-1))
-        target_thresholds = np.tile(nominal_threshold,(1,len(self.input_specs)))
+        nominal_threshold = np.reshape(self.tt_vector, (len(self.margin_nodes), -1))
+        target_thresholds = np.tile(nominal_threshold, (1, len(self.input_specs)))
 
-        #target_thresholds = [len(margin_nodes), len(input_specs)]
+        # target_thresholds = [len(margin_nodes), len(input_specs)]
 
-        deterioration_matrix = np.tile(deterioration,(len(self.margin_nodes),1))
+        deterioration_matrix = np.tile(deterioration, (len(self.margin_nodes), 1))
 
-        #deterioration_matrix = [len(margin_nodes), len(input_specs)]
+        # deterioration_matrix = [len(margin_nodes), len(input_specs)]
 
         # Compute performances at the spec limit for each margin node
 
-        new_thresholds = np.empty((len(self.margin_nodes),0))
-        for input_spec,input_spec_limit in zip(self.input_specs,spec_limit):
+        new_thresholds = np.empty((len(self.margin_nodes), 0))
+        for input_spec, input_spec_limit in zip(self.input_specs, spec_limit):
             input_spec.value = input_spec_limit
             self.forward()
 
-            new_thresholds_vector = np.reshape(self.tt_vector,(len(self.margin_nodes),-1))
-            new_thresholds = np.hstack((new_thresholds,new_thresholds_vector))
+            new_thresholds_vector = np.reshape(self.tt_vector, (len(self.margin_nodes), -1))
+            new_thresholds = np.hstack((new_thresholds, new_thresholds_vector))
 
             self.reset(1)
 
-        absorption = np.maximum(abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix), np.zeros_like(new_thresholds) )
-        absorption[absorption==np.nan] = 0 # replace undefined absorptions with 0
+        absorption = np.maximum(abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix),
+                                np.zeros_like(new_thresholds))
+        absorption[absorption == np.nan] = 0  # replace undefined absorptions with 0
 
-        #absorption = [len(margin_nodes), len(input_specs)]
+        # absorption = [len(margin_nodes), len(input_specs)]
 
         # utilization computation
 
-        decided_value = np.reshape(self.dv_vector,(len(self.margin_nodes),-1))
-        decided_values = np.tile(decided_value,(1,len(self.input_specs)))
+        decided_value = np.reshape(self.dv_vector, (len(self.margin_nodes), -1))
+        decided_values = np.tile(decided_value, (1, len(self.input_specs)))
 
-        #decided_values = [len(margin_nodes), len(input_specs)]
+        # decided_values = [len(margin_nodes), len(input_specs)]
 
         utilization = 1 - ((decided_values - new_thresholds) / (decided_values - target_thresholds))
 
-        #utilization = [len(margin_nodes), len(input_specs)]
+        # utilization = [len(margin_nodes), len(input_specs)]
 
-        self.absorption_matrix(deterioration=deterioration,absorption=absorption,utilization=utilization) # store the results
+        # store the results
+        self.absorption_matrix(absorption)
+        self.deterioration_vector(deterioration)
+        self.utilization_matrix(utilization)
 
-    def compute_MVP(self,plot_type:str='scatter',show_neutral=False) -> float:
+    def compute_mvp(self, plot_type: str = 'scatter', show_neutral=False) -> float:
         """
         computes the margin value map after running all Monte Carlo computations
 
@@ -1579,24 +1383,26 @@ class MarginNetwork():
             The aggregate distance from the neutral line
         """
 
-        color = np.random.random((100,3))
-        
+        color = np.random.random((100, 3))
+
         # Extract x and y
-        x = np.mean(self.impact_matrix.impacts,axis=1).ravel() # average along performance parameters (assumes equal weighting)
-        y = np.mean(self.absorption_matrix.absorptions,axis=1).ravel() # average along input specs (assumes equal weighting)
-        
-        c = np.empty((0,3))
+        x = np.mean(self.impact_matrix.values,
+                    axis=1).ravel()  # average along performance parameters (assumes equal weighting)
+        y = np.mean(self.absorption_matrix.values,
+                    axis=1).ravel()  # average along input specs (assumes equal weighting)
+
+        c = np.empty((0, 3))
         for i in range(len(self.margin_nodes)):
-            c_node = np.tile(color[i],(self.absorption_matrix.absorptions.shape[2],1))
-            c = np.vstack((c,c_node))
+            c_node = np.tile(color[i], (self.absorption_matrix.values.shape[2], 1))
+            c = np.vstack((c, c_node))
 
         # Define the borders
-        deltaX = (np.nanmax(x) - np.nanmin(x))/10
-        deltaY = (np.nanmax(y) - np.nanmin(y))/10
-        xmin = np.nanmin(x) - deltaX
-        ymax = np.nanmax(y) + deltaY
-        xmax = np.nanmax(x) + deltaX
-        ymin = np.nanmin(y) - deltaY
+        deltax = (np.nanmax(x) - np.nanmin(x)) / 10
+        deltay = (np.nanmax(y) - np.nanmin(y)) / 10
+        xmin = np.nanmin(x) - deltax
+        ymax = np.nanmax(y) + deltay
+        xmax = np.nanmax(x) + deltax
+        ymin = np.nanmin(y) - deltay
 
         # create empty figure
         fig, ax = plt.subplots(figsize=(7, 8))
@@ -1611,13 +1417,15 @@ class MarginNetwork():
 
         elif plot_type == 'mean':
 
-            c = np.empty((0,3))
+            c = np.empty((0, 3))
             for i in range(len(self.margin_nodes)):
-                c = np.vstack((c,color[i]))
+                c = np.vstack((c, color[i]))
 
             # Extract x and y
-            x = np.nanmean(self.impact_matrix.impacts,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
-            y = np.nanmean(self.absorption_matrix.absorptions,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
+            x = np.nanmean(self.impact_matrix.values,
+                           axis=(1, 2)).ravel()  # average along performance parameters (assumes equal weighting)
+            y = np.nanmean(self.absorption_matrix.values,
+                           axis=(1, 2)).ravel()  # average along input specs (assumes equal weighting)
 
             ax.scatter(x, y, s=50, c=c)
 
@@ -1628,7 +1436,7 @@ class MarginNetwork():
 
             # fit a Gaussian KDE
             values = np.vstack([x, y])
-            values = values[:,~np.isnan(values).any(axis=0)] # drop nans
+            values = values[:, ~np.isnan(values).any(axis=0)]  # drop nans
             kernel = st.gaussian_kde(values)
 
             # Predict at meshgrid points
@@ -1637,34 +1445,38 @@ class MarginNetwork():
 
             # plot the KDE contours
             # c2 = ax.contourf( X1, X2, Z, colors=['#1EAA37'], alpha=0.0)
-            cfset = ax.contourf(xx, yy, f, alpha=0.25, cmap=plt.cm.Blues)
-            cset = ax.contour(xx, yy, f, colors='b')
+            ax.contourf(xx, yy, f, alpha=0.25, cmap=plt.cm.Blues)
+            ax.contour(xx, yy, f, colors='b')
 
         # distance computation
         dist = 0
-        x = np.nanmean(self.impact_matrix.impacts,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
-        y = np.nanmean(self.absorption_matrix.absorptions,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
-        p1 = np.array([xmin,ymin])
-        p2 = np.array([xmax,ymax])
+        x = np.nanmean(self.impact_matrix.values,
+                       axis=(1, 2)).ravel()  # average along performance parameters (assumes equal weighting)
+        y = np.nanmean(self.absorption_matrix.values,
+                       axis=(1, 2)).ravel()  # average along input specs (assumes equal weighting)
+        p1 = np.array([xmin, ymin])
+        p2 = np.array([xmax, ymax])
 
         if show_neutral:
-            ax.plot([0, 1], [0, 1], transform=ax.transAxes, color='k',linestyle=(5,(10,5)))
+            ax.plot([0, 1], [0, 1], transform=ax.transAxes, color='k', linestyle=(5, (10, 5)))
 
+        d: float = 0.0
         for i in range(len(self.margin_nodes)):
-            s = np.array([x[i],y[i]])
+            s = np.array([x[i], y[i]])
 
-            pn,d = nearest(p1,p2,s)
+            pn, d = nearest(p1, p2, s)
             dist += d
 
             if show_neutral:
-                x_d = [s[0],pn[0]]
-                y_d = [s[1],pn[1]]
-                ax.plot(x_d,y_d,marker='.',linestyle='--',color=color[i])
+                x_d = [s[0], pn[0]]
+                y_d = [s[1], pn[1]]
+                ax.plot(x_d, y_d, marker='.', linestyle='--', color=color[i])
 
         plt.show()
-        
+
         return d
 
+    @abstractmethod
     def randomize(self, *args, **kwargs):
         """
         The function that will be used to randomize the MAN. 
@@ -1674,16 +1486,16 @@ class MarginNetwork():
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import guassianFunc, MarginNetwork, InputSpec
-        >>> dist_1 = guassianFunc(1.0,0.1)
-        >>> dist_2 = guassianFunc(0.5,0.2)
+        >>> from dmLib import MarginNetwork, InputSpec, GuassianFunc
+        >>> dist_1 = GuassianFunc(1.0,0.1)
+        >>> dist_2 = GuassianFunc(0.5,0.2)
         >>> s1 = InputSpec(1.0 ,'S1', distribution=dist_1)
-        >>> s2 = InputSpec(0.5 ,'S2', distribution=dist_1)
-        >>> class myMarginNetwork(MarginNetwork):
+        >>> s2 = InputSpec(0.5 ,'S2', distribution=dist_2)
+        >>> class MyMarginNetwork(MarginNetwork):
         >>>     def randomize(self):
         >>>         # randomization procedure
-        >>>         Requirement_1()
-        >>>         Requirement_2()
+        >>>         s1.random()
+        >>>         s2.random()
         >>>     def forward(self):
         >>>         # some specific model-dependent behaviour
         >>>         x = s1.value + s2.value # These values will be drawn from their respective distributions
@@ -1691,6 +1503,7 @@ class MarginNetwork():
         # default code for the default threshold
         pass
 
+    @abstractmethod
     def forward(self, *args, **kwargs):
         """
         The function that will be used to calculate a forward pass of the MAN
@@ -1701,7 +1514,9 @@ class MarginNetwork():
         -------
         >>> # [in the plugin file]
         >>> from dmLib import MarginNetwork
-        >>> class myMarginNetwork(MarginNetwork):
+        >>> class MyMarginNetwork(MarginNetwork):
+        >>>     def randomize(self):
+        >>>         pass
         >>>     def forward(self):
         >>>         # some specific model-dependent behaviour
         >>>         d1 = self.design_params[0]
@@ -1713,18 +1528,18 @@ class MarginNetwork():
         >>>         # Execution behaviour models
         >>>         b1(d1.value,p1.value)
         >>>         b2(d1.value,b1.intermediate)
-        >>>         e1(b3.decided_value,s3())
+        >>>         e1(b2.decided_value,s1.random())
         """
         # default code for the default threshold
         pass
 
-    def reset(self,N:int=None):
+    def reset(self, n: int = None):
         """
         Resets all elements of the MAN by clearing their internal caches
 
         Parameters
         -----------
-        N : int, optional
+        n : int, optional
             if provided deletes only the last n_samples, where possible, by default None
         """
 
@@ -1735,14 +1550,19 @@ class MarginNetwork():
         for behaviour in self.behaviours:
             behaviour.reset()
         for margin_node in self.margin_nodes:
-            margin_node.reset(N)
+            margin_node.reset(n)
         for performance in self.performances:
-            performance.reset(N)
+            performance.reset(n)
 
-    def reset_outputs(self):
+    def reset_outputs(self, n: int = None):
         """
         Resets Impact, Absorption, and Deterioration matrices
+
+        Parameters
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, by default None
         """
 
-        self.impact_matrix.reset()
-        self.absorption_matrix.reset()
+        self.impact_matrix.reset(n)
+        self.absorption_matrix.reset(n)

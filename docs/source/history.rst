@@ -2,6 +2,32 @@
 Changelog
 *********
 
+.. _release-0.4.7:
+
+0.4.7
+=====
+
+:Date: February 17, 2022
+
+Incompatible changes
+--------------------
+
+* ``AbsorptionMatrix`` class is removed, instead call ``MarginNetwork.absoprtion_matrix.value`` to retrieve absorption values
+* ``ImpactMatrix`` class is removed, instead call ``MarginNetwork.impact_matrix.value`` to retrieve impact values
+* ``AbsorptionMatrix.deteriorations`` attribute is removed, instead call ``MarginNetwork.deterioration_vector.value`` to retrieve deterioration values
+* All random sampling functions use the ``.random()`` method to draw samples. Cannot use the ``__call__`` operator anymore
+* ``MarginNetwork`` method ``reset_outputs()`` not takes a single optional argument to reset by ``N`` samples
+* ``dist`` method ``reset_outputs()`` not takes a single optional argument to reset by ``N`` samples
+* ``Distribution`` object method ``.random()`` (previously ``__call__``) now returns a 1D ``np.ndarray`` for one dimensional pdfs
+* Rename methods to comply with PEP 582 standard ``compute_mvp``, ``get_array``, ``set_func``
+* Rename classes to comply with PEP 582 standard ``GuassianFunc``, ``UniformFunc``, ``TriangularFunc``, ``FuzzySet``, ``FuzzyFunc``, ``FuzzySystem``, ``FuzzyRule``
+
+Features
+--------
+
+* Separate absorption, deterioration, and impact matrics into separate ``MarginNetwork`` attributes
+* Use a Factory design parameter for defining matrix and vector caches used during stochastic simulation of ``MarginNetwork``
+
 .. _release-0.4.6:
 
 0.4.6

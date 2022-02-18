@@ -2,6 +2,7 @@
 
 import os
 
+
 def check_folder(folder='render/'):
     """
     check if folder exists, make if not present

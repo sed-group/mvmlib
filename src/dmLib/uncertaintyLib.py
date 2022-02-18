@@ -1,18 +1,41 @@
-import numpy as np
-import  scipy.stats as st
-import matplotlib.pyplot as plt
-from typing import Dict, Any, AnyStr, Tuple, List, Union
+from typing import Union
 
-from .DOELib import Design
+import matplotlib.pyplot as plt
+import numpy as np
+
 from .utilities import check_folder
+from .DOELib import Design
 
 """Uncertainty Library for computing different PDFs"""
-def compute_cdf(values:np.ndarray,bins:int=500,cutoff:float=None,buffer_limit:float=None):
+
+
+def moving_average(i: np.ndarray, w: np.ndarray) -> np.ndarray:
+    """
+    N-moving average over 1D array
+
+    Parameters
+    ----------
+    i : np.ndarray
+        input array to average
+    w : int
+        number of elements to average
+
+    Returns
+    -------
+    np.ndarray
+        avaeraged array
+    """
+    return np.convolve(i, np.ones(w), 'valid') / w
+
+
+def compute_cdf(values: np.ndarray, bins: int = 500, cutoff: float = None, buffer_limit: float = None):
     """
     Calculate the cumulative distribution function for the excess margin
 
     Parameters
     ----------
+    values : np.ndarray
+        Values to construct cumulative pdf from
     bins : int, optional
         number of discrete bins used to 
         construct pdf and pdf curves, by default 500
@@ -23,11 +46,11 @@ def compute_cdf(values:np.ndarray,bins:int=500,cutoff:float=None,buffer_limit:fl
 
     Returns
     -------
-    values : np.1darray
+    values : np.ndarray
         vector of value samples to use for computing the cdf
-    bin_centers : np.1darray
+    bin_centers : np.ndarray
         array of len(value) - 1 containing the x-axis values of CDF
-    cdf : np.1darray
+    cdf : np.ndarray
         array of len(value) - 1 containing the y-axis values of CDF
 
     Raises
@@ -35,27 +58,10 @@ def compute_cdf(values:np.ndarray,bins:int=500,cutoff:float=None,buffer_limit:fl
     AssertionError
         if only one of `cutoff` or `buffer_limit` is provided
     """
-    def moving_average(x, w):
-        """
-        N-moving average over 1D array
 
-        Parameters
-        ----------
-        x : np.1darray
-            input array to average
-        w : int
-            number of elements to average
-
-        Returns
-        -------
-        np.1darray
-            avaeraged array
-        """
-        return np.convolve(x, np.ones(w), 'valid') / w
-
-    value_hist = np.histogram(values, bins=bins,density=True)
+    value_hist = np.histogram(values, bins=bins, density=True)
     bin_width = np.mean(np.diff(value_hist[1]))
-    bin_centers = moving_average(value_hist[1],2)
+    bin_centers = moving_average(value_hist[1], 2)
     cdf = np.cumsum(value_hist[0] * bin_width)
 
     if all([cutoff is not None, buffer_limit is not None]):
@@ -67,8 +73,9 @@ def compute_cdf(values:np.ndarray,bins:int=500,cutoff:float=None,buffer_limit:fl
     else:
         raise AssertionError('You must provide both cutoff and buffer_limit, only one of them is provided')
 
+
 class Distribution(object):
-    def __init__(self, pdf:np.ndarray, lb = -1, ub = 1, sort = True, interpolation = True, label=''):
+    def __init__(self, pdf: np.ndarray, lb=-1, ub=1, sort=True, interpolation=True, label=''):
         """
         Draws samples from a one dimensional probability distribution,
         by means of inversion of a discrete inversion of a cumulative density function,
@@ -85,9 +92,9 @@ class Distribution(object):
             2d-array of shape n_samples * n_dims including 
             sample density values throughout the real or 
             discrete space
-        lb : np.1darray OR float OR int, optional
+        lb : np.ndarray OR float OR int, optional
             The lower bound for the pdf support, default = -1
-        ub : np.1darray OR float OR int, optional
+        ub : np.ndarray OR float OR int, optional
             The uppoer bound for the pdf support, default = 1
         sort : bool, optional
             if True sort pdf to avoid interpolation 
@@ -101,18 +108,20 @@ class Distribution(object):
             string to tag instance with   
         """
 
-        self.shape          = pdf.shape
-        self.sort           = sort
-        self.interpolation  = interpolation
-        self.pdf            = pdf
-        self.lb             = lb
-        self.ub             = ub
-        self.label          = label
-        self.sample         = None
-        self._samples       = np.empty((self.ndim,0))
+        self.ax = None
+        self.fig = None
+        self.shape = pdf.shape
+        self.sort = sort
+        self.interpolation = interpolation
+        self.pdf = pdf
+        self.lb = lb
+        self.ub = ub
+        self.label = label
+        self.sample = None
+        self._samples = np.empty((self.ndim, 0))
 
         # upper bound cannot be smaller than lower bound
-        assert(self._ub >= self._lb).all()
+        assert (self._ub >= self._lb).all()
         # Check that the interval is square
         assert ((self._ub - self._lb) == (self._ub[0] - self._lb[0])).all()
 
@@ -123,25 +132,25 @@ class Distribution(object):
 
         Returns
         -------
-        np.ndarray OR np.1darray
+        np.ndarray OR np.ndarray
             array of pdf values
         """
 
         return self._pdf
 
     @pdf.setter
-    def pdf(self,pdf):
+    def pdf(self, pdf):
         """
         Sets the sorted pdf and asserts it is positive
 
         Parameters
         ----------
-        pdf: np.ndarray OR np.1darray
+        pdf: np.ndarray OR np.ndarray
             Array of pdf values. If ndim > 1 then 
             pdf must have a shape of size (n,n,...,n)
         """
 
-        assert(np.all(pdf>=0))
+        assert (np.all(pdf >= 0))
 
         # sort the PDF by magnitude
         if self.sort:
@@ -157,7 +166,7 @@ class Distribution(object):
 
         Returns
         -------
-        np.1darray
+        np.ndarray
             vector of cumilative distribution
         """
 
@@ -170,26 +179,28 @@ class Distribution(object):
 
         Returns
         -------
-        np.1darray
+        np.ndarray
             lower pdf supports
         """
 
         return self._lb
 
     @lb.setter
-    def lb(self,lb):
+    def lb(self, lb):
         """
         Sets the lb parameter and asserts it is compatible with pdf
 
         Parameters
         ----------
-        np.1darray OR float OR int
+        np.ndarray OR float OR int
             lower pdf support(s)
         """
 
         # convert to floats
-        if isinstance(lb, (int,float)): self._lb = lb * np.ones(self.ndim) 
-        else: self._lb = lb # reshape 1D arrays to 2D
+        if isinstance(lb, (int, float)):
+            self._lb = lb * np.ones(self.ndim)
+        else:
+            self._lb = lb  # reshape 1D arrays to 2D
 
         # number of dimensions in lower and upper bounds must be equal
         assert self._lb.shape == (self.ndim,)
@@ -201,25 +212,27 @@ class Distribution(object):
 
         Returns
         -------
-        np.1darray
+        np.ndarray
             upper pdf supports
         """
 
         return self._ub
 
     @ub.setter
-    def ub(self,ub):
+    def ub(self, ub):
         """
         Sets the ub parameter and asserts it is compatible with pdf
 
         Parameters
         ----------
-        np.1darray OR float OR int
+        np.ndarray OR float OR int
             upper pdf support(s)
         """
 
-        if isinstance(ub, (int,float)): self._ub = ub * np.ones(self.ndim) 
-        else: self._ub = ub # reshape 1D arrays to 2D
+        if isinstance(ub, (int, float)):
+            self._ub = ub * np.ones(self.ndim)
+        else:
+            self._ub = ub  # reshape 1D arrays to 2D
 
         # number of dimensions in lower and upper bounds must be equal
         assert self._ub.shape == (self.ndim,)
@@ -266,7 +279,7 @@ class Distribution(object):
         return self._samples
 
     @samples.setter
-    def samples(self,s:np.ndarray):
+    def samples(self, s: np.ndarray):
         """
         Appends target observation t to samples vector
 
@@ -275,15 +288,15 @@ class Distribution(object):
         s : np.ndarray
             value to append to samples vector
         """
-        self._samples = np.append(self._samples,s,axis=1)
+        self._samples = np.append(self._samples, s, axis=1)
 
     def reset(self):
         """
         Resets the stored samples
         """
-        self._samples = np.empty((self.ndim,0))
+        self._samples = np.empty((self.ndim, 0))
 
-    def transform(self,i):
+    def transform(self, i):
         """
         Transform discrete integer choices when sampling
         to their continues real valued random variable samples
@@ -300,13 +313,13 @@ class Distribution(object):
             Array of transformed indices of same shape as input i
         """
 
-        half_interval = np.tile(((self.ub - self.lb)/2)[:,None],(1,i.shape[1]))
-        half_mean = np.tile(((self.ub + self.lb) / 2)[:,None],(1,i.shape[1]))
+        half_interval = np.tile(((self.ub - self.lb) / 2)[:, None], (1, i.shape[1]))
+        half_mean = np.tile(((self.ub + self.lb) / 2)[:, None], (1, i.shape[1]))
 
-        return ((((i - self.shape[0]/2)) / (self.shape[0]/2)) \
-            * half_interval) + (half_mean)
+        return (((i - self.shape[0] / 2) / (self.shape[0] / 2))
+                * half_interval) + half_mean
 
-    def view(self,xlabel='',savefile=None):
+    def view(self, xlabel='', savefile=None):
         """
         view 1D or 2D plot of distribution for visual checks
 
@@ -338,23 +351,23 @@ class Distribution(object):
             self.ax.set_title(xlabel)
 
         else:
-            raise ValueError("only applicable for 1D and 2D probability density functions") 
+            raise ValueError("only applicable for 1D and 2D probability density functions")
 
         if savefile is not None:
             # Save figure to image
-            check_folder('images/%s' %(self.label))
-            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile),
-                format='pdf', dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % self.label)
+            self.fig.savefig('images/%s/%s.pdf' % (self.label, savefile),
+                             format='pdf', dpi=200, bbox_inches='tight')
 
         plt.show()
 
-    def __call__(self, N=1):
+    def random(self, n=1):
         """
         draw random samples from PDF
 
         Parameters
         ----------
-        N : int, optional
+        n : int, optional
             Number of random samples to draw
             default is one sample
 
@@ -366,7 +379,7 @@ class Distribution(object):
         """
 
         # pick numbers which are uniformly random over the cumulative distribution function
-        choice = np.random.uniform(high = self.sum, size = N)
+        choice = np.random.uniform(high=self.sum, size=n)
         # find the indices corresponding to this point on the CDF
         index = np.searchsorted(self.cdf, choice)
 
@@ -380,22 +393,27 @@ class Distribution(object):
         if self.interpolation:
             index = index + np.random.uniform(size=index.shape)
 
-        self.sample = self.transform(index) # store the sample inside instance
-        self.samples = self.sample # append sample to the samples inside instance
-        return self.sample # return the requested number of samples
+        self.sample = self.transform(index)  # store the sample inside instance
+        self.samples = self.sample  # append sample to the samples inside instance
 
-class gaussianFunc(Distribution):
+        if self.ndim == 1:
+            self.sample = self.sample.squeeze(0)
 
-    def __init__(self,mu:Union[float,int,np.ndarray],Sigma:Union[float,int,np.ndarray],label=''):
+        return self.sample  # return the requested number of samples
+
+
+class GaussianFunc(Distribution):
+
+    def __init__(self, mu: Union[float, int, np.ndarray], sigma: Union[float, int, np.ndarray], label=''):
         """
         Contains description and implementation of the multivariate 
         Gaussian PDF
 
         Parameters
         ----------
-        mu : np.1darray
+        mu : np.ndarray
             1d array of length n_dims containing means
-        Sigma : np.ndarray
+        sigma : np.ndarray
             1d array of length n_dims containing standard deviations
             OR
             2d array of length n_dims * n_dims containing standard deviations
@@ -405,20 +423,20 @@ class gaussianFunc(Distribution):
         """
 
         if type(mu) == float or type(mu) == int:
-            mu = np.array([float(mu),])
-        if type(Sigma) == float or type(mu) == int:
-            Sigma = np.array([[float(Sigma),],])
+            mu = np.array([float(mu), ])
+        if type(sigma) == float or type(mu) == int:
+            sigma = np.array([[float(sigma), ], ])
 
-        self.mu     = mu
-        self.Sigma  = Sigma
+        self.mu = mu
+        self.Sigma = sigma
         lb = self.mu - 3 * np.sqrt(np.max(self.eigvals))
         ub = self.mu + 3 * np.sqrt(np.max(self.eigvals))
 
-        x = Design(lb,ub,50,"fullfact").unscale() # 2D grid
-        p = self.compute_density(x) # get density values
-        pdf = p.reshape((50,)*self.ndim)
-        
-        super().__init__(pdf,lb=lb,ub=ub,label=label) # Initialize a distribution object for calling random samples
+        x = Design(lb, ub, 50, "fullfact").unscale()  # 2D grid
+        p = self.compute_density(x)  # get density values
+        pdf = p.reshape((50,) * self.ndim)
+
+        super().__init__(pdf, lb=lb, ub=ub, label=label)  # Initialize a distribution object for calling random samples
 
     @property
     def ndim(self):
@@ -441,13 +459,13 @@ class gaussianFunc(Distribution):
 
         Returns
         -------
-        np.1darray
+        np.ndarray
             eigen values
         """
 
         return np.linalg.eigvals(self.Sigma)
 
-    def compute_density(self,samples):
+    def compute_density(self, samples):
         """
         Return the multivariate Gaussian probability density 
         distribution on array samples.
@@ -459,7 +477,7 @@ class gaussianFunc(Distribution):
 
         Returns
         -------
-        Z : np.1darray
+        z : np.ndarray
             array of shape n_samples of PDF values
         """
 
@@ -467,27 +485,27 @@ class gaussianFunc(Distribution):
 
         # pos is an array constructed by packing the meshed arrays of variables
         # x_1, x_2, x_3, ..., x_k into its _last_ dimension.
-        pos = np.empty((n_samples,1) + (self.ndim,))
-            
+        pos = np.empty((n_samples, 1) + (self.ndim,))
+
         for i in range(self.ndim):
-            X_norm = np.reshape(samples[:,i],(n_samples,1))
+            x_norm = np.reshape(samples[:, i], (n_samples, 1))
             # Pack X1, X2 ... Xk into a single 3-dimensional array
-            pos[:, :, i] = X_norm
+            pos[:, :, i] = x_norm
 
-        Sigma_inv = np.linalg.inv(self.Sigma)
-        Sigma_det = np.linalg.det(self.Sigma)
+        sigma_inv = np.linalg.inv(self.Sigma)
+        sigma_det = np.linalg.det(self.Sigma)
 
-        N = np.sqrt((2*np.pi)**self.ndim * Sigma_det)
-        
+        n = np.sqrt((2 * np.pi) ** self.ndim * sigma_det)
+
         # This einsum call calculates (x-mu)T.Sigma-1.(x-mu) - the Mahalanobis distance d^2 - in a vectorized
         # way across all the input variables.
-        fac = np.einsum('...k,kl,...l->...', samples-self.mu, Sigma_inv, samples-self.mu)
+        fac = np.einsum('...k,kl,...l->...', samples - self.mu, sigma_inv, samples - self.mu)
 
-        Z = np.exp(-fac / 2)
+        z = np.exp(-fac / 2)
 
-        return Z / N
+        return z / n
 
-    def compute_volume(self,r=3):
+    def compute_volume(self, r=3):
         """
         The volume of the ellipsoid (x-mu)T.Sigma-1.(x-mu) = r
         This is the output of this method.
@@ -506,16 +524,16 @@ class gaussianFunc(Distribution):
             volume of hyperellipsoid for Mahalanobis distance r
 
         """
-        
+
         if (self.ndim % 2) == 0:
-            V_d = (np.pi**(self.ndim/2)) / np.math.factorial(self.ndim/2) # if self.ndim is even
+            v_d = (np.pi ** (self.ndim / 2)) / np.math.factorial(self.ndim / 2)  # if self.ndim is even
         else:
-            V_d = (2**(self.ndim)) * (np.pi**((self.ndim - 1)/2)) / \
-                (np.math.factorial((self.ndim - 1)/2) / np.math.factorial(self.ndim)) # if self.ndim is odd
+            v_d = (2 ** self.ndim) * (np.pi ** ((self.ndim - 1) / 2)) / \
+                  (np.math.factorial((self.ndim - 1) / 2) / np.math.factorial(self.ndim))  # if self.ndim is odd
 
-        return V_d * np.power(np.linalg.det(self.Sigma), 0.5) * (r**self.ndim)
+        return v_d * np.power(np.linalg.det(self.Sigma), 0.5) * (r ** self.ndim)
 
-    def compute_density_r(self,r=3):
+    def compute_density_r(self, r=3):
         """
         Returns the value of probability density at given Mahalanobis distance r
 
@@ -533,12 +551,12 @@ class gaussianFunc(Distribution):
             probability density at Mahalanobis distance r
 
         """
-        Sigma_det = np.linalg.det(self.Sigma)
-        N = np.sqrt((2*np.pi)**self.ndim * Sigma_det)
+        sigma_det = np.linalg.det(self.Sigma)
+        n = np.sqrt((2 * np.pi) ** self.ndim * sigma_det)
 
-        return np.exp(-r**2 / 2)/N
+        return np.exp(-r ** 2 / 2) / n
 
-    def view(self,xlabel='',savefile=None):
+    def view(self, xlabel='', savefile=None):
         """
         view 1D or 2D plot of distribution for visual checks
 
@@ -555,54 +573,55 @@ class gaussianFunc(Distribution):
         ValueError
             if called when ndim is > 2
         """
-        super().view(xlabel=xlabel,savefile=savefile) # call parent distribution class
+        super().view(xlabel=xlabel, savefile=savefile)  # call parent distribution class
 
-        if self.ndim == 1: # add trace of normal distribution to plot
-        
-            x = np.linspace(self.lb.squeeze(), self.ub.squeeze(),100) # 1D grid
-            p = self.compute_density(x[:,None]) # get density values
-            self.ax.plot(x,p)
+        if self.ndim == 1:  # add trace of normal distribution to plot
+
+            x = np.linspace(self.lb.squeeze(), self.ub.squeeze(), 100)  # 1D grid
+            p = self.compute_density(x[:, None])  # get density values
+            self.ax.plot(x, p)
             plt.draw()
             plt.pause(0.0001)
 
         if savefile is not None:
             # Save figure to image
-            check_folder('images/%s' %(self.label))
-            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
-                format='pdf', dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % self.label)
+            self.fig.savefig('images/%s/%s.pdf' % (self.label, savefile),
+                             format='pdf', dpi=200, bbox_inches='tight')
 
-class uniformFunc(Distribution):
 
-    def __init__(self,center:Union[float,int,np.ndarray],Range:Union[float,int,np.ndarray],label=''):
+class UniformFunc(Distribution):
+
+    def __init__(self, center: Union[float, int, np.ndarray], interval: Union[float, int, np.ndarray], label=''):
         """
         Contains description and implementation of the multivariate 
         Gaussian PDF
 
         Parameters
         ----------
-        center : np.1darray
+        center : np.ndarray
             1d array of length n_dims containing uniform distribution centers
-        Range : np.ndarray
+        interval : np.ndarray
             1d array of length n_dims containing spread along each dimension
         label : str, optional
             string to tag instance with        
         """
 
         if type(center) == float or type(center) == int:
-            center = np.array([float(center),])
-        if type(Range) == float or type(center) == int:
-            Range = np.array([[float(Range),],])
+            center = np.array([float(center), ])
+        if type(interval) == float or type(center) == int:
+            interval = np.array([[float(interval), ], ])
 
-        self.center     = center
-        self.Range      = Range
-        lb = self.center - 1.5 * np.linalg.norm(Range)
-        ub = self.center + 1.5 * np.linalg.norm(Range)
+        self.center = center
+        self.Range = interval
+        lb = self.center - 1.5 * np.linalg.norm(interval)
+        ub = self.center + 1.5 * np.linalg.norm(interval)
 
-        x = Design(lb,ub,50,"fullfact").unscale() # 2D grid
-        p = self.compute_density(x) # get density values
-        pdf = p.reshape((50,)*self.ndim)
-        
-        super().__init__(pdf,lb=lb,ub=ub,label=label) # Initialize a distribution object for calling random samples
+        x = Design(lb, ub, 50, "fullfact").unscale()  # 2D grid
+        p = self.compute_density(x)  # get density values
+        pdf = p.reshape((50,) * self.ndim)
+
+        super().__init__(pdf, lb=lb, ub=ub, label=label)  # Initialize a distribution object for calling random samples
 
     @property
     def ndim(self):
@@ -618,7 +637,7 @@ class uniformFunc(Distribution):
 
         return len(self.center)
 
-    def compute_density(self,samples):
+    def compute_density(self, samples):
         """
         Return the multivariate Gaussian probability density 
         distribution on array samples.
@@ -630,13 +649,14 @@ class uniformFunc(Distribution):
 
         Returns
         -------
-        Z : np.1darray
+        Z : np.ndarray
             array of shape n_samples of PDF values
         """
 
         n_samples = samples.shape[0]
         density = np.zeros(n_samples)
-        density[np.all(samples <= (self.center + self.Range), axis=1) & np.all(samples >= (self.center-self.Range), axis=1)] = 1/self.compute_volume()
+        density[np.all(samples <= (self.center + self.Range), axis=1) & np.all(samples >= (self.center - self.Range),
+                                                                               axis=1)] = 1 / self.compute_volume()
 
         return density
 
@@ -651,9 +671,9 @@ class uniformFunc(Distribution):
 
         """
 
-        return np.prod(2*self.Range)
+        return np.prod(2 * self.Range)
 
-    def view(self,xlabel='',savefile=None):
+    def view(self, xlabel='', savefile=None):
         """
         view 1D or 2D plot of distribution for visual checks
 
@@ -670,30 +690,31 @@ class uniformFunc(Distribution):
         ValueError
             if called when ndim is > 2
         """
-        super().view(xlabel=xlabel,savefile=savefile) # call parent distribution class
+        super().view(xlabel=xlabel, savefile=savefile)  # call parent distribution class
 
-        if self.ndim == 1: # add trace of normal distribution to plot
-        
-            x = np.linspace(self.lb.squeeze(), self.ub.squeeze(),100) # 1D grid
-            p = self.compute_density(x[:,None]) # get density values
-            self.ax.plot(x,p)
+        if self.ndim == 1:  # add trace of normal distribution to plot
+
+            x = np.linspace(self.lb.squeeze(), self.ub.squeeze(), 100)  # 1D grid
+            p = self.compute_density(x[:, None])  # get density values
+            self.ax.plot(x, p)
             plt.draw()
             plt.pause(0.0001)
 
         if savefile is not None:
             # Save figure to image
-            check_folder('images/%s' %(self.label))
-            self.fig.savefig('images/%s/%s.pdf' %(self.label,savefile), 
-                format='pdf', dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % self.label)
+            self.fig.savefig('images/%s/%s.pdf' % (self.label, savefile),
+                             format='pdf', dpi=200, bbox_inches='tight')
 
-class VisualizeDist():
-    def __init__(self,values:np.ndarray,cutoff:float=None,buffer_limit:float=None):
+
+class VisualizeDist:
+    def __init__(self, values: np.ndarray, cutoff: float = None, buffer_limit: float = None):
         """
         Contains PDF and CDF visualization tools
 
         Parameters
         ----------
-        values : np.1darray
+        values : np.ndarray
             vector of sample observations whose PDF is to be visualized using a histogram
         cutoff : float, optional
             cutoff limit for calculating reliability, by default None
@@ -701,11 +722,11 @@ class VisualizeDist():
             lower bound for beginning of buffer zone, by default None
         """
 
-        self.values         = values
-        self.cutoff         = cutoff
-        self.buffer_limit   = buffer_limit
+        self.values = values
+        self.cutoff = cutoff
+        self.buffer_limit = buffer_limit
 
-    def view(self,xlabel:str='',folder:str='',file:str=None,img_format:str='pdf'):
+    def view(self, xlabel: str = '', folder: str = '', file: str = None, img_format: str = 'pdf'):
         """
         view 1D or 2D plot of probability distribution of value
 
@@ -729,13 +750,13 @@ class VisualizeDist():
 
         if file is not None:
             # Save figure to image
-            check_folder('images/%s' %(folder))
-            fig.savefig('images/%s/%s.%s' %(folder,file,img_format), 
-                format=img_format, dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % folder)
+            fig.savefig('images/%s/%s.%s' % (folder, file, img_format),
+                        format=img_format, dpi=200, bbox_inches='tight')
 
         plt.show()
 
-    def view_cdf(self,xlabel:str='',folder:str='',file:str=None,img_format:str='pdf'):
+    def view_cdf(self, xlabel: str = '', folder: str = '', file: str = None, img_format: str = 'pdf'):
         """
         view 1D or 2D plot of probability distribution of value
 
@@ -743,73 +764,78 @@ class VisualizeDist():
         ----------
         xlabel : str, optional
             the xlabel to display on the plot, by default ''
-        savefile : str, optional
-            if provided saves a screenshot of the figure to file in pdf format, by default None
+        folder : str, optional
+            folder in which to store image, by default ''
+        file : str, optional
+            name of image file, if not provide then an image is not saved, by default None
+        img_format : str, optional
+            format of the image to be stored, by default 'pdf'
         """
 
-        # calculate CDF
-        if all([self.cutoff is not None, self.buffer_limit is not None]):
-            bin_centers, cdf, value_limit, reliability = compute_cdf(self.values,cutoff=self.cutoff,buffer_limit=self.buffer_limit)
-            buffer_band = (bin_centers >= self.buffer_limit) & (cdf <= self.cutoff)
-            value_band = cdf >= self.cutoff
-        else:
-            bin_centers, cdf = compute_cdf(self.values)
-
         fig, ax = plt.subplots(figsize=(8, 3))
-        ax.plot(bin_centers, cdf, '-b')
-
         ax.set_xlabel(xlabel)
         ax.set_ylabel('Cumulative density')
 
+        # calculate CDF
         if all([self.cutoff is not None, self.buffer_limit is not None]):
+            bin_centers, cdf, value_limit, reliability = compute_cdf(self.values, cutoff=self.cutoff,
+                                                                     buffer_limit=self.buffer_limit)
+            buffer_band = (bin_centers >= self.buffer_limit) & (cdf <= self.cutoff)
+            value_band = cdf >= self.cutoff
 
-            ax.vlines([self.buffer_limit,value_limit],[0,0],[1-reliability,self.cutoff],linestyles='dashed')
+            ax.vlines([self.buffer_limit, value_limit], [0, 0], [1 - reliability, self.cutoff], linestyles='dashed')
             ax.fill_between(bin_centers[buffer_band], 0, cdf[buffer_band], facecolor='Green', alpha=0.4, label='Buffer')
             ax.fill_between(bin_centers[value_band], 0, cdf[value_band], facecolor='Red', alpha=0.4, label='Excess')
-            
+
             tb = ax.text((value_limit + self.buffer_limit) / 2 - 0.2, 0.1, 'Buffer', fontsize=14)
             te = ax.text((value_limit + bin_centers[-1]) / 2 - 0.2, 0.1, 'Excess', fontsize=14)
             tb.set_bbox(dict(facecolor='white'))
             te.set_bbox(dict(facecolor='white'))
 
+        else:
+            bin_centers, cdf = compute_cdf(self.values)
+
+        ax.plot(bin_centers, cdf, '-b')
+
         if file is not None:
             # Save figure to image
-            check_folder('images/%s' %(folder))
-            self.fig.savefig('images/%s/%s.%s' %(folder,file,img_format), 
-                format=img_format, dpi=200, bbox_inches='tight')
+            check_folder('images/%s' % folder)
+            fig.savefig('images/%s/%s.%s' % (folder, file, img_format),
+                        format=img_format, dpi=200, bbox_inches='tight')
 
         plt.show()
 
-if __name__ == "__main__":
 
-    from dmLib import Design, gaussianFunc
+if __name__ == "__main__":
+    from dmLib import Design, GaussianFunc
 
     mean = 10.0
     sd = 5.0
 
     # 1D example
-    x = np.linspace(-100,100,100) # 2D grid
-    function = gaussianFunc(np.array([mean]),np.array([[sd**2,]]))
-    p = function.compute_density(x[:,None]) # get density values
+    x_test = np.linspace(-100, 100, 100)  # 2D grid
+    function = GaussianFunc(np.array([mean]), np.array([[sd ** 2, ]]))
+    p_test = function.compute_density(x_test[:, None])  # get density values
 
-    dist = Distribution(p)
-    print(dist(10000).mean(axis=1)) # should be close to 10.0
-    print(dist(10000).std(axis=1)) # should be close to 5.0
+    dist = Distribution(p_test)
+    print(dist.random(10000).mean(axis=1))  # should be close to 10.0
+    print(dist.random(10000).std(axis=1))  # should be close to 5.0
 
     # View distribution
-    plt.hist(dist(10000).squeeze(), bins=100, density=True)
+    plt.hist(dist.random(10000).squeeze(), bins=100, density=True)
     plt.show()
 
     # 2D example
-    x = Design(np.array([-100,-100]),np.array([100,100]),512,"fullfact").unscale() # 2D grid
-    function = gaussianFunc(np.array([mean,mean]),np.array([[sd**2,0],[0,sd**2]]))
-    p = function.compute_density(x) # get density values
+    x_test = Design(np.array([-100, -100]), np.array([100, 100]), 512, "fullfact").unscale()  # 2D grid
+    function = GaussianFunc(np.array([mean, mean]), np.array([[sd ** 2, 0], [0, sd ** 2]]))
+    p_test = function.compute_density(x_test)  # get density values
 
-    dist = Distribution(p.reshape((512,512)))
-    print(dist(1000000).mean(axis=1)) # should be close to 10.0
-    print(dist(1000000).std(axis=1)) # should be close to 5.0
+    dist = Distribution(p_test.reshape((512, 512)))
+    print(dist.random(1000000).mean(axis=1))  # should be close to 10.0
+    print(dist.random(1000000).std(axis=1))  # should be close to 5.0
 
     # View distribution
     import matplotlib.pyplot as plt
-    plt.scatter(*dist(1000))
+
+    plt.scatter(*dist.random(1000))
     plt.show()

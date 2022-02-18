@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib import triangularFunc, fuzzySet, fuzzyRule, fuzzySystem
+from dmLib import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
 
 def create_set(lb,ub):
     """" Create a fuzzy set from a given range """
@@ -15,16 +15,16 @@ def create_set(lb,ub):
     shape_hi = np.array([lb + 1*(ub-lb)/4,  ub,             ub])
 
     # Generate fuzzy membership functions
-    lo = triangularFunc(universe)
-    lo.setFunc(shape_lo[0],shape_lo[1],shape_lo[2])
+    lo = TriangularFunc(universe)
+    lo.set_func(shape_lo[0], shape_lo[1], shape_lo[2])
 
-    md = triangularFunc(universe)
-    md.setFunc(shape_md[0],shape_md[1],shape_md[2])
+    md = TriangularFunc(universe)
+    md.set_func(shape_md[0], shape_md[1], shape_md[2])
 
-    hi = triangularFunc(universe)
-    hi.setFunc(shape_hi[0],shape_hi[1],shape_hi[2])
+    hi = TriangularFunc(universe)
+    hi.set_func(shape_hi[0], shape_hi[1], shape_hi[2])
 
-    fuzzy_set = fuzzySet(lo,md,hi)
+    fuzzy_set = FuzzySet(lo, md, hi)
 
     return fuzzy_set
 
@@ -36,7 +36,7 @@ def input_set_1():
     ub = 10.0
 
     fuzzyset_in_1 = create_set(lb,ub)
-    fuzzyset_in_1.setLabel('Input_1')
+    fuzzyset_in_1.set_label('Input_1')
 
     return fuzzyset_in_1
 
@@ -48,7 +48,7 @@ def input_set_2():
     ub = 10.0
 
     fuzzyset_in_2 = create_set(lb,ub)
-    fuzzyset_in_2.setLabel('Input_2')
+    fuzzyset_in_2.set_label('Input_2')
 
     return fuzzyset_in_2
 
@@ -60,7 +60,7 @@ def output_set():
     ub = 100.0
 
     fuzzyset_out = create_set(lb,ub)
-    fuzzyset_out.setLabel('output')
+    fuzzyset_out.set_label('output')
 
     return fuzzyset_out
 
@@ -99,12 +99,12 @@ def test_traingular():
     shape = np.array([lb + (ub-lb)/4, lb + (ub-lb)/2, ub - (ub-lb)/4])
 
     # Generate fuzzy membership functions
-    function = triangularFunc(universe,'test')
-    function.setFunc(shape[0],shape[1],shape[2])
+    function = TriangularFunc(universe, 'test')
+    function.set_func(shape[0], shape[1], shape[2])
 
     # test that a triangular function is returned
     test_array = np.array([0. , 0. , 0. , 0.2, 0.6, 1. , 0.6, 0.2, 0. , 0. , 0. ])
-    assert (function.getArray() == test_array).all()
+    assert (function.get_array() == test_array).all()
 
     # test that correct membership is inferred
     assert function.interp(5) == 1.0
@@ -125,12 +125,12 @@ def test_traingular_N():
     shape = np.array([lb + (ub-lb)/4, lb + (ub-lb)/2, ub - (ub-lb)/4])
 
     # Generate fuzzy membership functions
-    function = triangularFunc(universe,'test')
-    function.setFunc(shape[0],shape[1],shape[2])
+    function = TriangularFunc(universe, 'test')
+    function.set_func(shape[0], shape[1], shape[2])
 
     # test that a triangular function is returned
     test_array = np.array([0. , 0. , 0. , 0.2, 0.6, 1. , 0.6, 0.2, 0. , 0. , 0. ])
-    assert (function.getArray() == test_array).all()
+    assert (function.get_array() == test_array).all()
 
     # test that correct membership is inferred for array of inputs
     output = function.interp(np.array([4,5,6]))
@@ -162,14 +162,14 @@ def test_fuzzyRule(input_set_1,input_set_2,output_set,input_1D):
     ######################################################
 
     # Define fuzzy rules
-    rule = fuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'},],output_set.lo,label='rule')
+    rule = FuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'}, ], output_set.lo, label='rule')
 
     input_set_1.lo.interp(input_1D[0])
     output = rule.apply(input_1D)
 
     # Test result by manual calculation
     rule_test = np.fmax(input_set_1.lo.interp(input_1D[0]), input_set_2.lo.interp(input_1D[1]))
-    activation_test = np.fmin(rule_test, output_set.lo.getArray())  # removed entirely to 0
+    activation_test = np.fmin(rule_test, output_set.lo.get_array())  # removed entirely to 0
 
     assert (output == activation_test).all()
 
@@ -208,7 +208,7 @@ def test_fuzzyRule_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D_5):
     ################ 1 input in a 2D array ###############
 
     # Define fuzzy rules
-    rule = fuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'},],output_set.lo,label='rule')
+    rule = FuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'}, ], output_set.lo, label='rule')
 
     input_set_1.lo.interp(input_2D_1[:,0])
     output = rule.apply(input_2D_1)
@@ -226,7 +226,7 @@ def test_fuzzyRule_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D_5):
 
     # rule_test [n, len output_set.universe]
     
-    activation_test = np.fmin(rule_test, output_set.lo.getArray())  # removed entirely to 0
+    activation_test = np.fmin(rule_test, output_set.lo.get_array())  # removed entirely to 0
 
     # activation_test [n, len output_set.universe]
 
@@ -235,7 +235,7 @@ def test_fuzzyRule_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D_5):
     ################ 5 inputs in a 2D array ###############
 
     # Define fuzzy rules
-    rule = fuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'},],output_set.lo,label='rule')
+    rule = FuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'}, ], output_set.lo, label='rule')
     test_input = np.array([
         [1.0, 0.5,],
         [2.0, 1.5,],
@@ -260,7 +260,7 @@ def test_fuzzyRule_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D_5):
 
     # rule_test [n, len output_set.universe]
     
-    activation_test = np.fmin(rule_test, output_set.lo.getArray())  # removed entirely to 0
+    activation_test = np.fmin(rule_test, output_set.lo.get_array())  # removed entirely to 0
 
     # activation_test [n, len output_set.universe]
 
@@ -291,12 +291,12 @@ def test_fuzzyInference(input_set_1,input_set_2,output_set,input_1D):
     ######################################################
 
     # Define fuzzy rules
-    rule_1 = fuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'},],output_set.lo,label='rule_1')
-    rule_2 = fuzzyRule([{'fun1': input_set_1.hi, 'fun2': input_set_2.hi, 'operator': 'OR'},],output_set.hi,label='rule_2')
+    rule_1 = FuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'}, ], output_set.lo, label='rule_1')
+    rule_2 = FuzzyRule([{'fun1': input_set_1.hi, 'fun2': input_set_2.hi, 'operator': 'OR'}, ], output_set.hi, label='rule_2')
 
     # Define fuzzy control system
     rules = [rule_1, rule_2,]
-    sim = fuzzySystem([input_set_1,input_set_2],output_set,rules)
+    sim = FuzzySystem([input_set_1, input_set_2], output_set, rules)
 
     # Compute for given inputs
     test_input = np.array([2.0, 0.5,])
@@ -304,10 +304,10 @@ def test_fuzzyInference(input_set_1,input_set_2,output_set,input_1D):
 
     # Test result by manual calculation
     rule_test_1 = np.fmax(input_set_1.lo.interp(input_1D[0]), input_set_2.lo.interp(input_1D[1]))
-    activation_test_1 = np.fmin(rule_test_1, output_set.lo.getArray())
+    activation_test_1 = np.fmin(rule_test_1, output_set.lo.get_array())
 
     rule_test_2 = np.fmax(input_set_1.hi.interp(input_1D[0]), input_set_2.hi.interp(input_1D[1]))
-    activation_test_2 = np.fmin(rule_test_2, output_set.hi.getArray())
+    activation_test_2 = np.fmin(rule_test_2, output_set.hi.get_array())
 
     aggregate_test = np.fmax(activation_test_1,activation_test_2)
 
@@ -355,12 +355,12 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
     ######################################################
 
     # Define fuzzy rules
-    rule_1 = fuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'},],output_set.lo,label='rule_1')
-    rule_2 = fuzzyRule([{'fun1': input_set_1.hi, 'fun2': input_set_2.hi, 'operator': 'OR'},],output_set.hi,label='rule_2')
+    rule_1 = FuzzyRule([{'fun1': input_set_1.lo, 'fun2': input_set_2.lo, 'operator': 'OR'}, ], output_set.lo, label='rule_1')
+    rule_2 = FuzzyRule([{'fun1': input_set_1.hi, 'fun2': input_set_2.hi, 'operator': 'OR'}, ], output_set.hi, label='rule_2')
 
     # Define fuzzy control system
     rules = [rule_1, rule_2,]
-    sim = fuzzySystem([input_set_1,input_set_2],output_set,rules)
+    sim = FuzzySystem([input_set_1, input_set_2], output_set, rules)
 
     ################ 1 input in a 2D array ###############
     # Compute for given inputs
@@ -384,7 +384,7 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
 
     # rule_test [n, len output_set.universe]
     
-    activation_test_1 = np.fmin(rule_test_1, output_set.lo.getArray())  # removed entirely to 0
+    activation_test_1 = np.fmin(rule_test_1, output_set.lo.get_array())  # removed entirely to 0
 
     # activation_test_1 [n, len output_set.universe]
 
@@ -401,7 +401,7 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
 
     # rule_test_2 [n, len output_set.universe]
     
-    activation_test_2 = np.fmin(rule_test_2, output_set.hi.getArray())  # removed entirely to 0
+    activation_test_2 = np.fmin(rule_test_2, output_set.hi.get_array())  # removed entirely to 0
 
     # activation_test_2 [n, len output_set.universe]
 
@@ -434,7 +434,7 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
 
     # rule_test [n, len output_set.universe]
     
-    activation_test_1 = np.fmin(rule_test_1, output_set.lo.getArray())  # removed entirely to 0
+    activation_test_1 = np.fmin(rule_test_1, output_set.lo.get_array())  # removed entirely to 0
 
     # activation_test_1 [n, len output_set.universe]
 
@@ -451,7 +451,7 @@ def test_fuzzyInference_N(input_set_1,input_set_2,output_set,input_2D_1,input_2D
 
     # rule_test_2 [n, len output_set.universe]
     
-    activation_test_2 = np.fmin(rule_test_2, output_set.hi.getArray())  # removed entirely to 0
+    activation_test_2 = np.fmin(rule_test_2, output_set.hi.get_array())  # removed entirely to 0
 
     # activation_test_2 [n, len output_set.universe]
 
@@ -469,17 +469,17 @@ if __name__ == "__main__":
     lb = 0.0
     ub = 10.0
     input_set_1 = create_set(lb,ub)
-    input_set_1.setLabel('Input_1')
+    input_set_1.set_label('Input_1')
 
     lb = 0.0
     ub = 10.0
     input_set_2 = create_set(lb,ub)
-    input_set_2.setLabel('Input_2')
+    input_set_2.set_label('Input_2')
 
     lb = 0.0
     ub = 100.0
     output_set = create_set(lb,ub)
-    output_set.setLabel('output')
+    output_set.set_label('output')
 
     input_2D_1 = np.array([[2.0, 0.5,],])
 

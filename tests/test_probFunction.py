@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib import Design, gaussianFunc, uniformFunc, Distribution
+from dmLib import Design, GaussianFunc, UniformFunc, Distribution
 
 # Input set 1
 @pytest.fixture
@@ -28,7 +28,7 @@ def test_compute_density_gaussian():
     ub = np.array([1.0, 1.0,])
     s = Design(lb,ub,5,'fullfact').unscale()
 
-    test_function = gaussianFunc(mu,Sigma)
+    test_function = GaussianFunc(mu, Sigma)
 
     test = test_function.compute_density(s)
 
@@ -67,7 +67,7 @@ def test_compute_density_uniform():
     ub = np.array([1.0, 1.0,])
     s = Design(lb,ub,5,'fullfact').unscale()
 
-    test_function = uniformFunc(center,range)
+    test_function = UniformFunc(center, range)
 
     test = test_function.compute_density(s)
 
@@ -90,7 +90,7 @@ def test_compute_volume_2D():
     r = 2 # Mahalanobis distance
 
     # Compute volumes using compute_volume method
-    test_function = gaussianFunc(mu,Sigma)
+    test_function = GaussianFunc(mu, Sigma)
     V_output = test_function.compute_volume(r=r)
 
     # Compute volumes analytically
@@ -145,7 +145,7 @@ def test_compute_volume_2D_cov():
     r = 2 # Mahalanobis distance
 
     # plot rotated ellipse
-    test_function = gaussianFunc(mu,Sigma)
+    test_function = GaussianFunc(mu, Sigma)
     V_output = test_function.compute_volume(r=r)
 
     # Compute volumes numerically
@@ -210,7 +210,7 @@ def test_compute_density_r():
     r = 2 # Mahalanobis distance
 
     # Compute density using compute_density_r method
-    test_function = gaussianFunc(mu,Sigma)
+    test_function = GaussianFunc(mu, Sigma)
     p_output = test_function.compute_density_r(r=r)
 
     # Compute density analytically
@@ -233,7 +233,7 @@ def test_compute_density_r():
     r = 2 # Mahalanobis distance
 
     # plot rotated ellipse
-    test_function = gaussianFunc(mu,Sigma)
+    test_function = GaussianFunc(mu, Sigma)
     p_output = test_function.compute_density_r(r=r)
 
     # Compute density numerically
@@ -263,11 +263,11 @@ def test_gaussian_pdf_rvs(example_mean_std):
 
     # 1D example
     x = np.linspace(-100,100,100) # 2D grid
-    dist = gaussianFunc(np.array([mean]),np.array([[sd**2,]]))
+    dist = GaussianFunc(np.array([mean]), np.array([[sd ** 2, ]]))
     p = dist.compute_density(x[:,None]) # get density values
 
-    output_mean = dist(10000).mean(axis=1).squeeze() # should be close to 10.0
-    output_sd = dist(10000).std(axis=1).squeeze() # should be close to 5.0
+    output_mean = dist.random(10000).mean() # should be close to 10.0
+    output_sd = dist.random(10000).std() # should be close to 5.0
 
     if (output_mean.ndim == 0) & (output_sd.ndim == 0):
         output_mean = float(output_mean)
@@ -278,7 +278,7 @@ def test_gaussian_pdf_rvs(example_mean_std):
 
     # # View distribution
     # import matplotlib.pyplot as plt
-    # plt.hist(dist(10000).squeeze(), bins=100, density=True)
+    # plt.hist(dist(10000), bins=100, density=True)
     # # plt.plot(np.linspace(-6,6),pdf)
     # plt.show()
 
@@ -292,11 +292,11 @@ def test_gaussian_pdf_rvs(example_mean_std):
     var = (sd**2) * np.eye(2)
 
     x = Design(-100*np.ones(2),100*np.ones(2),50,"fullfact").unscale() # 2D grid
-    dist = gaussianFunc(mean,var)
+    dist = GaussianFunc(mean, var)
     p = dist.compute_density(x) # get density values
 
-    output_mean = dist(10000).mean(axis=1) # should be close to 10.0
-    output_var = np.diag(dist(10000).var(axis=1)) # should be close to 5.0
+    output_mean = dist.random(10000).mean(axis=1) # should be close to 10.0
+    output_var = np.diag(dist.random(10000).var(axis=1)) # should be close to 5.0
 
     if (output_mean.ndim != 1) | (output_var.ndim != 2):
         raise ValueError("Number of dimensions in function output \
@@ -325,11 +325,11 @@ def test_uniform_pdf_rvs(example_mean_std):
 
     # 1D example
     x = np.linspace(-100,100,100) # 2D grid
-    dist = uniformFunc(center,range)
+    dist = UniformFunc(center, range)
     p = dist.compute_density(x[:,None]) # get density values
 
-    output_mean = dist(10000).mean(axis=1).squeeze() # should be close to 10.0
-    output_sd = dist(10000).var(axis=1).squeeze() # should be close to (b-a)^2 /12
+    output_mean = dist.random(10000).mean() # should be close to 10.0
+    output_sd = dist.random(10000).var() # should be close to (b-a)^2 /12
 
     if (output_mean.ndim == 0) & (output_sd.ndim == 0):
         output_mean = float(output_mean)
@@ -340,7 +340,7 @@ def test_uniform_pdf_rvs(example_mean_std):
 
     # # View distribution
     # import matplotlib.pyplot as plt
-    # plt.hist(dist(10000).squeeze(), bins=100, density=True)
+    # plt.hist(dist(10000), bins=100, density=True)
     # # plt.plot(np.linspace(-6,6),pdf)
     # plt.show()
 
@@ -355,11 +355,11 @@ def test_uniform_pdf_rvs(example_mean_std):
     range = range * np.ones(2)
 
     x = Design(-100*np.ones(2),100*np.ones(2),50,"fullfact").unscale() # 2D grid
-    dist = uniformFunc(center,range)
+    dist = UniformFunc(center, range)
     p = dist.compute_density(x) # get density values
 
-    output_mean = dist(10000).mean(axis=1) # should be close to 10.0
-    output_var = np.diag(dist(10000).var(axis=1)) # should be close to 5.0
+    output_mean = dist.random(10000).mean(axis=1) # should be close to 10.0
+    output_var = np.diag(dist.random(10000).var(axis=1)) # should be close to 5.0
 
     if (output_mean.ndim != 1) | (output_var.ndim != 2):
         raise ValueError("Number of dimensions in function output \
@@ -371,7 +371,7 @@ def test_uniform_pdf_rvs(example_mean_std):
 
     # # View distribution
     # import matplotlib.pyplot as plt
-    # plt.scatter(*dist(1000))
+    # plt.scatter(*dist.random(1000))
     # plt.show()
 
 def test_arbitrary_pdf_rvs(example_mean_std):
@@ -388,12 +388,12 @@ def test_arbitrary_pdf_rvs(example_mean_std):
 
     # 1D example
     x = np.linspace(-100,100,100) # 2D grid
-    function = gaussianFunc(np.array([mean]),np.array([[sd**2,]]))
+    function = GaussianFunc(np.array([mean]), np.array([[sd ** 2, ]]))
     p = function.compute_density(x[:,None]) # get density values
     dist = Distribution(p,lb=-100,ub=100)
 
-    output_mean = dist(10000).mean(axis=1).squeeze() # should be close to 10.0
-    output_sd = dist(10000).std(axis=1).squeeze() # should be close to 5.0
+    output_mean = dist.random(10000).mean() # should be close to 10.0
+    output_sd = dist.random(10000).std() # should be close to 5.0
 
     if output_mean.ndim == 0 & output_sd.ndim == 0:
         output_mean = float(output_mean)
@@ -404,7 +404,7 @@ def test_arbitrary_pdf_rvs(example_mean_std):
 
     # # View distribution
     # import matplotlib.pyplot as plt
-    # plt.hist(dist(10000).squeeze(), bins=100, density=True)
+    # plt.hist(dist.random(10000), bins=100, density=True)
     # # plt.plot(np.linspace(-6,6),pdf)
     # plt.show()
 
@@ -418,12 +418,12 @@ def test_arbitrary_pdf_rvs(example_mean_std):
     var = (sd**2) * np.eye(2)
 
     x = Design(-100*np.ones(2),100*np.ones(2),50,"fullfact").unscale() # 2D grid
-    function = gaussianFunc(mean,var)
+    function = GaussianFunc(mean, var)
     p = function.compute_density(x) # get density values
 
     dist = Distribution(p.reshape((50,)*2),lb=-100,ub=100)
-    output_mean = dist(10000).mean(axis=1) # should be close to 10.0
-    output_var = np.diag(dist(10000).var(axis=1)) # should be close to 5.0
+    output_mean = dist.random(10000).mean(axis=1) # should be close to 10.0
+    output_var = np.diag(dist.random(10000).var(axis=1)) # should be close to 5.0
 
     if (output_mean.ndim != 1) | (output_var.ndim != 2):
         raise ValueError("Number of dimensions in function output \
@@ -438,7 +438,7 @@ def test_arbitrary_pdf_rvs(example_mean_std):
 
     # # View distribution
     # import matplotlib.pyplot as plt
-    # plt.scatter(*dist(1000))
+    # plt.scatter(*dist.random(1000))
     # plt.show()
 
     # 3D example
@@ -448,12 +448,12 @@ def test_arbitrary_pdf_rvs(example_mean_std):
     var = (sd**2) * np.eye(3)
 
     x = Design(-100*np.ones(3),100*np.ones(3),50,"fullfact").unscale() # 3D grid
-    function = gaussianFunc(mean,var)
+    function = GaussianFunc(mean, var)
     p = function.compute_density(x) # get density values
 
     dist = Distribution(p.reshape((50,)*3),lb=-100,ub=100)
-    output_mean = dist(10000).mean(axis=1) # should be close to 10.0
-    output_var = np.diag(dist(10000).var(axis=1)) # should be close to 5.0
+    output_mean = dist.random(10000).mean(axis=1) # should be close to 10.0
+    output_var = np.diag(dist.random(10000).var(axis=1)) # should be close to 5.0
 
     if (output_mean.ndim != 1) | (output_var.ndim != 2):
         raise ValueError("Number of dimensions in function output \

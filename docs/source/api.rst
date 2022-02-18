@@ -2,7 +2,7 @@ The dmLib API reference
 =======================
 
 .. automodule:: dmLib
-   :members:
+   :noindex:
 
 The “DOELib” module
 -------------------
@@ -19,16 +19,16 @@ The “fuzzyLib” module
 .. automodule:: dmLib.fuzzyLib
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.triangularFunc
+.. autoclass:: dmLib.fuzzyLib.TriangularFunc
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzyRule
+.. autoclass:: dmLib.fuzzyLib.FuzzyRule
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzySet
+.. autoclass:: dmLib.fuzzyLib.FuzzySet
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.fuzzySystem
+.. autoclass:: dmLib.fuzzyLib.FuzzySystem
    :members:
 
 The “uncertaintyLib” module
@@ -37,7 +37,7 @@ The “uncertaintyLib” module
 .. automodule:: dmLib.uncertaintyLib
    :members:
 
-.. autoclass:: dmLib.uncertaintyLib.gaussianFunc
+.. autoclass:: dmLib.uncertaintyLib.GaussianFunc
    :members:
 
 .. autoclass:: dmLib.uncertaintyLib.Distribution
@@ -52,8 +52,23 @@ The "designMargins" module
 .. automodule:: dmLib.designMarginsLib
    :members:
 
-.. autoclass:: dmLib.designMarginsLib.InputSpec
+.. autoclass:: dmLib.designMarginsLib.ScalarParam
    :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: dmLib.designMarginsLib.VectorParam
+   :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: dmLib.designMarginsLib.MatrixParam
+   :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
 
 .. autoclass:: dmLib.designMarginsLib.FixedParam
    :members:
@@ -61,17 +76,25 @@ The "designMargins" module
 .. autoclass:: dmLib.designMarginsLib.DesignParam
    :members:
 
+.. autoclass:: dmLib.designMarginsLib.InputSpec
+   :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
+
 .. autoclass:: dmLib.designMarginsLib.Behaviour
    :members:
+   :noindex:
 
 .. autoclass:: dmLib.designMarginsLib.Performance
    :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
 
 .. autoclass:: dmLib.designMarginsLib.MarginNode
    :members:
 
-.. autoclass:: dmLib.designMarginsLib.ImpactMatrix
-   :members:
-
 .. autoclass:: dmLib.designMarginsLib.MarginNetwork
    :members:
+   :noindex:
