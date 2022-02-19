@@ -46,27 +46,27 @@ def gridsamp(bounds: np.ndarray, q: Union[int, np.ndarray, List[int]]) -> np.nda
 
     # Recursive computation
     if n > 1:
-        A = gridsamp(bounds[:, 1::], q[1::])  # Recursive call
-        [m, p] = np.shape(A)
+        a = gridsamp(bounds[:, 1::], q[1::])  # Recursive call
+        [m, _] = np.shape(a)
         q = int(q[0])
-        S = np.concatenate((np.zeros((m * q, 1)), np.tile(A, (q, 1))), axis=1)
+        s = np.concatenate((np.zeros((m * q, 1)), np.tile(a, (q, 1))), axis=1)
         y = np.linspace(bounds[0, 0], bounds[1, 0], q)
 
         k = range(m)
         for i in range(q):
             aug = np.tile(y[i], (m, 1))
-            aug = np.reshape(aug, S[k, 0].shape)
+            aug = np.reshape(aug, s[k, 0].shape)
 
-            S[k, 0] = aug
+            s[k, 0] = aug
             k = [item + m for item in k]
     else:
-        S = np.linspace(bounds[0, 0], bounds[1, 0], int(q[-1]))
-        S = np.transpose([S])
+        s = np.linspace(bounds[0, 0], bounds[1, 0], int(q[-1]))
+        s = np.transpose([s])
 
-    return S
+    return s
 
 
-def scaling(x: np.ndarray, l: np.ndarray, u: np.ndarray, operation: int) -> np.ndarray:
+def scaling(x: np.ndarray, lb: np.ndarray, ub: np.ndarray, operation: int) -> np.ndarray:
     """
     Scaling by a range
 
@@ -74,9 +74,9 @@ def scaling(x: np.ndarray, l: np.ndarray, u: np.ndarray, operation: int) -> np.n
     ----------
     x : np.ndarray
         2d array of size n * nsamples of datapoints
-    l : np.ndarray
+    lb : np.ndarray
         1d array of length n specifying lower range of features
-    u : np.ndarray
+    ub : np.ndarray
         1d array of length n = len(l) specifying upper range of features
     operation : int
         The flag type indicates whether to scale (1) or unscale (2)
@@ -89,15 +89,15 @@ def scaling(x: np.ndarray, l: np.ndarray, u: np.ndarray, operation: int) -> np.n
 
     if operation == 1:
         # scale
-        x_out = (x - l) / (u - l)
+        x_out = (x - lb) / (ub - lb)
         return x_out
     elif operation == 2:
         # unscale
-        x_out = l + x * (u - l)
+        x_out = lb + x * (ub - lb)
         return x_out
 
 
-class Design():
+class Design:
 
     def __init__(self, lb: np.ndarray, ub: np.ndarray, nsamples: Union[int, List[int], np.ndarray], doe_type: str):
         """
@@ -153,9 +153,9 @@ class Design():
             numpy array of size n * nsamples of LH values unscaled by lb and ub
         """
 
-        unscaled_LH = scaling(self.design, self.lb, self.ub, 2)
+        unscaled_lh = scaling(self.design, self.lb, self.ub, 2)
 
-        return unscaled_LH
+        return unscaled_lh
 
     def scale(self) -> np.ndarray:
         """

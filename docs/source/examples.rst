@@ -9,3 +9,4 @@ Below is a list of examples on how to use ``dmLib`` to solve practical design pr
 
    notebooks/TRS_example
    notebooks/strut_example
+   notebooks/PDF_examples

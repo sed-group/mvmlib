@@ -5,6 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as st
 from smt.surrogate_models import KRG
+from smt.sampling_methods import LHS
+from smt.applications.mixed_integer import (
+    FLOAT,
+    ORD,
+    ENUM,
+    MixedIntegerSamplingMethod,
+)
 
 from .DOELib import Design, scaling
 from .uncertaintyLib import Distribution, GaussianFunc, UniformFunc, VisualizeDist
@@ -467,7 +474,6 @@ class FixedParam:
                  description: str = '', symbol: str = ''):
         """
         Contains description of an input parameter to the MAN
-        is inherited by DesignParam
 
         Parameters
         ----------
@@ -490,7 +496,7 @@ class FixedParam:
 
 class DesignParam:
     def __init__(self, value: Union[float, int, str], key: str,
-                 universe: Union[Tuple[Union[int, float], Union[int, float]], List[Union[int, float]]],
+                 universe: List[Union[int, float]], variable_type: str,
                  description: str = '', symbol: str = ''):
         """
         Contains description of an input parameter to the MAN
@@ -502,10 +508,12 @@ class DesignParam:
             the value of the input spec
         key : str
             unique identifier
-        universe : Union[Tuple[Union[int,float],Union[int,float]],List[Union[int,float]]]
+        universe : List[Union[int, float]]
             the possible values the design parameter can take, 
-            If tuple must be of length 2 (upper and lower bound)
+            must be of length 2 (upper and lower bound)
             type(value) must be float, or int
+        variable_type : str
+            type of variable, possible values are 'INT', 'FLOAT'
         description : str, optional
             description string, by default ''
         symbol : str, optional
@@ -515,13 +523,11 @@ class DesignParam:
         self.symbol = symbol
         self.key = key
         self.type = type(value)
+        self.variable_type = variable_type
         self.value = value
 
-        if type(universe) == tuple:
-            assert len(universe) == 2
-            assert self.type in [float, int]
-        elif type(universe) == list:
-            assert len(universe) > 0
+        assert len(universe) == 2, 'Universe must have a length of 2, %i given' % len(universe)
+        assert self.type in [float, int]
         self.original = value
         self.universe = universe
 
@@ -534,8 +540,8 @@ class DesignParam:
 
 class InputSpec(ScalarParam):
     def __init__(self, value: Union[float, int, Distribution, GaussianFunc, UniformFunc],
-                 key: str, universe: Tuple[float, float], description: str = '', symbol: str = '',
-                 distribution: Distribution = None,
+                 key: str, universe: List[Union[int, float]], variable_type: str,
+                 description: str = '', symbol: str = '', distribution: Distribution = None,
                  cov_index: int = 0, inc: float = 5.0, inc_type: str = 'rel'):
         """
         Contains description of an input specification
@@ -548,10 +554,12 @@ class InputSpec(ScalarParam):
             if type is Distribution then a sample is drawn
         key : str
             unique identifier
-        universe : Tuple[float,float]
+        universe : List[Union[int, float]]
             the possible values the design parameter can take, 
             must be of length 2 (upper and lower bound)
-            type(value) must be float
+            type(value) must be float or int
+        variable_type : str
+            type of variable, possible values are 'INT', 'FLOAT'
         description : str, optional
             description string, by default ''
         symbol : str, optional
@@ -561,7 +569,7 @@ class InputSpec(ScalarParam):
             Example:
             >>> from dmLib import InputSpec, GaussianFunc
             >>> dist = GaussianFunc(1.0, 0.1)
-            >>> s1 = InputSpec(1.0, 'S1', (0.0, 1.0), distribution=dist)
+            >>> s1 = InputSpec(1.0, 'S1', [0.0, 1.0], 'FLOAT', distribution=dist)
             >>> sample = s1.random()
         cov_index : int, optional
             which random variable to draw from 
@@ -585,6 +593,7 @@ class InputSpec(ScalarParam):
         self.inc_type = inc_type
         self.original = value
         self.universe = universe
+        self.variable_type = variable_type
 
         self.value = value
 
@@ -601,6 +610,7 @@ class InputSpec(ScalarParam):
             self.ndim = 1
 
         assert self.cov_index <= self.ndim
+        assert len(universe) == 2, 'Universe must have a length of 2, %i given' % len(universe)
 
     def reset(self, n: int = None):
         """
@@ -795,9 +805,118 @@ class Behaviour(ABC):
         return
 
 
+class Decision:
+    def __init__(self, universe: List[Union[int, str]], variable_type: str, key: str = '',
+                 direction: str = 'must_exceed',
+                 decided_value_model: Behaviour = None, description: str = ''):
+        """
+        Provide the correct decided value based on a supplied target threshold
+
+        Parameters
+        ----------
+        universe : List[Union[int,str]]
+            the possible list of discrete values (for off-the-shelf components)
+        variable_type : str
+            type of variable, possible values are 'INT', 'ENUM'
+        key : str, optional
+            string to tag instance with, default = ''
+        direction : str, optional
+            possible values('must_exceed','must_not_exceed'), by default 'must_exceed'
+        decided_value_model : Behaviour, optional
+            If supplied is used to convert selected_values to decided values,
+            otherwise selected value = decided value, by default None
+        description : str, optional
+            description string, by default ''
+        """
+
+        self.universe = universe
+        self.variable_type = variable_type
+        self.key = key
+        self.direction = direction
+        self.decided_value_model = decided_value_model
+        self.description = description
+
+        self.decided_values = None
+        self.selection_value = None
+        self.decided_value = None
+        self.i_min = None
+
+        assert self.direction in ['must_exceed', 'must_not_exceed']
+        assert len(universe) > 0, 'Universe must have a length of at least 1, %i given' % len(universe)
+
+    def compute_decided_values(self) -> np.ndarray:
+        """
+        Converts selected values to decided values
+
+        Returns
+        ----------
+        np.ndarray
+            Vector of decided values after conversion
+        """
+
+        if self.decided_value_model is not None:
+            decided_values = np.empty(0)
+            for value in self.universe:
+                self.decided_value_model(value)
+                decided_values = np.append(decided_values, self.decided_value_model.decided_value)
+            self.decided_values = decided_values
+        else:
+            self.decided_values = self.universe
+
+        return self.decided_values
+
+    def __call__(self, target_threshold: Union[int, float], override: bool = False) -> \
+            Tuple[Union[int, float], Union[int, str]]:
+        """
+        Calculate the nearest decided value that yield a positive margin
+
+        Parameters
+        ----------
+        target_threshold : Union[int,float]
+            target threshold from intermediate calculations that feeds the margin node describing the capability
+            of the design.
+        override : bool, optional
+            if True override the decision nodes outputs and return the last stored selection and decided values,
+            by default False
+
+        Returns
+        -------
+        Tuple[Union[int, float], Union[int, str]]
+            The selected value from the design parameter and the corresponding decided value
+        """
+
+        if not override:
+
+            excesses = np.empty(0)
+            decided_values = self.compute_decided_values()
+            for decided_value in decided_values:
+                if self.direction == 'must_exceed':
+                    e = target_threshold - decided_value
+                elif self.direction == 'must_not_exceed':
+                    e = decided_value - target_threshold
+                else:
+                    raise Exception(
+                        'Wrong margin type (%s) specified. Possible values are "must_Exceed", "must_not_exceed".' % (
+                            str(self.direction)))
+
+                excesses = np.append(excesses, e)
+
+            valid_idx = np.where(excesses >= 0)[0]
+            if len(valid_idx) > 0:
+                i_min = valid_idx[excesses[valid_idx].argmin()]  # if at least one excess value is positive
+            else:
+                i_min = excesses.argmax()  # if all excess are negative
+
+            self.selection_value = self.universe[i_min]
+            self.decided_value = self.decided_values[i_min]
+            self.i_min = i_min
+
+        return self.decided_value, self.selection_value
+
+
 class MarginNetwork(ABC):
     def __init__(self, design_params: List[DesignParam], input_specs: List[InputSpec],
-                 fixed_params: List[FixedParam], behaviours: List[Behaviour],
+                 fixed_params: List[FixedParam], behaviours: List[Behaviour], decisions: List[Decision],
                  margin_nodes: List[MarginNode], performances: List[Performance], key: str = ''):
         """
         The function that will be used to calculate a forward pass of the MAN
@@ -814,9 +933,11 @@ class MarginNetwork(ABC):
         input_specs : List[InputSpec]
             list of InputSpec instances 
         fixed_params : List[FixedParam]
-            list of FixedParam instances 
+            list of FixedParam instances
         behaviours : List[Behaviour]
             list of Behaviour instances
+        decisions : List[Decision]
+            list of Decision instances
         margin_nodes : List[MarginNode]
             list of MarginNode instances
         margin_nodes : List[Performance]
@@ -834,6 +955,7 @@ class MarginNetwork(ABC):
         self.design_params = design_params
         self.input_specs = input_specs
         self.fixed_params = fixed_params
+        self.decisions = decisions
         self.behaviours = behaviours
 
         # Outputs
@@ -845,32 +967,48 @@ class MarginNetwork(ABC):
         self.utilization_matrix = ParamFactory.build_param(key=self.key, dims=[len(margin_nodes), len(input_specs), ])
 
         # Design parameter space
-        lb = np.array([])
-        ub = np.array([])
+        universe_d = []
+        variable_type_d = []
+
         # Get upper and lower bound for continuous variables
         for design_param in self.design_params:
             assert min(design_param.universe) < max(design_param.universe), \
                 'max of universe of design parameter %s must be greater than min' % design_param.key
 
-            lb = np.append(lb, min(design_param.universe))
-            ub = np.append(ub, max(design_param.universe))
-
-        self.lb_d, self.ub_d = lb, ub
+            universe_d += [design_param.universe]
+            variable_type_d += [design_param.variable_type]
 
         # Input specification space
-        lb = np.array([])
-        ub = np.array([])
+        universe_s = []
+        variable_type_s = []
+
         for input_spec in self.input_specs:
             assert min(input_spec.universe) < max(input_spec.universe), \
                 'max of universe of input spec %s must be greater than min' % input_spec.key
 
-            lb = np.append(lb, min(input_spec.universe))
-            ub = np.append(ub, max(input_spec.universe))
+            universe_s += [input_spec.universe]
+            variable_type_s += [input_spec.variable_type]
 
-        self.lb_s, self.ub_s = lb, ub
+        # Decision space
+        universe_decision = []
+        variable_type_decision = []
 
-        self.lb_i = np.append(self.lb_d, self.lb_s)
-        self.ub_i = np.append(self.ub_d, self.ub_s)
+        # Get upper and lower bound for continuous variables
+        for decision in self.decisions:
+            universe_decision += [decision.universe]
+            variable_type_decision += [decision.variable_type]
+
+        self.universe_d = universe_d
+        self.variable_type_d = variable_type_d
+
+        self.universe_s = universe_s
+        self.variable_type_s = variable_type_s
+
+        self.universe_decision = universe_decision
+        self.variable_type_decision = variable_type_decision
+
+        self.universe = self.universe_d + self.universe_s + self.universe_decision
+        self.variable_type = self.variable_type_d + self.variable_type_s + self.variable_type_decision
 
     @property
     def design_vector(self) -> np.ndarray:
@@ -933,6 +1071,36 @@ class MarginNetwork(ABC):
 
         for value, item in zip(d, self.input_specs):
             item.value = value
+
+    @property
+    def decision_vector(self) -> List[Union[str, int]]:
+        """
+        returns a vector of decisions
+
+        Returns
+        -------
+        List[Union[str, int]]
+            List of decisions
+        """
+        vector = []
+        for item in self.decisions:
+            vector += [item.selection_value]
+        return vector
+
+    @decision_vector.setter
+    def decision_vector(self, d: List[Union[str, int]]):
+        """
+        Adjusts all the decisions according to the vector d provided
+
+        Parameters
+        ----------
+        d : List[Union[str, int]]
+            list of values to set the decisions of the MAN to
+        """
+        assert len(d) == len(self.decisions)
+
+        for value, item in zip(d, self.decisions):
+            item.selection_value = value
 
     @property
     def nominal_spec_vector(self) -> np.ndarray:
@@ -1067,23 +1235,45 @@ class MarginNetwork(ABC):
         if ext_samples is None:
             # generate training data for response surface using an LHS grid of design parameter and input
             # specification space
-            input_samples = Design(self.lb_i, self.ub_i, n_samples, "LHS").unscale()  # 2D grid
+
+            xtypes = []
+            xlimits = []
+            for xtype, limits in zip(self.variable_type, self.universe):
+                if xtype == 'FLOAT':
+                    xtypes += [FLOAT, ]
+                elif xtype == 'INT':
+                    xtypes += [ORD, ]
+                elif xtype == 'ENUM':
+                    xtypes += [(ENUM, len(limits)), ]
+
+                xlimits += [limits]
+
+            sampling = MixedIntegerSamplingMethod(xtypes=xtypes, xlimits=xlimits,
+                                                  sampling_method_class=LHS, criterion="ese")
+
+            input_samples = sampling(n_samples)
 
             xt = np.empty((0, len(self.margin_nodes) + len(self.input_specs)))  # excess + input secs
             yt = np.empty((0, len(self.performances)))  # Performance parameters
 
             for input_i in input_samples:
                 design = input_i[:len(self.design_params)]
-                spec = input_i[len(self.design_params):]
+                spec = input_i[len(self.design_params):len(self.design_params) + len(self.input_specs)]
+                decision = input_i[len(self.design_params) + len(self.input_specs):]
+
+                decisions = []
+                for value, universe in zip(decision, self.universe_decision):
+                    decisions += [universe[int(value)]]
 
                 self.design_vector = design  # Set design parameters to their respective values
                 self.spec_vector = spec  # Set input specifications to their respective values
+                self.decision_vector = decisions  # Set decisions to their respective values
 
                 excess_samples = np.empty((0, len(self.margin_nodes)))
                 perf_samples = np.empty((0, len(self.performances)))
                 for n in range(sampling_freq):
                     # self.randomize() # Randomize the MAN
-                    self.forward()  # Run one pass of the MAN
+                    self.forward(override_decisions=True)  # Run one pass of the MAN
 
                     excess_samples = np.vstack((excess_samples, self.excess_vector.reshape(1, excess_samples.shape[1])))
                     perf_samples = np.vstack((perf_samples, self.perf_vector.reshape(1, perf_samples.shape[1])))
@@ -1103,7 +1293,7 @@ class MarginNetwork(ABC):
             assert len(ext_samples) == 2
             for value in ext_samples:
                 assert type(value) == np.ndarray
-            assert ext_samples[0].shape[1] == len(self.margin_nodes) + len(self.input_specs)
+            assert ext_samples[0].shape[1] == len(self.margin_nodes) + len(self.input_specs) + len(self.decisions)
             assert ext_samples[1].shape[1] == len(self.performances)
             assert ext_samples[0].shape[0] == ext_samples[1].shape[0]
 
@@ -1291,6 +1481,7 @@ class MarginNetwork(ABC):
             self.forward()  # do not randomize the man for deterioration
             n_inc = 1
             delta_e = 1.0
+            initial_decision = self.decision_vector
 
             if spec.inc_type == 'rel':
                 inc = (spec.original * spec.inc) / 100
@@ -1300,7 +1491,8 @@ class MarginNetwork(ABC):
                 inc = spec.inc
                 Warning('increment type %s, is invalid using absolute value' % str(spec.inc))
 
-            while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4:
+            while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4 and \
+                    all([d == di for d, di in zip(self.decision_vector, initial_decision)]):
                 excess_last_inc = self.excess_vector
 
                 spec.value += inc
@@ -1486,9 +1678,9 @@ class MarginNetwork(ABC):
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import MarginNetwork, InputSpec, GuassianFunc
-        >>> dist_1 = GuassianFunc(1.0,0.1)
-        >>> dist_2 = GuassianFunc(0.5,0.2)
+        >>> from dmLib import MarginNetwork, InputSpec, GaussianFunc
+        >>> dist_1 = GaussianFunc(1.0,0.1)
+        >>> dist_2 = GaussianFunc(0.5,0.2)
         >>> s1 = InputSpec(1.0 ,'S1', distribution=dist_1)
         >>> s2 = InputSpec(0.5 ,'S2', distribution=dist_2)
         >>> class MyMarginNetwork(MarginNetwork):
@@ -1517,7 +1709,7 @@ class MarginNetwork(ABC):
         >>> class MyMarginNetwork(MarginNetwork):
         >>>     def randomize(self):
         >>>         pass
-        >>>     def forward(self):
+        >>>     def forward(self,override_decisions=False):
         >>>         # some specific model-dependent behaviour
         >>>         d1 = self.design_params[0]
         >>>         s1 = self.input_specs[0]

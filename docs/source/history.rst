@@ -2,6 +2,25 @@
 Changelog
 *********
 
+.. _release-0.4.8:
+
+0.4.8
+=====
+
+:Date: February 20, 2022
+
+Incompatible changes
+--------------------
+
+* Added mandatory argument ``variable_type`` to ``InputSpec`` and ``DesignParam`` classes during initialization
+
+Features
+--------
+
+* Add the ``Decision`` class for defining decision nodes and off-the-shelf components
+* Add the integer and continuous type variables for ``InputSpec`` and ``DesignParam`` classes
+
+
 .. _release-0.4.7:
 
 0.4.7
