@@ -2,6 +2,40 @@
 Changelog
 *********
 
+.. _release-0.5.0:
+
+0.5.0
+=====
+
+:Date: March 14, 2022
+
+Incompatible changes
+--------------------
+
+* The ``init_decisions()`` must be called before the first ``forward()`` and after every ``randomize()`` or changing the input specifications to store the universe of decided values
+* if the argument ``num_threads`` of ``train_performance_surrogate()``, ``compute_absorption()``, or ``compute_decisions()`` is greater then 1 then Jupyter notebook cannot be used with ur script
+* The argument ``value`` of ``InputSpec`` initializer must be a float or an integer only. A ``Distribution`` object must be passed to the optional argument ``distribution``
+
+Features
+--------
+
+* The ``Decision`` class can now support multiple decided values using the ``n_nodes`` optional argument. User must supple equal length of target thresholds
+* Can pass additional arguments as ``kwargs`` to behaviour model for ``Decision`` class during the ``__call__`` method
+* The method ``train_performance_surrogate()`` of the class ``MarginNetwork``now supports different surrogate models specified using the ``sm_type`` argument
+* The method ``train_performance_surrogate()`` of the class ``MarginNetwork`` now supports parallel processing specified using the ``num_threads`` argument
+* The method ``compute_absorption()`` of the class ``MarginNetwork`` now supports parallel processing of the decision universe (which changes every time the input specifications ``self.spec_vector`` are iterated during absorption computation) specified using the ``num_threads`` argument
+* The method ``compute_decisions()`` of the class ``Decision`` now supports parallel processing specified using the ``num_threads`` argument
+
+
+Fixes
+-----
+
+* More efficient ``compute_absorption()`` method by lumping threshold limit and specification limit calculations
+* Fixed ``train_performance_surrogate()`` method to properly handle ordinal type variables such as ``INT``
+* Fixed ``compute_absorption()`` method to properly handle input specifications that have negative nominal values
+* Fixed ``compute_absorption()`` method to change nan values to zero
+* Added ``__deepcopy__`` directives to all classes
+
 .. _release-0.4.8:
 
 0.4.8

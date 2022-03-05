@@ -139,3 +139,15 @@ examples/images
 
 #pycharm
 .idea
+
+# binary files
+*.pkl
+
+# NX intermediate files
+*.dat
+*.diag
+*.f04
+*.f06
+*.op2
+*.vtk
+*.png

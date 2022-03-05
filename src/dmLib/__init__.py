@@ -8,11 +8,10 @@ uncertainty modelling
 
 """
 
-__version__ = '0.4.8'
+__version__ = '0.5.0'
 __all__ = ['TriangularFunc', 'FuzzySet', 'FuzzyRule', 'FuzzySystem', 'GaussianFunc', 'UniformFunc', 'Distribution',
            'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode', 'InputSpec', 'FixedParam', 'DesignParam',
-           'Behaviour',
-           'MatrixParam', 'ScalarParam', 'VectorParam', 'Performance', 'MarginNetwork', 'Decision', 'nearest']
+           'Behaviour', 'MatrixParam', 'ScalarParam', 'VectorParam', 'Performance', 'MarginNetwork', 'Decision', 'nearest']
 
 from .fuzzyLib import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
 from .uncertaintyLib import GaussianFunc, UniformFunc, Distribution, VisualizeDist, compute_cdf

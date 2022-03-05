@@ -21,7 +21,7 @@ copyright = '2021, Khalil Al Handawi'
 author = 'Khalil Al Handawi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.4.8'
+release = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------
