@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from typing import List, Tuple
 from scipy.optimize import fsolve, minimize
 
-from dmLib import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
+from mvm import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
     InputSpec, DesignParam, Behaviour, Decision, compute_cdf, nearest
 
 # Input set 1

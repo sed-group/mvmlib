@@ -1,14 +1,14 @@
 """
-Design Margins Library
-----------------------
+Margin Value Method Library
+---------------------------
 
-A library for computing design margins using 
-fuzzy logic and probabilistic methods for 
+A library based on the margin value method for computing design 
+margins using fuzzy logic and probabilistic methods for 
 uncertainty modelling
 
 """
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 __all__ = ['TriangularFunc', 'FuzzySet', 'FuzzyRule', 'FuzzySystem', 'GaussianFunc', 'UniformFunc', 'Distribution',
            'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode', 'InputSpec', 'FixedParam', 'DesignParam',
            'Behaviour', 'MatrixParam', 'ScalarParam', 'VectorParam', 'Performance', 'MarginNetwork', 'Decision', 'nearest']

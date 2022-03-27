@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dmLib import Design
-from dmLib import Distribution, GaussianFunc
-from dmLib import InputSpec, Behaviour, MarginNode, MarginNetwork
-from dmLib import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
+from mvm import Design
+from mvm import Distribution, GaussianFunc
+from mvm import InputSpec, Behaviour, MarginNode, MarginNetwork
+from mvm import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
 
 np.warnings.filterwarnings('error', category=np.VisibleDeprecationWarning)
 

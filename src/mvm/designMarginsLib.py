@@ -182,8 +182,8 @@ class ScalarParam(Cache):
 
         Returns
         -------
-        dmLib.Distribution
-            instance of dmLib.Distribution holding value pdf
+        Distribution
+            instance of Distribution holding value pdf
         """
         return self._value_dist
 
@@ -592,7 +592,7 @@ class InputSpec(ScalarParam):
         distribution : Union[Distribution, GaussianFunc, UniformFunc], optional
             if a Distribution object is provided, then the spec can sampled by calling it
             Example:
-            >>> from dmLib import InputSpec, GaussianFunc
+            >>> from mvm import InputSpec, GaussianFunc
             >>> dist = GaussianFunc(1.0, 0.1)
             >>> s1 = InputSpec(1.0, 'S1', [0.0, 1.0], 'FLOAT', distribution=dist)
             >>> sample = s1.random()
@@ -1071,14 +1071,14 @@ class Behaviour():
         """
         The function that will be used to calculate the outputs of the behaviour model
             - Can be a deterministic model
-            - Can be a stochastic model (by calling a defined dmLib.Distribution instance)
+            - Can be a stochastic model (by calling a defined mvm.Distribution instance)
         This method must be redefined by the user for every instance
         If planning to use a surrogate, the user should extend this method using super()
 
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import Behaviour
+        >>> from mvm import Behaviour
         >>> class MyBehaviour(Behaviour):
         >>>     def __call__(self,r,d):
         >>>         # some specific model-dependent behaviour
@@ -1090,7 +1090,7 @@ class Behaviour():
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import Behaviour
+        >>> from mvm import Behaviour
         >>> class MyBehaviour(Behaviour):
         >>>     def __call__(self,r,d,y):
         >>>         args = [r,d]
@@ -2344,7 +2344,7 @@ class MarginNetwork():
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import MarginNetwork, InputSpec, GaussianFunc
+        >>> from mvm import MarginNetwork, InputSpec, GaussianFunc
         >>> dist_1 = GaussianFunc(1.0,0.1)
         >>> dist_2 = GaussianFunc(0.5,0.2)
         >>> s1 = InputSpec(1.0 ,'S1', distribution=dist_1)
@@ -2371,7 +2371,7 @@ class MarginNetwork():
         Example
         -------
         >>> # [in the plugin file]
-        >>> from dmLib import MarginNetwork
+        >>> from mvm import MarginNetwork
         >>> class MyMarginNetwork(MarginNetwork):
         >>>     def randomize(self):
         >>>         pass

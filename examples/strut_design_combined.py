@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from dmLib import Design
-from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
-from dmLib import GaussianFunc, UniformFunc
+from mvm import Design
+from mvm import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
+from mvm import GaussianFunc, UniformFunc
 
-os.chdir(os.path.join(os.getenv('GITDIR'),'dmLib'))
+os.chdir(os.path.join(os.getenv('GITDIR'),'mvmlib'))
 num_threads = 1
 
 # define fixed parameters

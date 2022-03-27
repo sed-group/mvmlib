@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "dmLib"
+name = "mvmlib"
 authors = [{name = "Khalil Al Handawi", email = "khalil.alhandawi@mail.mcgill.ca"}]
 
 requires-python = ">=3.8"
@@ -15,6 +15,9 @@ dependencies = [
 "scikit-fuzzy==0.4.2",
 "smt==1.1.0",
 ]
+
+[tool.flit.module]
+name = "mvm"
 
 [project.optional-dependencies]
 test = [
@@ -29,4 +32,4 @@ doc = [
 ]
 
 [project.urls]
-Source = "https://github.com/sed-group/DM_Module"
+Source = "https://github.com/sed-group/mvmlib"

@@ -7,7 +7,7 @@ function values to define a multivariate Guassian
 
 # 1D example (uniform)
 import numpy as np
-from dmLib import GaussianFunc, UniformFunc, Distribution
+from mvm import GaussianFunc, UniformFunc, Distribution
 
 mean = 10.0
 sd = 5.0
@@ -28,7 +28,7 @@ plt.show()
 
 # 1D example
 import numpy as np
-from dmLib import GaussianFunc, Distribution
+from mvm import GaussianFunc, Distribution
 
 mean = 10.0
 sd = 5.0
@@ -50,7 +50,7 @@ plt.show()
 
 # Arbitrary example
 import numpy as np
-from dmLib import GaussianFunc, Distribution
+from mvm import GaussianFunc, Distribution
 
 x = np.linspace(-100, 100, 100)  # 2D grid
 
@@ -87,7 +87,7 @@ plt.show()
 
 # 2D example
 import numpy as np
-from dmLib import Design, GaussianFunc, Distribution
+from mvm import Design, GaussianFunc, Distribution
 
 mean = 10.0
 sd = 5.0

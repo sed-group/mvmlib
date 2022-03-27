@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-from dmLib import Design
-from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
-from dmLib import GaussianFunc, UniformFunc
-from dmLib import nearest
+from mvm import Design
+from mvm import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
+from mvm import GaussianFunc, UniformFunc
+from mvm import nearest
 
 if __name__ == '__main__':
 

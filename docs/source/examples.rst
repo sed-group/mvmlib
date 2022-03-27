@@ -1,7 +1,7 @@
 Cookbook and Examples
 =====================
 
-Below is a list of examples on how to use ``dmLib`` to solve practical design problems and quantify design margins for them.
+Below is a list of examples on how to use ``mvmlib`` to solve practical design problems and quantify design margins for them.
 
 .. toctree::
    :maxdepth: 3

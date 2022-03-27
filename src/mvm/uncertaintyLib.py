@@ -880,7 +880,7 @@ class VisualizeDist:
 
 
 if __name__ == "__main__":
-    from dmLib import Design, GaussianFunc
+    from mvm import Design, GaussianFunc
 
     mean = 10.0
     sd = 5.0

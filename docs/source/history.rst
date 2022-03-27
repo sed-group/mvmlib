@@ -2,6 +2,18 @@
 Changelog
 *********
 
+.. _release-0.5.1:
+
+0.5.1
+=====
+
+:Date: March 14, 2022
+
+Incompatible changes
+--------------------
+
+* Rename the library to ``mvmlib`` and the main module to ``mvm``
+
 .. _release-0.5.0:
 
 0.5.0

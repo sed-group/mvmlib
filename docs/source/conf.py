@@ -16,12 +16,12 @@ sys.path.insert(0, os.path.abspath('../src')) # append src to system directory
 
 # -- Project information -----------------------------------------------------
 
-project = 'dmLib'
+project = 'mvmlib'
 copyright = '2021, Khalil Al Handawi'
 author = 'Khalil Al Handawi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5.0'
+release = '0.5.1'
 
 
 # -- General configuration ---------------------------------------------------
