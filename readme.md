@@ -57,7 +57,7 @@ flit install --deps=develop --symlink
 Use ``sphinx`` to build the documentation
 
 ```
-sphinx-autobuild docs/source docs/build/html
+sphinx-autobuild docs docs/build/html
 ```
 
 Navigate to <http://127.0.0.1:8000> to view the documentation.
@@ -87,7 +87,7 @@ flit install --deps=develop --pth-file
 Use ``sphinx`` to build the documentation
 
 ```
-sphinx-autobuild docs/source docs/build/html
+sphinx-autobuild docs docs/build/html
 ```
 
 Navigate to <http://127.0.0.1:8000> to view the documentation.

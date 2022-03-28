@@ -23,7 +23,6 @@ author = 'Khalil Al Handawi'
 # The full version, including alpha/beta/rc tags
 release = '0.5.1'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -33,7 +32,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'nbsphinx'
+    'nbsphinx',
+    'sphinx.ext.githubpages',
 ]
 
 autodoc_default_flags = ['members', 'inherited-members']

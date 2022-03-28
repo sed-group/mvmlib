@@ -144,10 +144,10 @@ examples/images
 *.pkl
 
 # NX intermediate files
-*.dat
-*.diag
-*.f04
-*.f06
-*.op2
-*.vtk
-*.png
+examples/CAD/*.dat
+examples/CAD/*.diag
+examples/CAD/*.f04
+examples/CAD/*.f06
+examples/CAD/*.op2
+examples/CAD/*.vtk
+examples/CAD/Nastran_output/
