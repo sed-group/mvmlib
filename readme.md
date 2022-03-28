@@ -1,10 +1,44 @@
-# Welcome to dmLib: the design margins library
+# Welcome to mvmlib: the margin value method library
 
-## Installation for development
+## Quickstart guide
+
+Create a virtual environment for your project
 
 **MacOS/Linux**
 
-Create a virtual environment to develop this app
+```
+python -m venv .venv
+source .venv/bin/activate
+```
+
+**Windows**
+```
+python -m venv .env
+.env\Scripts\activate
+```
+### Prerequisites
+
+``mvmlib`` requires ``numpy`` make sure you have it installed
+
+### Installing
+To install the latest released version of ``mvmlib``
+```
+pip install mvmlib
+```
+
+### Uninstalling
+to uninstall
+```
+pip uninstall mvmlib
+```
+
+## Installation for development
+
+First clone this repository and in the ```mvmlib`` directory do the following:
+
+**MacOS/Linux**
+
+Create a virtual environment to develop this library
 
 ```
 python -m venv .venv

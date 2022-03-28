@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from typing import List, Tuple
 from scipy.optimize import fsolve, minimize
 
-from dmLib import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, InputSpec, Behaviour, Decision, compute_cdf, nearest
-
+from mvm import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
+    InputSpec, DesignParam, Behaviour, Decision, compute_cdf, nearest
 
 # Input set 1
 @pytest.fixture
@@ -36,17 +36,20 @@ def deterministic_inputs() -> Tuple[float,float]:
 @pytest.fixture
 def Impact_test_inputs() -> Tuple[np.ndarray,np.ndarray]:
     # test decided values and target thresholds for checking impact matrix calculation
-    dv_vector = np.array([0.5,0.5,0.25])
-    tt_vector = np.array([0.25,0.25,0.75])
+    tt_vector = np.array([0.5,0.5,0.25])
+    dv_vector = np.array([0.25,0.25,0.75])
 
-    return dv_vector,tt_vector
+    return tt_vector,dv_vector
 
 @pytest.fixture
-def Absorption_test_inputs() -> np.ndarray:
+def design_parameters() -> List[DesignParam]:
     # test decided values for checking absorption matrix calculation
-    dv_vector = np.array([4.0,2.0,2.0])
+    d1 = DesignParam(4.0, 'D1', universe=[1.0, 4.0], variable_type='FLOAT')
+    d2 = DesignParam(2.0, 'D2', universe=[0.5, 2.0], variable_type='FLOAT')
+    d3 = DesignParam(1.5, 'D3', universe=[0.25, 1.5], variable_type='FLOAT')
+    design_params = [d1, d2, d3]
 
-    return dv_vector
+    return design_params
 
 @pytest.fixture
 def deterministic_specs() -> Tuple[np.ndarray,List[InputSpec]]:
@@ -72,6 +75,7 @@ def stochastic_specs() -> Tuple[UniformFunc, np.ndarray, np.ndarray, List[InputS
 
 @pytest.fixture
 def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]]:
+    
     # Define behaviour models
     class B1(Behaviour):
         def __call__(self,s1,s2):
@@ -83,7 +87,6 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
             self.threshold = [tt1_model((s1,s2)),tt2_model((s1,s2)),tt3_model((s1,s2))]
 
             return self.threshold
-
 
     class B2(Behaviour):
 
@@ -128,18 +131,36 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
 
             return self.decided_value
 
+    class B5(Behaviour):
+
+        def __call__(self,value):
+            # Translate decision variable to decided value
+            if value == '1':
+                self.decided_value = [4.0,2.0]
+            elif value == '2':
+                self.decided_value = [3.0,3.0]
+            elif value == '3':
+                self.decided_value = [2.0,0.5]
+            elif value == '4':
+                self.decided_value = [1.0,0.25]
+
+            return self.decided_value
+
     b1 = B1('B1')
     b2 = B2('B2')
     b3 = B3('B3')
     b4 = B4('B4')
-    behaviours = [b1,b2,b3,b4]
+    b5 = B5('B5')
+    behaviours = [b1,b2,b3,b4,b5]
 
     # Define decision nodes
     decision_1 = Decision(universe=['1', '2', '3', '4'], variable_type='ENUM', key='decision_1',
                           direction='must_exceed', decided_value_model=b3)
     decision_2 = Decision(universe=['1', '2', '3'], variable_type='ENUM', key='decision_2',
                           direction='must_exceed', decided_value_model=b4)
-    decisions = [decision_1, decision_2]
+    decision_3 = Decision(universe=['1', '2', '3', '4'], variable_type='ENUM', key='decision_2',
+                          direction=['must_exceed','must_exceed'], decided_value_model=b5, n_nodes=2)
+    decisions = [decision_1, decision_2, decision_3]
 
     # Define performances
     p1 = Performance('P1')
@@ -155,12 +176,11 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
     return behaviours, decisions, performances, margin_nodes
 
 @pytest.fixture
-def deterministic_man(Absorption_test_inputs: np.ndarray,
+def deterministic_man(design_parameters: List[DesignParam],
                       man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                       deterministic_specs: Tuple[np.ndarray,List[InputSpec]]) -> MarginNetwork:
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     centers,input_specs = deterministic_specs
 
@@ -169,8 +189,13 @@ def deterministic_man(Absorption_test_inputs: np.ndarray,
         def randomize(self):
             pass
         
-        def forward(self):
+        def forward(self,**kwargs):
             
+            # retrieve design parameters
+            d1 = self.design_params[0]
+            d2 = self.design_params[1]
+            d3 = self.design_params[2]
+
             # retrieve input specs
             s1 = self.input_specs[0]
             s2 = self.input_specs[1]
@@ -190,28 +215,27 @@ def deterministic_man(Absorption_test_inputs: np.ndarray,
 
             # Execute behaviour models
             b1(s1.value,s2.value)
-            b2(dv_vector[0],dv_vector[1],dv_vector[2])
+            b2(d1.value,d2.value,d3.value)
 
             # Compute excesses
-            e1(b1.threshold[0],dv_vector[0])
-            e2(b1.threshold[1],dv_vector[1])
-            e3(b1.threshold[2],dv_vector[2])
+            e1(b1.threshold[0],d1.value)
+            e2(b1.threshold[1],d2.value)
+            e3(b1.threshold[2],d3.value)
 
             # Compute performances
             p1(b2.performance[0])
             p2(b2.performance[1])
 
-    man = MAN([],input_specs,[],behaviours,[],margin_nodes,performances,'MAN_test')
+    man = MAN(design_parameters,input_specs,[],behaviours,[],margin_nodes,performances,'MAN_test')
 
     return man
 
 @pytest.fixture
-def stochastic_man(Absorption_test_inputs: np.ndarray,
+def stochastic_man(design_parameters: List[DesignParam],
                    man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                    stochastic_specs: Tuple[np.ndarray,List[InputSpec]]) -> MarginNetwork:
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     dist,centers,ranges,input_specs = stochastic_specs
 
@@ -223,7 +247,12 @@ def stochastic_man(Absorption_test_inputs: np.ndarray,
             s1.random()
             s2.random()
 
-        def forward(self):
+        def forward(self,**kwargs):
+
+            # retrieve design parameters
+            d1 = self.design_params[0]
+            d2 = self.design_params[1]
+            d3 = self.design_params[2]
 
             # retrieve input specs
             s1 = self.input_specs[0]
@@ -244,28 +273,27 @@ def stochastic_man(Absorption_test_inputs: np.ndarray,
 
             # Execute behaviour models
             b1(s1.value,s2.value)
-            b2(dv_vector[0],dv_vector[1],dv_vector[2])
+            b2(d1.value,d2.value,d3.value)
 
             # Compute excesses
-            e1(b1.threshold[0],dv_vector[0])
-            e2(b1.threshold[1],dv_vector[1])
-            e3(b1.threshold[2],dv_vector[2])
+            e1(b1.threshold[0],d1.value)
+            e2(b1.threshold[1],d2.value)
+            e3(b1.threshold[2],d3.value)
 
             # Compute performances
             p1(b2.performance[0])
             p2(b2.performance[1])
 
-    man = MAN([],input_specs,[],behaviours,[],margin_nodes,performances,'MAN_test')
+    man = MAN(design_parameters,input_specs,[],behaviours,[],margin_nodes,performances,'MAN_test')
 
     return man
 
-def decision_man(Absorption_test_inputs: np.ndarray,
+def decision_man(design_parameters: List[DesignParam],
                  man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                  deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                 tt_factor: float=1.0) -> MarginNetwork:
+                 tt_factor: List[float]=3*[1.0,]) -> MarginNetwork:
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     centers,input_specs = deterministic_specs
 
@@ -275,7 +303,12 @@ def decision_man(Absorption_test_inputs: np.ndarray,
         def randomize(self):
             pass
 
-        def forward(self,override_decisions=False):
+        def forward(self,recalculate_decisions=False,override_decisions=False,**kwargs):
+            
+            # retrieve design parameters
+            d1 = self.design_params[0]
+            d2 = self.design_params[1]
+            d3 = self.design_params[2]
 
             # retrieve input specs
             s1 = self.input_specs[0]
@@ -304,26 +337,93 @@ def decision_man(Absorption_test_inputs: np.ndarray,
             b1(s1.value,s2.value)
 
             # Execute decision node and translation model
-            decision_1(tt_factor*b1.threshold[0], override=override_decisions)
+            tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
+            decision_1(tt_vector[0], override_decisions, recalculate_decisions)
             b3(decision_1.selection_value)
 
-            decision_2(tt_factor*b1.threshold[1], override=override_decisions)
+            decision_2(tt_vector[1], override_decisions, recalculate_decisions)
             b4(decision_2.selection_value)
 
             # Compute excesses
-            e1(tt_factor*b1.threshold[0],decision_1.decided_value)
-            e2(tt_factor*b1.threshold[1],decision_2.decided_value)
-            e3(b1.threshold[2],dv_vector[2])
+            e1(tt_vector[0],decision_1.decided_value)
+            e2(tt_vector[1],decision_2.decided_value)
+            e3(tt_vector[2],d3.value)
 
             # Compute performances
-            b2(decision_1.decided_value,decision_2.decided_value,dv_vector[2])
+            b2(decision_1.decided_value,decision_2.decided_value,d3.value)
             p1(b2.performance[0])
             p2(b2.performance[1])
 
-    man = MAN([],input_specs,[],behaviours,decisions,margin_nodes,performances,'MAN_test')
+    man = MAN(design_parameters,input_specs,[],behaviours,decisions,margin_nodes,performances,'MAN_test')
 
     return man
 
+def multidecision_man(design_parameters: List[DesignParam],
+                      man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                      deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                      tt_factor: List[float]=3*[1.0,]) -> MarginNetwork:
+    ######################################################
+    # Construct MAN
+    behaviours, decisions, performances, margin_nodes = man_components
+    centers,input_specs = deterministic_specs
+
+    s1,s2 = input_specs
+
+    class MAN(MarginNetwork):
+        def randomize(self):
+            pass
+
+        def forward(self,recalculate_decisions=False,override_decisions=False,**kwargs):
+
+            # retrieve design parameters
+            d1 = self.design_params[0]
+            d2 = self.design_params[1]
+            d3 = self.design_params[2]
+
+            # retrieve input specs
+            s1 = self.input_specs[0]
+            s2 = self.input_specs[1]
+
+            # get behaviour
+            b1 = self.behaviours[0]
+            b2 = self.behaviours[1]
+            b3 = self.behaviours[2]
+            b4 = self.behaviours[3]
+            b5 = self.behaviours[4]
+
+            # get decision nodes
+            decision_1 = self.decisions[0]
+
+            # retrieve margin nodes
+            e1 = self.margin_nodes[0]
+            e2 = self.margin_nodes[1]
+            e3 = self.margin_nodes[2]
+
+            # get performance
+            p1 = self.performances[0]
+            p2 = self.performances[1]
+
+            # Execute behaviour models
+            b1(s1.value,s2.value)
+
+            # Execute decision node and translation model
+            tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
+            decision_1(tt_vector[:2], override_decisions, recalculate_decisions)
+            b5(decision_1.selection_value)
+
+            # Compute excesses
+            e1(tt_vector[0],decision_1.decided_value[0])
+            e2(tt_vector[1],decision_1.decided_value[1])
+            e3(tt_vector[2],d3.value)
+
+            # Compute performances
+            b2(decision_1.decided_value[0],decision_1.decided_value[1],d3.value)
+            p1(b2.performance[0])
+            p2(b2.performance[1])
+
+    man = MAN(design_parameters,input_specs,[],behaviours,[decisions[2],],margin_nodes,performances,'MAN_test')
+
+    return man
 
 @pytest.fixture
 def noise() -> GaussianFunc:
@@ -350,7 +450,7 @@ def test_deterministic_MarginNode(deterministic_inputs:Tuple[float,float]):
     # Check return for multiple inputs
     ThermalNode.reset()
     ThermalNode(np.ones(10)*decided_value,np.ones(10)*threshold)
-    assert (ThermalNode.excess.values == np.ones(10) * (decided_value-threshold)).all()
+    assert np.allclose(ThermalNode.excess.values, np.ones(10) * (decided_value-threshold), atol=1e-3)
 
 def test_stochastic_MarginNode(stochastic_inputs:Tuple[GaussianFunc, GaussianFunc]):
     """
@@ -419,7 +519,7 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
     # Construct MAN
 
     behaviours, decisions, performances, margin_nodes = man_components
-    dv_vector, tt_vector = Impact_test_inputs
+    tt_vector, dv_vector = Impact_test_inputs
 
     # Define the MAN
     class MAN(MarginNetwork):
@@ -468,7 +568,7 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
     man.forward()
     man.compute_impact(use_estimate=True)
 
-    # Check outputs
+    # Compute test impact
     input = np.tile(tt_vector,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
@@ -501,7 +601,7 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
     # Construct MAN
 
     behaviours, decisions, performances, margin_nodes = man_components
-    dv_vector, tt_vector = Impact_test_inputs
+    tt_vector, dv_vector = Impact_test_inputs
 
     # Define the MAN
     class MAN(MarginNetwork):
@@ -555,7 +655,7 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
 
     mean_impact = np.mean(man.impact_matrix.values,axis=2)
 
-    # Check outputs
+    # Compute test impact
     input = np.tile(tt_vector,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
@@ -607,21 +707,25 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
 def test_deterministic_Absorption(deterministic_man: MarginNetwork,
     man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
     deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-    Absorption_test_inputs: np.ndarray):
+    design_parameters: List[DesignParam]):
     """
     Tests the Absorption calculation method for deterministic specifications
     """
 
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     centers,input_specs = deterministic_specs
     man = deterministic_man
 
+    d1 = design_parameters[0]
+    d2 = design_parameters[1]
+    d3 = design_parameters[2]
+    design_parameters_vector = [d.value for d in design_parameters]
+    dv_vector = design_parameters_vector
     ######################################################
     # Create training data and train response surface
-    b1, b2, _, _ = behaviours
+    b1, b2, _, _, _ = behaviours
 
     man.forward()
     man.compute_absorption()
@@ -632,7 +736,7 @@ def test_deterministic_Absorption(deterministic_man: MarginNetwork,
     # Check outputs
 
     s1_limit = np.array([
-        -1 + np.sqrt(1+dv_vector[0]-centers[1]**2),
+        -1 + np.sqrt(1-centers[1]+dv_vector[0]),
         (dv_vector[1]-2*centers[1]),
         (dv_vector[2]-centers[1]),
     ])
@@ -709,22 +813,26 @@ def test_deterministic_Absorption(deterministic_man: MarginNetwork,
 def test_stochastic_Absorption(stochastic_man: MarginNetwork, 
     man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
     stochastic_specs: Tuple[np.ndarray,List[InputSpec]],
-    Absorption_test_inputs: np.ndarray):
+    design_parameters: List[DesignParam]):
     """
     Tests the Absorption calculation method for stochastic specifications
     """
 
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     dist,centers,ranges,input_specs = stochastic_specs
     man = stochastic_man
 
+    d1 = design_parameters[0]
+    d2 = design_parameters[1]
+    d3 = design_parameters[2]
+    design_parameters_vector = [d.value for d in design_parameters]
+
     ######################################################
     # Create training data and train response surface
 
-    b1, b2, _, _ = behaviours
+    b1, b2, _, _, _ = behaviours
 
     n_runs = 100
     for n in range(n_runs):
@@ -738,15 +846,15 @@ def test_stochastic_Absorption(stochastic_man: MarginNetwork,
     # Check outputs
     
     s1_limit = np.array([
-        -1 + np.sqrt(1+dv_vector[0]-centers[1]**2),
-        (dv_vector[1]-2*centers[1]),
-        (dv_vector[2]-centers[1]),
+        -1 + np.sqrt(1-centers[1]+d1.value),
+        (d2.value-2*centers[1]),
+        (d3.value-centers[1]),
     ])
     
     s2_limit = np.array([
-        dv_vector[0]-(centers[0]**2)-(2*centers[0]),
-        (dv_vector[1]-centers[0]) / 2,
-        dv_vector[2]-centers[0],
+        d1.value-(centers[0]**2)-(2*centers[0]),
+        (d2.value-centers[0]) / 2,
+        d3.value-centers[0],
     ])
 
     s1_limit = np.max(s1_limit)
@@ -790,7 +898,7 @@ def test_stochastic_Absorption(stochastic_man: MarginNetwork,
     #test_absorption = [len(margin_nodes), len(input_specs)]
 
     # compute utilization
-    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_value = np.reshape(design_parameters_vector,(len(margin_nodes),-1))
     decided_values = np.tile(decided_value,(1,len(input_specs)))
 
     #decided_values = [len(margin_nodes), len(input_specs)]
@@ -815,48 +923,53 @@ def test_stochastic_Absorption(stochastic_man: MarginNetwork,
     assert np.allclose(mean_absorption, test_absorption, rtol=0.2)
     assert np.allclose(mean_utilization, test_utilization, rtol=0.2)
 
-
 def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
-    deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-    Absorption_test_inputs: np.ndarray):
+                  deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                  design_parameters: List[DesignParam]):
     """
     Tests the Decision node capability of the MAN
     """
 
     ######################################################
     # Construct MAN
-    dv_vector = Absorption_test_inputs
     behaviours, decisions, performances, margin_nodes = man_components
     centers,input_specs = deterministic_specs
 
+    d1 = design_parameters[0]
+    d2 = design_parameters[1]
+    d3 = design_parameters[2]
+    design_parameters_vector = [d.value for d in design_parameters]
+    dv_vector = np.empty(3)
+    dv_vector[2] = d3.value
     ######################################################
     # Loop over different decision possibilities
-    b1, b2, b3, b4 = behaviours
+    b1, b2, b3, b4, b5 = behaviours
 
     # Check outputs
 
     test_dicts = [
         {
             'true_decisions' : ['1','1'],
-            'tt_factor' : 1.0,
+            'tt_factor' : [1.0,1.0,1.0],
             'tt_vector' : [4.84,3.2,2.2],
         },
         {
             'true_decisions' : ['3','2'],
-            'tt_factor' : 0.5,
+            'tt_factor' : [0.5,0.5,1.0],
             'tt_vector' : [2.42,1.6,1.1],
         },
         {
             'true_decisions' : ['4','3'],
-            'tt_factor' : 0.25,
+            'tt_factor' : [0.25,0.25,1.0],
             'tt_vector' : ['1','1'],
         },
     ]
 
     for test_dict in test_dicts:
 
-        man = decision_man(Absorption_test_inputs,man_components,deterministic_specs,test_dict['tt_factor'])
-        man.forward(override_decisions=False)
+        man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+        man.init_decisions()
+        man.forward()
         man.compute_absorption()
 
         mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
@@ -871,15 +984,15 @@ def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[M
         dv_vector[1] = b4(decisions[1].selection_value)
 
         s1_limit = np.array([
-            -1 + np.sqrt(1+dv_vector[0]-centers[1]**2),
-            (dv_vector[1]-2*centers[1]),
-            (dv_vector[2]-centers[1]),
+            -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
+            ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
+            ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
         ])
         
         s2_limit = np.array([
-            dv_vector[0]-(centers[0]**2)-(2*centers[0]),
-            (dv_vector[1]-centers[0]) / 2,
-            dv_vector[2]-centers[0],
+            (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
+            ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
+            (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
         ])
 
         s1_limit = np.max(s1_limit)
@@ -895,18 +1008,15 @@ def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[M
         #deterioration_matrix = [len(margin_nodes), len(input_specs)]
 
         # threshold matrix
-        nominal_tt = np.array(b1(centers[0],centers[1]))
-        nominal_tt[:2] *= test_dict['tt_factor']
+        nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
         nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
         target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
 
         #target_thresholds = [len(margin_nodes), len(input_specs)]
 
         # Compute performances at the spec limit for each margin node
-        new_tt_1 = np.array(b1(s1_limit,centers[1]))
-        new_tt_1[:2] *= test_dict['tt_factor']
-        new_tt_2 = np.array(b1(centers[0],s2_limit))
-        new_tt_2[:2] *= test_dict['tt_factor']
+        new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
+        new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
 
         new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
         new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
@@ -933,6 +1043,218 @@ def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[M
         assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
         assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
 
+def test_decision_multinode(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                            deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                            design_parameters: List[DesignParam]):
+    """
+    Tests the Decision node capability of the MAN
+    """
+
+    ######################################################
+    # Construct MAN
+    behaviours, decisions, performances, margin_nodes = man_components
+    centers,input_specs = deterministic_specs
+
+    d1 = design_parameters[0]
+    d2 = design_parameters[1]
+    d3 = design_parameters[2]
+    design_parameters_vector = [d.value for d in design_parameters]
+    dv_vector = np.empty(3)
+    dv_vector[2] = d3.value
+
+    ######################################################
+    # Loop over different decision possibilities
+    b1, b2, b3, b4, b5 = behaviours
+    
+    # Check outputs
+
+    test_dicts = [
+        {
+            'true_decisions' : ['2'],
+            'tt_factor' : [1.0,1.0,1.0],
+            'tt_vector' : [4.84,3.2,2.2],
+        },
+        {
+            'true_decisions' : ['3'],
+            'tt_factor' : [0.5,0.5,1.0],
+            'tt_vector' : [2.42,1.6,2.2],
+        },
+        {
+            'true_decisions' : ['4'],
+            'tt_factor' : [0.25,0.25,1.0],
+            'tt_vector' : [1.21,0.8 ,2.2],
+        },
+    ]
+
+    for test_dict in test_dicts[1:]:
+
+        man = multidecision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+        man.init_decisions()
+        man.forward(override_decisions=False)
+        man.compute_absorption()
+
+        mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+        mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
+
+        ######################################################
+        # Calculate the test values
+        # check that correct decisions are made
+        assert all([d == d_t for d,d_t in zip(man.decision_vector, test_dict['true_decisions'])])
+
+        dv_vector[:2] = b5(decisions[2].selection_value)
+
+        s1_limit = np.array([
+            -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
+            ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
+            ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
+        ])
+        
+        s2_limit = np.array([
+            (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
+            ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
+            (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
+        ])
+
+        s1_limit = np.max(s1_limit)
+        s2_limit = np.max(s2_limit)
+        spec_limit = np.array([s1_limit,s2_limit])
+
+        # deterioration matrix
+        signs = np.array([-1,-1])
+        nominal_specs = np.array([centers[0],centers[1]])
+        deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
+        deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
+
+        #deterioration_matrix = [len(margin_nodes), len(input_specs)]
+
+        # threshold matrix
+        nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
+        nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
+        target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
+
+        #target_thresholds = [len(margin_nodes), len(input_specs)]
+
+        # Compute performances at the spec limit for each margin node
+        new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
+        new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
+
+        new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
+        new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
+        new_thresholds = np.empty((len(margin_nodes),0))
+        new_thresholds = np.hstack((new_thresholds,new_tt_1))
+        new_thresholds = np.hstack((new_thresholds,new_tt_2))
+
+        #new_thresholds = [len(margin_nodes), len(input_specs)]
+
+        test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
+
+        #test_absorption = [len(margin_nodes), len(input_specs)]
+
+        # compute utilization
+        decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+        decided_values = np.tile(decided_value,(1,len(input_specs)))
+
+        #decided_values = [len(margin_nodes), len(input_specs)]
+
+        test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
+
+        #test_utilization = [len(margin_nodes), len(input_specs)]
+
+        assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
+        assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
+
+@pytest.mark.parametrize('n_threads', [1,])
+def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                         deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                         design_parameters: List[DesignParam], n_threads:int):
+
+    """
+    Tests the train performance surrogate functionality when decision nodes are present
+    """
+
+    ######################################################
+    # Construct MAN
+    behaviours, decisions, performances, margin_nodes = man_components
+    centers,input_specs = deterministic_specs
+
+    d1 = design_parameters[0]
+    d2 = design_parameters[1]
+    d3 = design_parameters[2]
+    design_parameters_vector = [d.value for d in design_parameters]
+    dv_vector = np.empty(3)
+    dv_vector[2] = d3.value
+    ######################################################
+    # Loop over different decision possibilities
+    b1, b2, b3, b4, b5 = behaviours
+
+    # Check outputs
+
+    test_dict = {
+            'true_decisions' : ['1','1'],
+            'tt_factor' : [1.0,1.0,1.0],
+            'tt_vector' : [4.84,3.2,2.2],
+        }
+
+    man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+
+    # Create surrogate model for estimating threshold performance
+    man.train_performance_surrogate(n_samples=100, sm_type='KRG', sampling_freq=1, 
+        num_threads=n_threads, bandwidth=[1e-3, ])
+    man.init_decisions(num_threads=n_threads)
+    man.forward()
+    man.compute_impact()
+
+    ######################################################
+    # Calculate the test values
+    # check that correct decisions are made
+
+    input = np.tile(man.dv_vector,(len(margin_nodes),1))
+
+    p = np.empty((len(margin_nodes),len(performances)))
+    p[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
+    p[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=input)
+
+    np.fill_diagonal(input,man.tt_vector)
+
+    p_t = np.empty((len(margin_nodes),len(performances)))
+    p_t[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
+    p_t[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=input)
+
+    test_impact = (p - p_t) / p_t
+
+    assert np.allclose(man.impact_matrix.value, test_impact, rtol=1e-1)
+
+@pytest.mark.parametrize('n_threads', [1,])
+def test_behaviour(n_threads):
+
+    def fun(x,value):
+        if value == '1':
+            p = -0.1 * x
+        elif value == '2':
+            p = 0.5 * x
+        elif value == '3':
+            p = 50
+
+        return p
+
+    # Define behaviour models
+    class B1(Behaviour):
+        def __call__(self,x,value):
+            p = fun(x,value)
+            return p
+    b = B1()
+
+    # Train surrogate
+    variable_dict = {
+        'x' : {'type' : 'FLOAT', 'limits' : [-100,100]},
+        'value' : {'type' : 'ENUM', 'limits' : ['1','2','3']},
+    }
+    b.train_surrogate(variable_dict,n_outputs=1,n_samples=100,num_threads=n_threads)
+
+    # test outputs
+    assert fun(1.0,'1') == b(1.0,'1')
+    assert fun(1.0,'2') == b(1.0,'2')
+    assert fun(1.0,'3') == b(1.0,'3')
 
 def test_nearest():
     """

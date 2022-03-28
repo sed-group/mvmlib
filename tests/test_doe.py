@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from dmLib import Design
+from mvm import Design
 
 def test_fullfactorial():
     """testing full factorial design"""

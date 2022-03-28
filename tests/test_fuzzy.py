@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from dmLib import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
+from mvm import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
 
 def create_set(lb,ub):
     """" Create a fuzzy set from a given range """

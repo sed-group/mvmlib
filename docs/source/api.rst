@@ -1,100 +1,100 @@
-The dmLib API reference
-=======================
+The mvmlib API reference
+========================
 
-.. automodule:: dmLib
+.. automodule:: mvm
    :noindex:
 
 The “DOELib” module
 -------------------
 
-.. automodule:: dmLib.DOELib
+.. automodule:: mvm.DOELib
    :members:
 
-.. autoclass:: dmLib.DOELib.Design
+.. autoclass:: mvm.DOELib.Design
    :members:
 
 The “fuzzyLib” module
 ---------------------
 
-.. automodule:: dmLib.fuzzyLib
+.. automodule:: mvm.fuzzyLib
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.TriangularFunc
+.. autoclass:: mvm.fuzzyLib.TriangularFunc
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.FuzzyRule
+.. autoclass:: mvm.fuzzyLib.FuzzyRule
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.FuzzySet
+.. autoclass:: mvm.fuzzyLib.FuzzySet
    :members:
 
-.. autoclass:: dmLib.fuzzyLib.FuzzySystem
+.. autoclass:: mvm.fuzzyLib.FuzzySystem
    :members:
 
 The “uncertaintyLib” module
 ---------------------------
 
-.. automodule:: dmLib.uncertaintyLib
+.. automodule:: mvm.uncertaintyLib
    :members:
 
-.. autoclass:: dmLib.uncertaintyLib.GaussianFunc
+.. autoclass:: mvm.uncertaintyLib.GaussianFunc
    :members:
 
-.. autoclass:: dmLib.uncertaintyLib.Distribution
+.. autoclass:: mvm.uncertaintyLib.Distribution
    :members:
 
-.. autoclass:: dmLib.uncertaintyLib.VisualizeDist
+.. autoclass:: mvm.uncertaintyLib.VisualizeDist
    :members:
 
 The "designMargins" module
 --------------------------
 
-.. automodule:: dmLib.designMarginsLib
+.. automodule:: mvm.designMarginsLib
    :members:
 
-.. autoclass:: dmLib.designMarginsLib.ScalarParam
-   :members:
-   :noindex:
-   :undoc-members:
-   :show-inheritance:
-
-.. autoclass:: dmLib.designMarginsLib.VectorParam
+.. autoclass:: mvm.designMarginsLib.ScalarParam
    :members:
    :noindex:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dmLib.designMarginsLib.MatrixParam
+.. autoclass:: mvm.designMarginsLib.VectorParam
    :members:
    :noindex:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dmLib.designMarginsLib.FixedParam
-   :members:
-
-.. autoclass:: dmLib.designMarginsLib.DesignParam
-   :members:
-
-.. autoclass:: dmLib.designMarginsLib.InputSpec
+.. autoclass:: mvm.designMarginsLib.MatrixParam
    :members:
    :noindex:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dmLib.designMarginsLib.Behaviour
+.. autoclass:: mvm.designMarginsLib.FixedParam
    :members:
-   :noindex:
 
-.. autoclass:: dmLib.designMarginsLib.Performance
+.. autoclass:: mvm.designMarginsLib.DesignParam
+   :members:
+
+.. autoclass:: mvm.designMarginsLib.InputSpec
    :members:
    :noindex:
    :undoc-members:
    :show-inheritance:
 
-.. autoclass:: dmLib.designMarginsLib.MarginNode
+.. autoclass:: mvm.designMarginsLib.Behaviour
+   :members:
+   :noindex:
+
+.. autoclass:: mvm.designMarginsLib.Performance
+   :members:
+   :noindex:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: mvm.designMarginsLib.MarginNode
    :members:
 
-.. autoclass:: dmLib.designMarginsLib.MarginNetwork
+.. autoclass:: mvm.designMarginsLib.MarginNetwork
    :members:
    :noindex:

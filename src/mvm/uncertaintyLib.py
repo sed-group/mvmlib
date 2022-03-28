@@ -401,6 +401,31 @@ class Distribution(object):
 
         return self.sample  # return the requested number of samples
 
+    def __deepcopy__(self, memo): # memo is a dict of id's to copies
+        """
+        creates a deep independent copy of the class instance self.
+        https://stackoverflow.com/a/15774013
+
+        Parameters
+        ----------
+        memo : Dict
+            memoization dictionary of id(original) (or identity numbers) to copies
+
+        Returns
+        -------
+        Decision
+            copy of Distribution instance
+        """
+        id_self = id(self) # memoization avoids unnecessary recursion
+        _copy = memo.get(id_self)
+        if _copy is None:
+
+            _copy = type(self)(self.pdf, self.lb, self.ub, self.sort, self.interpolation, self.label)
+            _copy.label = self.label+'_copy_'+str(id(_copy))
+            _copy._samples = self._samples
+            memo[id_self] = _copy 
+        return _copy
+
 
 class GaussianFunc(Distribution):
 
@@ -589,6 +614,30 @@ class GaussianFunc(Distribution):
             self.fig.savefig('images/%s/%s.pdf' % (self.label, savefile),
                              format='pdf', dpi=200, bbox_inches='tight')
 
+    def __deepcopy__(self, memo): # memo is a dict of id's to copies
+        """
+        creates a deep independent copy of the class instance self.
+        https://stackoverflow.com/a/15774013
+
+        Parameters
+        ----------
+        memo : Dict
+            memoization dictionary of id(original) (or identity numbers) to copies
+
+        Returns
+        -------
+        Decision
+            copy of Distribution instance
+        """
+        id_self = id(self) # memoization avoids unnecessary recursion
+        _copy = memo.get(id_self)
+        if _copy is None:
+            
+            _copy = type(self)(self.mu, self.sigma, self.label)
+            _copy.label = self.label+'_copy_'+str(id(_copy))
+            _copy._samples = self._samples
+            memo[id_self] = _copy 
+        return _copy
 
 class UniformFunc(Distribution):
 
@@ -706,6 +755,30 @@ class UniformFunc(Distribution):
             self.fig.savefig('images/%s/%s.pdf' % (self.label, savefile),
                              format='pdf', dpi=200, bbox_inches='tight')
 
+    def __deepcopy__(self, memo): # memo is a dict of id's to copies
+        """
+        creates a deep independent copy of the class instance self.
+        https://stackoverflow.com/a/15774013
+
+        Parameters
+        ----------
+        memo : Dict
+            memoization dictionary of id(original) (or identity numbers) to copies
+
+        Returns
+        -------
+        Decision
+            copy of Distribution instance
+        """
+        id_self = id(self) # memoization avoids unnecessary recursion
+        _copy = memo.get(id_self)
+        if _copy is None:
+            
+            _copy = type(self)(self.center, self.Range, self.label)
+            _copy.label = self.label+'_copy_'+str(id(_copy))
+            _copy._samples = self._samples
+            memo[id_self] = _copy 
+        return _copy
 
 class VisualizeDist:
     def __init__(self, values: np.ndarray, cutoff: float = None, buffer_limit: float = None):
@@ -807,7 +880,7 @@ class VisualizeDist:
 
 
 if __name__ == "__main__":
-    from dmLib import Design, GaussianFunc
+    from mvm import Design, GaussianFunc
 
     mean = 10.0
     sd = 5.0

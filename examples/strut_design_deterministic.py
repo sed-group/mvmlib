@@ -2,11 +2,14 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
-from dmLib import Design
-from dmLib import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
-from dmLib import UniformFunc
-from dmLib import nearest
+from mvm import Design
+from mvm import FixedParam, DesignParam, InputSpec, Behaviour, Performance, MarginNode, MarginNetwork, Decision
+from mvm import UniformFunc
+from mvm import nearest
+
+os.chdir(os.path.join(os.getenv('GITDIR'),'mvmlib'))
 
 # define fixed parameters
 i1 = FixedParam(7.17E-06, 'I1', description='Coefficient of thermal expansion', symbol='alpha')
@@ -36,7 +39,6 @@ s2 = InputSpec(425, 'S2', universe=[325, 550], variable_type='FLOAT', descriptio
                symbol='T2', inc=+1e-0, inc_type='rel')
 input_specs = [s1, s2]
 
-
 # define the behaviour models
 
 # this is the length model
@@ -54,11 +56,16 @@ class B2(Behaviour):
         self.performance = [weight, cost]
 
 
+coeffs = [0.95, 1.05, 0.97]
+coeffs = 3 * [1.0, ]
+
+
 # this is the axial stress model
 class B3(Behaviour):
     def __call__(self, alpha, E, r1, r2, Ts, T1, T2, w, h, theta, L):
-        force = (E * w * h * alpha) * ((T2 * 0.95 * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.cos(np.deg2rad(theta)) / L
-        sigma_a = (E * alpha) * ((T2 * 1.05 * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.cos(np.deg2rad(theta)) / L
+        force = (E * w * h * alpha) * ((T2 * coeffs[0] * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.cos(
+            np.deg2rad(theta)) / L
+        sigma_a = (E * alpha) * ((T2 * coeffs[1] * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.cos(np.deg2rad(theta)) / L
         self.threshold = [force / 1000, sigma_a]
 
 
@@ -66,29 +73,12 @@ class B3(Behaviour):
 class B4(Behaviour):
     def __call__(self, alpha, E, r1, r2, Ts, T1, T2, h, theta, L):
         sigma_m = (3 / 2) * ((E * h) / (L ** 2)) * (
-                alpha * ((T2 * 0.97 * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.sin(np.deg2rad(theta)))
+                alpha * ((T2 * coeffs[2] * r2) - (T1 * r1) - (Ts * (r2 - r1))) * np.sin(np.deg2rad(theta)))
         self.threshold = sigma_m
 
 
-# Converts material index to material properties
-class B5(Behaviour):
-    def __call__(self, material):
-        if material == 'Inconel':
-            sigma_y = 460  # MPa
-            rho = 8.19e-06  # kg/mm3
-            cost = 46  # USD/kg
-
-        elif material == 'Titanium':
-            sigma_y = 828  # MPa
-            rho = 4.43e-06  # kg/mm3
-            cost = 110  # USD/kg
-
-        self.intermediate = [rho, cost]
-        self.decided_value = sigma_y
-
-
 # this is the buckling model
-class B6(Behaviour):
+class B5(Behaviour):
     def __call__(self, E, K, w, h, L):
         f_buckling = ((np.pi ** 2) * E * w * (h ** 3)) / (12 * ((K * L) ** 2))
         self.decided_value = f_buckling / 1000
@@ -99,13 +89,34 @@ b2 = B2('B2')
 b3 = B3('B3')
 b4 = B4('B4')
 b5 = B5('B5')
-b6 = B6('B6')
-behaviours = [b1, b2, b3, b4, b5, b6]
 
-# Define decision nodes
+
+class B6(Behaviour):
+    def __call__(self, material):
+        if material == 'Inconel':
+            sigma_y = 460  # MPa
+            rho = 8.19e-06  # kg/mm3
+            cost = 0.46  # USD/kg
+
+        elif material == 'Titanium':
+            sigma_y = 828  # MPa
+            rho = 4.43e-06  # kg/mm3
+            cost = 1.10  # USD/kg
+
+        self.intermediate = [rho, cost]
+        self.decided_value = sigma_y
+
+        return self.decided_value
+
+
+b6 = B6('B6')
+
+# Define decision nodes and a model to convert to decided values
 decision_1 = Decision(universe=['Inconel', 'Titanium'], variable_type='ENUM', key='decision_1',
-                      direction='must_not_exceed', decided_value_model=b5, description='The type of material')
+                      direction='must_not_exceed', decided_value_model=b6, description='The type of material')
+
 decisions = [decision_1, ]
+behaviours = [b1, b2, b3, b4, b5, b6]
 
 # Define margin nodes
 e1 = MarginNode('E1', direction='must_not_exceed')
@@ -125,7 +136,7 @@ class MAN(MarginNetwork):
     def randomize(self):
         pass
 
-    def forward(self, override_decisions=False):
+    def forward(self, num_threads=1, recalculate_decisions=False, override_decisions=False):
         # retrieve MAN components
         d1 = self.design_params[0]  # w
         d2 = self.design_params[1]  # h
@@ -145,8 +156,8 @@ class MAN(MarginNetwork):
         b2 = self.behaviours[1]  # calculates weight and cost
         b3 = self.behaviours[2]  # calculates axial force and stress
         b4 = self.behaviours[3]  # calculates bending stress
-        b5 = self.behaviours[4]  # convert material index to yield stress, density, and cost
-        b6 = self.behaviours[5]  # calculates buckling load
+        b5 = self.behaviours[4]  # calculates buckling load
+        b6 = self.behaviours[5]  # convert material index to yield stress, density, and cost
 
         decision_1 = self.decisions[0]  # select a material based on maximum bending and axial stress
 
@@ -162,19 +173,19 @@ class MAN(MarginNetwork):
         b3(i1.value, i2.value, i3.value, i4.value, i6.value, s1.value, s2.value, d1.value, d2.value, d3.value,
            b1.intermediate)
         b4(i1.value, i2.value, i3.value, i4.value, i6.value, s1.value, s2.value, d2.value, d3.value, b1.intermediate)
-        b6(i2.value, i5.value, d1.value, d2.value, b1.intermediate)
+        b5(i2.value, i5.value, d1.value, d2.value, b1.intermediate)
 
-        decision_1(max(b3.threshold[1], b4.threshold), override=override_decisions)
-
-        b5(decision_1.selection_value)
+        # Execute decision node and translation model
+        decision_1(max(b3.threshold[1], b4.threshold),override_decisions,recalculate_decisions,num_threads)
+        b6(decision_1.selection_value)
 
         # Compute excesses
-        e1(b3.threshold[0], b6.decided_value)
-        e2(b3.threshold[1], b5.decided_value)
-        e3(b4.threshold, b5.decided_value)
+        e1(b3.threshold[0], b5.decided_value)
+        e2(b3.threshold[1], b6.decided_value)
+        e3(b4.threshold, b6.decided_value)
 
         # Compute performances
-        b2(b5.intermediate[0], d1.value, d2.value, b1.intermediate, b5.intermediate[1])
+        b2(b6.intermediate[0], d1.value, d2.value, b1.intermediate, b6.intermediate[1])
         p1(b2.performance[0])
         p2(b2.performance[1])
 
@@ -184,6 +195,12 @@ man = MAN(design_params, input_specs, fixed_params,
 
 # Create surrogate model for estimating threshold performance
 man.train_performance_surrogate(n_samples=700, bandwidth=[1e-3, ], sampling_freq=1)
+man.save('strut_d')
+
+# load the MAN
+# man.save('strut_d')
+
+man.init_decisions()
 man.forward()
 man.view_perf(e_indices=[0, 1], p_index=0)
 man.view_perf(e_indices=[0, 2], p_index=0)
@@ -193,7 +210,6 @@ man.view_perf(e_indices=[0, 2], p_index=1)
 man.view_perf(e_indices=[1, 2], p_index=1)
 
 # Run a forward pass of the MAN
-man.forward()
 man.compute_impact()
 man.compute_absorption()
 
