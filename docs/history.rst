@@ -2,12 +2,36 @@
 Changelog
 *********
 
+.. _release-0.5.3:
+
+0.5.3
+=====
+
+:Date: March 29, 2022
+
+Fixes
+-----
+
+* removed dependency on ``py``
+
+.. _release-0.5.2:
+
+0.5.2
+=====
+
+:Date: March 29, 2022
+
+Features
+--------
+
+* First public release of ``mvmlib``
+
 .. _release-0.5.1:
 
 0.5.1
 =====
 
-:Date: March 14, 2022
+:Date: March 27, 2022
 
 Incompatible changes
 --------------------

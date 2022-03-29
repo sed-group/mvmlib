@@ -9,7 +9,6 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from py import process
 import scipy.stats as st
 from smt.surrogate_models import KRG, RMTB, QP, LS
 from smt.sampling_methods import LHS
