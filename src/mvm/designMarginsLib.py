@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 from gettext import find
+from tabnanny import check
 from turtle import xcor
 from typing import Tuple, List, Union, Callable, Dict
 from copy import copy,deepcopy
 import multiprocess as mp
 import sys
+import os
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1454,7 +1457,7 @@ class Decision:
                 self.decided_value = list(self.decided_values[i_min,:])
             self.i_min = i_min
         else:
-            assert self.selection_value is not None, 'the selected value for this node has not initialized'
+            assert self.selection_value is not None, 'the selected value for this node was not initialized'
             i_min = np.where([self.selection_value == v for v in self._universe])[0][0]
 
             if self.decided_value_model is not None:
@@ -1555,6 +1558,8 @@ class MarginNetwork():
         self.fig = None
         self.lb_inputs = None
         self.ub_inputs = None
+        self.lb_outputs = None
+        self.ub_outputs = None
         self.key = key
 
         # Inputs
@@ -1900,7 +1905,6 @@ class MarginNetwork():
             ext_samples[1] must have shape (N_samples,len(performances)),
             by default None
         """
-
         if ext_samples is None:
             # generate training data for response surface using an LHS grid of design parameter and input
             # specification space
@@ -1927,10 +1931,10 @@ class MarginNetwork():
             # Retrieve sampling results
             for result in results:
                 
-                excess_samples, spec, perf_samples = result
+                node_samples, spec, perf_samples = result
 
                 # concatenate input specifications
-                x_i = np.append(excess_samples, spec)
+                x_i = np.append(node_samples, spec)
                 x_i = x_i.reshape(1,self.xt.shape[1])
 
                 self.xt = np.vstack((self.xt, x_i))
@@ -1951,7 +1955,10 @@ class MarginNetwork():
         # Get lower and upper bounds of excess values
         self.lb_inputs = np.min(self.xt, axis=0)
         self.ub_inputs = np.max(self.xt, axis=0)
-        bounds = np.vstack((self.lb_inputs,self.ub_inputs)).T
+
+        # Get lower and upper bounds of performance values
+        self.lb_outputs = np.min(self.yt, axis=0)
+        self.ub_outputs = np.max(self.yt, axis=0)
 
         xt = scaling(self.xt, self.lb_inputs, self.ub_inputs, operation=1)
         # xt = self.xt
@@ -2004,7 +2011,7 @@ class MarginNetwork():
         Parameters
         ----------
         e_indices : list[int]
-            index of the excess values to be viewed on the plot
+            index of the margin node values to be viewed on the plot
         p_index : int
             index of the performance parameter to be viewed on the plot
         label_1 : str, optional
@@ -2035,22 +2042,22 @@ class MarginNetwork():
         # only sample the selected variables while holding the other variables at their nominal values
         sampling_vector[e_indices] = n_levels
 
-        lb_excess, ub_excess = np.empty(0), np.empty(0)
+        lb_node, ub_node = np.empty(0), np.empty(0)
         for margin_node in self.margin_nodes:
-            lb_excess = np.append(lb_excess, margin_node.excess.value)
-            ub_excess = np.append(ub_excess, margin_node.excess.value + 1e-3)
-        lb_excess[e_indices] = self.lb_inputs[e_indices]
-        ub_excess[e_indices] = self.ub_inputs[e_indices]
+            lb_node = np.append(lb_node, margin_node.decided_value.value)
+            ub_node = np.append(ub_node, margin_node.decided_value.value + 1e-3)
+        lb_node[e_indices] = self.lb_inputs[e_indices]
+        ub_node[e_indices] = self.ub_inputs[e_indices]
 
-        excess_doe = Design(lb_excess, ub_excess, sampling_vector, 'fullfact')
-        values = np.hstack((excess_doe.unscale(),
-                            np.tile(self.nominal_spec_vector, (excess_doe.unscale().shape[0], 1))))
+        doe_node = Design(lb_node, ub_node, sampling_vector, 'fullfact')
+        values = np.hstack((doe_node.unscale(), np.tile(self.nominal_spec_vector, (doe_node.unscale().shape[0], 1))))
         values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
 
-        perf_estimate = self.sm_perf.predict_values(values)
+        perf_estimate = self._bounded_perf(values)
+        # perf_estimate = self.sm_perf.predict_values(values)
 
-        x = excess_doe.unscale()[:, e_indices[0]].reshape((n_levels, n_levels))
-        y = excess_doe.unscale()[:, e_indices[1]].reshape((n_levels, n_levels))
+        x = doe_node.unscale()[:, e_indices[0]].reshape((n_levels, n_levels))
+        y = doe_node.unscale()[:, e_indices[1]].reshape((n_levels, n_levels))
         z = perf_estimate[:, p_index].reshape((n_levels, n_levels))
 
         if label_1 is None:
@@ -2096,15 +2103,15 @@ class MarginNetwork():
             to estimate performance at the threshold design, by default False
         """
 
-        excess_values = self.excess_vector.reshape(1, -1)  # turn it into a 2D matrix
+        node_values = self.dv_vector.reshape(1, -1)  # turn it into a 2D matrix
         input_specs = self.spec_vector.reshape(1, -1)  # turn it into a 2D matrix
 
         # Compute performances at decided values first
         if use_estimate:
             # Use surrogate model
-            value = np.hstack((excess_values, input_specs))
+            value = np.hstack((node_values, input_specs))
             value = scaling(value, self.lb_inputs, self.ub_inputs, operation=1)
-            performances = self.sm_perf.predict_values(value)
+            performances = self._bounded_perf(value)
         else:
             # Get performances from behaviour models
             performances = self.perf_vector
@@ -2114,20 +2121,18 @@ class MarginNetwork():
         # performances = [len(margin_nodes), len(performances)]
 
         # Compute performances at target threshold for each margin node
-        input_excess = np.tile(excess_values, (len(self.margin_nodes), 1))  # Create a square matrix
+        input_node = np.tile(node_values, (len(self.margin_nodes), 1))  # Create a square matrix
 
-        # input_excess = [len(margin_nodes), len(margin_nodes)]
+        # input_node = [len(margin_nodes), len(margin_nodes)]
 
-        np.fill_diagonal(input_excess, np.zeros(len(self.margin_nodes)), wrap=False)  # works in place
+        np.fill_diagonal(input_node, self.tt_vector, wrap=False)  # works in place
 
         # input_excess = [len(margin_nodes), len(margin_nodes)]
 
         # concatenate input specifications
-        values = np.hstack((input_excess,
-                            np.tile(self.nominal_spec_vector, (input_excess.shape[0], 1))))
+        values = np.hstack((input_node, np.tile(self.nominal_spec_vector, (input_node.shape[0], 1))))
         values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
-
-        thresh_perf = self.sm_perf.predict_values(values)
+        thresh_perf = self._bounded_perf(values)
 
         # thresh_perf = [len(margin_nodes), len(performances)]
 
@@ -2424,7 +2429,7 @@ class MarginNetwork():
         self.impact_matrix.reset(n)
         self.absorption_matrix.reset(n)
 
-    def save(self,filename='man'):
+    def save(self,filename='man',folder='/'):
         """
         saves the initial state of the MarginNetwork:
         Performance surrogate and decision univere
@@ -2435,32 +2440,36 @@ class MarginNetwork():
         filename : str, optional
            basefile path, by default 'man'
         """
-        
-        with open(filename+'_init'+'.pkl','wb') as f:
+        check_folder(folder)
+        path = os.path.join(folder,filename)
+
+        with open(path+'_init'+'.pkl','wb') as f:
             pickle.dump(self.lb_inputs,f)
             pickle.dump(self.ub_inputs,f)
+            pickle.dump(self.lb_outputs,f)
+            pickle.dump(self.ub_outputs,f)
             pickle.dump(self.xt,f)
             pickle.dump(self.yt,f)
             pickle.dump(self.sm_perf,f)
             pickle.dump(self.initial_decision,f)
-            pickle.dump(self.decisions,f)
+            pickle.dump(self.decision_vector,f)
 
-        with open(filename+'_samples'+'.pkl','wb') as f:
+        with open(path+'_samples'+'.pkl','wb') as f:
             pickle.dump(self.deterioration_vector,f)
             pickle.dump(self.impact_matrix,f)
             pickle.dump(self.absorption_matrix,f)
             pickle.dump(self.utilization_matrix,f)
 
         for decision in self.decisions:
-            decision.save(filename=filename)
+            decision.save(filename=path)
 
         for margin_node in self.margin_nodes:
-            margin_node.save(filename=filename)
+            margin_node.save(filename=path)
 
         for behaviour in self.behaviours:
-            behaviour.save(filename=filename)
+            behaviour.save(filename=path)
 
-    def load(self,filename='man'):
+    def load(self,filename='man',folder=''):
         """
         loads the initial state of the MarginNetwork:
         Performance surrogate and decision univere
@@ -2471,30 +2480,33 @@ class MarginNetwork():
         filename : str, optional
            basefile path, by default 'man'
         """
-        
-        with open(filename+'_init'+'.pkl','rb') as f:
+        path = os.path.join(folder,filename)
+
+        with open(path+'_init'+'.pkl','rb') as f:
             self.lb_inputs = pickle.load(f)
             self.ub_inputs = pickle.load(f)
+            self.lb_outputs = pickle.load(f)
+            self.ub_outputs = pickle.load(f)
             self.xt = pickle.load(f)
             self.yt = pickle.load(f)
             self.sm_perf = pickle.load(f)
             self.initial_decision = pickle.load(f)
-            self.decisions = pickle.load(f)
+            self.decision_vector = pickle.load(f)
 
-        with open(filename+'_samples'+'.pkl','rb') as f:
+        with open(path+'_samples'+'.pkl','rb') as f:
             self.deterioration_vector = pickle.load(f)
             self.impact_matrix = pickle.load(f)
             self.absorption_matrix = pickle.load(f)
             self.utilization_matrix = pickle.load(f)
 
         for decision in self.decisions:
-            decision.load(filename=filename)
+            decision.load(filename=path)
 
         for margin_node in self.margin_nodes:
-            margin_node.load(filename=filename)
+            margin_node.load(filename=path)
 
         for behaviour in self.behaviours:
-            behaviour.load(filename=filename)
+            behaviour.load(filename=path)
 
     def _sample_inputs(self,n_samples: int) -> np.ndarray:
         """
@@ -2529,6 +2541,27 @@ class MarginNetwork():
         input_samples = sampling(n_samples)
 
         return input_samples
+
+    def _bounded_perf(self,inputs: np.ndarray) -> np.ndarray:
+        """
+        Retrieve performance estimates from the surrogate
+
+        Parameters
+        ----------
+        inputs : np.ndarray
+            inputs at which to make predictions must be of size
+            n_samples x n_margin_nodes
+
+        Returns
+        -------
+        np.ndarray
+            array of estimated performance parameters
+        """
+        perf_estimate = self.sm_perf.predict_values(inputs)
+        for col in range(perf_estimate.shape[1]):
+            perf_estimate[perf_estimate[:,col] >= self.ub_outputs[col],col] = self.ub_outputs[col]
+            perf_estimate[perf_estimate[:,col] <= self.lb_outputs[col],col] = self.lb_outputs[col]
+        return perf_estimate
 
     def __copy__(self):
         """
@@ -2621,7 +2654,7 @@ def _sample_man(input_i: np.ndarray, man: MarginNetwork, sampling_freq: int = 1)
     Returns
     -------
     Tuple[np.ndarray,List[Union[int,float]],np.ndarray]
-        List of excess values, input specifications, and performance parameters
+        List of target threshold values, input specifications, and performance parameters
     """
 
     design = input_i[:len(man.design_params)]
@@ -2643,19 +2676,19 @@ def _sample_man(input_i: np.ndarray, man: MarginNetwork, sampling_freq: int = 1)
     man.spec_vector = spec  # Set input specifications to their respective values
     man.decision_vector = decisions  # Set decisions to their respective values
 
-    excess_samples = np.empty((0, len(man.margin_nodes)))
+    node_samples = np.empty((0, len(man.margin_nodes)))
     perf_samples = np.empty((0, len(man.performances)))
     for n in range(sampling_freq):
         # man.randomize() # Randomize the MAN
         man.forward(override_decisions=True)  # Run one pass of the MAN
 
-        excess_samples = np.vstack((excess_samples, man.excess_vector.reshape(1, excess_samples.shape[1])))
+        node_samples = np.vstack((node_samples, man.dv_vector.reshape(1, node_samples.shape[1])))
         perf_samples = np.vstack((perf_samples, man.perf_vector.reshape(1, perf_samples.shape[1])))
 
-    excess_samples = np.mean(excess_samples, axis=0)
+    node_samples = np.mean(node_samples, axis=0)
     perf_samples = np.mean(perf_samples, axis=0)
 
-    return excess_samples, spec, perf_samples
+    return node_samples, spec, perf_samples
 
 def _parallel_sample_man(input_i: np.ndarray, mans: List[MarginNetwork], 
                          sampling_freq: int = 1, process_ids: List[int] = None) -> Tuple[np.ndarray,List[Union[int,float]],np.ndarray]:
@@ -2674,7 +2707,7 @@ def _parallel_sample_man(input_i: np.ndarray, mans: List[MarginNetwork],
     Returns
     -------
     Tuple[np.ndarray,List[Union[int,float]],np.ndarray]
-        List of excess values, input specifications, and performance parameters
+        List of target threshold values, input specifications, and performance parameters
     """
 
     # Select a man to forward based on process id
@@ -2685,9 +2718,9 @@ def _parallel_sample_man(input_i: np.ndarray, mans: List[MarginNetwork],
         pid = mp.current_process()._identity[0] - process_ids[0]
         man = mans[pid]
 
-    excess_samples, spec, perf_samples = _sample_man(input_i,man,sampling_freq)
+    tt_samples, spec, perf_samples = _sample_man(input_i,man,sampling_freq)
 
-    return excess_samples, spec, perf_samples
+    return tt_samples, spec, perf_samples
 
 def _sample_behaviour(*args, variable_dict=None, **kwargs) -> List[Union[int,float]]:
     """

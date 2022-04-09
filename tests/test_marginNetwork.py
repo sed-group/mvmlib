@@ -1,12 +1,16 @@
 import pytest
 import numpy as np
+import os
 from scipy.stats import norm
-import matplotlib.pyplot as plt
+import matplotlib
 from typing import List, Tuple
 from scipy.optimize import fsolve, minimize
 
+matplotlib.use('Agg')
+
 from mvm import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
     InputSpec, DesignParam, Behaviour, Decision, compute_cdf, nearest
+from mvm.utilities import check_folder
 
 # Input set 1
 @pytest.fixture
@@ -106,7 +110,9 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
 
         def __call__(self,value):
             # Translate decision variable to decided value
-            if value == '1':
+            if value == '0':
+                self.decided_value = 5.0
+            elif value == '1':
                 self.decided_value = 4.0
             elif value == '2':
                 self.decided_value = 3.0
@@ -122,7 +128,9 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
 
         def __call__(self,value):
             # Translate decision variable to decided value
-            if value == '1':
+            if value == '0':
+                self.decided_value = 4.0
+            elif value == '1':
                 self.decided_value = 2.0
             elif value == '2':
                 self.decided_value = 1.0
@@ -130,6 +138,7 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
                 self.decided_value = 0.5
 
             return self.decided_value
+
 
     class B5(Behaviour):
 
@@ -146,6 +155,7 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
 
             return self.decided_value
 
+
     b1 = B1('B1')
     b2 = B2('B2')
     b3 = B3('B3')
@@ -154,17 +164,17 @@ def man_components() -> Tuple[List[Behaviour],List[Performance],List[MarginNode]
     behaviours = [b1,b2,b3,b4,b5]
 
     # Define decision nodes
-    decision_1 = Decision(universe=['1', '2', '3', '4'], variable_type='ENUM', key='decision_1',
+    decision_1 = Decision(universe=['0','1', '2', '3', '4'], variable_type='ENUM', key='decision_1',
                           direction='must_exceed', decided_value_model=b3)
-    decision_2 = Decision(universe=['1', '2', '3'], variable_type='ENUM', key='decision_2',
+    decision_2 = Decision(universe=['0','1', '2', '3'], variable_type='ENUM', key='decision_2',
                           direction='must_exceed', decided_value_model=b4)
     decision_3 = Decision(universe=['1', '2', '3', '4'], variable_type='ENUM', key='decision_2',
                           direction=['must_exceed','must_exceed'], decided_value_model=b5, n_nodes=2)
     decisions = [decision_1, decision_2, decision_3]
 
     # Define performances
-    p1 = Performance('P1')
-    p2 = Performance('P1')
+    p1 = Performance('P1', direction='less_is_better')
+    p2 = Performance('P2', direction='less_is_better')
     performances = [p1,p2]
 
     # Define margin nodes
@@ -452,6 +462,7 @@ def test_deterministic_MarginNode(deterministic_inputs:Tuple[float,float]):
     ThermalNode(np.ones(10)*decided_value,np.ones(10)*threshold)
     assert np.allclose(ThermalNode.excess.values, np.ones(10) * (decided_value-threshold), atol=1e-3)
 
+@pytest.mark.dependency()
 def test_stochastic_MarginNode(stochastic_inputs:Tuple[GaussianFunc, GaussianFunc]):
     """
     Tests the MarginNode excess calculation method for stochastic threshold and behaviour
@@ -504,13 +515,18 @@ def test_stochastic_MarginNode(stochastic_inputs:Tuple[GaussianFunc, GaussianFun
     assert np.math.isclose(excess_limit, test_excess_limit, rel_tol=1e-1)
     assert np.allclose(cdf, test_excess_cdf, atol=1e-1)
 
-    ######################################################
-    # Check visualization
-    # ThermalNode.value_dist(1000)
-    # ThermalNode.value_dist.view()
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+    check_folder(folder)
 
+    ThermalNode.save(os.path.join(folder,'test_margin_node'))
+
+@pytest.mark.dependency()
+@pytest.mark.parametrize(
+    'deviation', [0.0, 0.5],
+)
 def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
-    Impact_test_inputs:Tuple[np.ndarray,np.ndarray]):
+    Impact_test_inputs:Tuple[np.ndarray,np.ndarray],deviation:float):
     """
     Tests the ImpactMatrix calculation method for deterministic threshold and decided values
     """
@@ -542,12 +558,12 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
             b2 = self.behaviours[1]
 
             # Execute behaviour models
-            b2(dv_vector[0],dv_vector[1],dv_vector[2])
+            b2(dv_vector[0]+deviation,dv_vector[1]+deviation,dv_vector[2]+deviation)
 
             # Compute excesses
-            e1(tt_vector[0],dv_vector[0])
-            e2(tt_vector[1],dv_vector[1])
-            e3(tt_vector[2],dv_vector[2])
+            e1(tt_vector[0],dv_vector[0]+deviation)
+            e2(tt_vector[1],dv_vector[1]+deviation)
+            e3(tt_vector[2],dv_vector[2]+deviation)
 
             # Compute performances
             p1(b2.performance[0])
@@ -557,25 +573,26 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
 
     ######################################################
     # Create training data and train response surface
-    n_samples = 100
-    excess_space = Design(np.zeros(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
+    n_samples = 1000
+    doe_node = Design(-np.ones(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
 
     p_space = np.empty((n_samples,len(performances)))
-    p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
-    p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,ext_samples=(excess_space,p_space))
+    man.train_performance_surrogate(n_samples=100,sm_type='KRG',ext_samples=(doe_node+dv_vector,p_space))
     man.forward()
+    man.view_perf(e_indices=[0,1],p_index=0)
     man.compute_impact(use_estimate=True)
 
     # Compute test impact
-    input = np.tile(tt_vector,(len(margin_nodes),1))
+    input = np.tile(dv_vector+deviation,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
     p[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
     p[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=input)
 
-    np.fill_diagonal(input,dv_vector)
+    np.fill_diagonal(input,tt_vector)
 
     p_t = np.empty((len(margin_nodes),len(performances)))
     p_t[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
@@ -591,6 +608,7 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
 
     assert np.allclose(man.impact_matrix.value, test_impact, rtol=1e-1)
 
+@pytest.mark.dependency()
 def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                                  Impact_test_inputs:Tuple[np.ndarray,np.ndarray], noise:GaussianFunc):
     """
@@ -640,13 +658,13 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
     ######################################################
     # Create training data and train response surface
     n_samples = 100
-    excess_space = Design(-np.ones(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
+    doe_node = Design(-np.ones(len(margin_nodes)),np.ones(len(margin_nodes)),n_samples,'LHS').unscale()
 
     p_space = np.empty((n_samples,len(performances)))
-    p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
-    p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=excess_space+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
+    p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,ext_samples=(excess_space,p_space))
+    man.train_performance_surrogate(n_samples=100,ext_samples=(doe_node+dv_vector,p_space))
 
     n_runs = 1000
     for n in range(n_runs):
@@ -656,13 +674,13 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
     mean_impact = np.mean(man.impact_matrix.values,axis=2)
 
     # Compute test impact
-    input = np.tile(tt_vector,(len(margin_nodes),1))
+    input = np.tile(dv_vector,(len(margin_nodes),1))
 
     p = np.empty((len(margin_nodes),len(performances)))
     p[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
     p[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=input)
 
-    np.fill_diagonal(input,dv_vector)
+    np.fill_diagonal(input,tt_vector)
 
     p_t = np.empty((len(margin_nodes),len(performances)))
     p_t[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=input)
@@ -698,11 +716,6 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
         assert len(node.excess.values) == n_runs - 5
         assert len(node.decided_value.values) == n_runs - 5
         assert len(node.target.values) == n_runs - 5
-
-    ######################################################
-    # Check visualization
-    # man.view_perf(e_indices=[1,2],p_index=1)
-    # man.impact_matrix.view(2,1)
 
 def test_deterministic_Absorption(deterministic_man: MarginNetwork,
     man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
@@ -800,20 +813,11 @@ def test_deterministic_Absorption(deterministic_man: MarginNetwork,
     assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
     assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
 
-    ######################################################
-    # Check visualization
-    # man.absorption_matrix.view(0,0)
-    # man.absorption_matrix.view(1,0)
-    # man.absorption_matrix.view(2,0)
-
-    # man.absorption_matrix.view(0,1)
-    # man.absorption_matrix.view(1,1)
-    # man.absorption_matrix.view(2,1)
-
+@pytest.mark.dependency()
 def test_stochastic_Absorption(stochastic_man: MarginNetwork, 
-    man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
-    stochastic_specs: Tuple[np.ndarray,List[InputSpec]],
-    design_parameters: List[DesignParam]):
+                               man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                               stochastic_specs: Tuple[np.ndarray,List[InputSpec]],
+                               design_parameters: List[DesignParam]):
     """
     Tests the Absorption calculation method for stochastic specifications
     """
@@ -907,25 +911,37 @@ def test_stochastic_Absorption(stochastic_man: MarginNetwork,
 
     #test_utilization = [len(margin_nodes), len(input_specs)]
 
-    ######################################################
-    # Check visualization
-    # man.absorption_matrix.view_det(0)
-    # man.absorption_matrix.view_det(1)
-
-    # man.absorption_matrix.view(0,0)
-    # man.absorption_matrix.view(1,0)
-    # man.absorption_matrix.view(2,0)
-
-    # man.absorption_matrix.view(0,1)
-    # man.absorption_matrix.view(1,1)
-    # man.absorption_matrix.view(2,1)
-
     assert np.allclose(mean_absorption, test_absorption, rtol=0.2)
     assert np.allclose(mean_utilization, test_utilization, rtol=0.2)
 
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    man.save('absorption_man',folder=folder)
+
+@pytest.mark.parametrize(
+    'test_dict', 
+    [
+        {
+            'true_decisions' : ['1','1'],
+            'tt_factor' : [1.0,1.0,1.0],
+            'tt_vector' : [4.84,3.2,2.2],
+        },
+        {
+            'true_decisions' : ['3','2'],
+            'tt_factor' : [0.5,0.5,1.0],
+            'tt_vector' : [2.42,1.6,1.1],
+        },
+        {
+            'true_decisions' : ['4','3'],
+            'tt_factor' : [0.25,0.25,1.0],
+            'tt_vector' : ['1','1'],
+        },
+    ]
+)
 def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                   deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                  design_parameters: List[DesignParam]):
+                  design_parameters: List[DesignParam], test_dict):
     """
     Tests the Decision node capability of the MAN
     """
@@ -946,106 +962,105 @@ def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[M
     b1, b2, b3, b4, b5 = behaviours
 
     # Check outputs
+    man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+    man.init_decisions()
+    man.forward()
+    man.compute_absorption()
 
-    test_dicts = [
+    mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+    mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
+
+    ######################################################
+    # Calculate the test values
+    # check that correct decisions are made
+    assert all([d == d_t for d,d_t in zip(man.decision_vector, test_dict['true_decisions'])])
+
+    dv_vector[0] = b3(decisions[0].selection_value)
+    dv_vector[1] = b4(decisions[1].selection_value)
+
+    s1_limit = np.array([
+        -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
+        ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
+        ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
+    ])
+    
+    s2_limit = np.array([
+        (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
+        ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
+        (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
+    ])
+
+    s1_limit = np.max(s1_limit)
+    s2_limit = np.max(s2_limit)
+    spec_limit = np.array([s1_limit,s2_limit])
+
+    # deterioration matrix
+    signs = np.array([-1,-1])
+    nominal_specs = np.array([centers[0],centers[1]])
+    deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
+    deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
+
+    #deterioration_matrix = [len(margin_nodes), len(input_specs)]
+
+    # threshold matrix
+    nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
+    nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
+    target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
+
+    #target_thresholds = [len(margin_nodes), len(input_specs)]
+
+    # Compute performances at the spec limit for each margin node
+    new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
+    new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
+
+    new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
+    new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
+    new_thresholds = np.empty((len(margin_nodes),0))
+    new_thresholds = np.hstack((new_thresholds,new_tt_1))
+    new_thresholds = np.hstack((new_thresholds,new_tt_2))
+
+    #new_thresholds = [len(margin_nodes), len(input_specs)]
+
+    test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
+
+    #test_absorption = [len(margin_nodes), len(input_specs)]
+
+    # compute utilization
+    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_values = np.tile(decided_value,(1,len(input_specs)))
+
+    #decided_values = [len(margin_nodes), len(input_specs)]
+
+    test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
+
+    #test_utilization = [len(margin_nodes), len(input_specs)]
+
+    assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
+    assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
+
+@pytest.mark.parametrize(
+    'test_dict', 
+    [
         {
-            'true_decisions' : ['1','1'],
+            'true_decisions' : ['2',],
             'tt_factor' : [1.0,1.0,1.0],
             'tt_vector' : [4.84,3.2,2.2],
         },
         {
-            'true_decisions' : ['3','2'],
+            'true_decisions' : ['3',],
             'tt_factor' : [0.5,0.5,1.0],
             'tt_vector' : [2.42,1.6,1.1],
         },
         {
-            'true_decisions' : ['4','3'],
+            'true_decisions' : ['4',],
             'tt_factor' : [0.25,0.25,1.0],
             'tt_vector' : ['1','1'],
         },
     ]
-
-    for test_dict in test_dicts:
-
-        man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
-        man.init_decisions()
-        man.forward()
-        man.compute_absorption()
-
-        mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
-        mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
-
-        ######################################################
-        # Calculate the test values
-        # check that correct decisions are made
-        assert all([d == d_t for d,d_t in zip(man.decision_vector, test_dict['true_decisions'])])
-
-        dv_vector[0] = b3(decisions[0].selection_value)
-        dv_vector[1] = b4(decisions[1].selection_value)
-
-        s1_limit = np.array([
-            -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
-            ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
-            ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
-        ])
-        
-        s2_limit = np.array([
-            (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
-            ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
-            (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
-        ])
-
-        s1_limit = np.max(s1_limit)
-        s2_limit = np.max(s2_limit)
-        spec_limit = np.array([s1_limit,s2_limit])
-
-        # deterioration matrix
-        signs = np.array([-1,-1])
-        nominal_specs = np.array([centers[0],centers[1]])
-        deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
-        deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
-
-        #deterioration_matrix = [len(margin_nodes), len(input_specs)]
-
-        # threshold matrix
-        nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
-        nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
-        target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
-
-        #target_thresholds = [len(margin_nodes), len(input_specs)]
-
-        # Compute performances at the spec limit for each margin node
-        new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
-        new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
-
-        new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
-        new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
-        new_thresholds = np.empty((len(margin_nodes),0))
-        new_thresholds = np.hstack((new_thresholds,new_tt_1))
-        new_thresholds = np.hstack((new_thresholds,new_tt_2))
-
-        #new_thresholds = [len(margin_nodes), len(input_specs)]
-
-        test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
-
-        #test_absorption = [len(margin_nodes), len(input_specs)]
-
-        # compute utilization
-        decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
-        decided_values = np.tile(decided_value,(1,len(input_specs)))
-
-        #decided_values = [len(margin_nodes), len(input_specs)]
-
-        test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
-
-        #test_utilization = [len(margin_nodes), len(input_specs)]
-
-        assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
-        assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
-
+)
 def test_decision_multinode(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                             deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                            design_parameters: List[DesignParam]):
+                            design_parameters: List[DesignParam], test_dict):
     """
     Tests the Decision node capability of the MAN
     """
@@ -1067,111 +1082,90 @@ def test_decision_multinode(man_components: Tuple[List[Behaviour],List[Performan
     b1, b2, b3, b4, b5 = behaviours
     
     # Check outputs
+    man = multidecision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+    man.init_decisions()
+    man.forward(override_decisions=False)
+    man.compute_absorption()
 
-    test_dicts = [
-        {
-            'true_decisions' : ['2'],
-            'tt_factor' : [1.0,1.0,1.0],
-            'tt_vector' : [4.84,3.2,2.2],
-        },
-        {
-            'true_decisions' : ['3'],
-            'tt_factor' : [0.5,0.5,1.0],
-            'tt_vector' : [2.42,1.6,2.2],
-        },
-        {
-            'true_decisions' : ['4'],
-            'tt_factor' : [0.25,0.25,1.0],
-            'tt_vector' : [1.21,0.8 ,2.2],
-        },
-    ]
+    mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+    mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
 
-    for test_dict in test_dicts[1:]:
+    ######################################################
+    # Calculate the test values
+    # check that correct decisions are made
+    assert all([d == d_t for d,d_t in zip(man.decision_vector, test_dict['true_decisions'])])
 
-        man = multidecision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
-        man.init_decisions()
-        man.forward(override_decisions=False)
-        man.compute_absorption()
+    dv_vector[:2] = b5(decisions[2].selection_value)
 
-        mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
-        mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
+    s1_limit = np.array([
+        -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
+        ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
+        ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
+    ])
+    
+    s2_limit = np.array([
+        (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
+        ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
+        (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
+    ])
 
-        ######################################################
-        # Calculate the test values
-        # check that correct decisions are made
-        assert all([d == d_t for d,d_t in zip(man.decision_vector, test_dict['true_decisions'])])
+    s1_limit = np.max(s1_limit)
+    s2_limit = np.max(s2_limit)
+    spec_limit = np.array([s1_limit,s2_limit])
 
-        dv_vector[:2] = b5(decisions[2].selection_value)
+    # deterioration matrix
+    signs = np.array([-1,-1])
+    nominal_specs = np.array([centers[0],centers[1]])
+    deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
+    deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
 
-        s1_limit = np.array([
-            -1 + np.sqrt(1-centers[1]+(dv_vector[0]/test_dict['tt_factor'][0])),
-            ((dv_vector[1]/test_dict['tt_factor'][1])-2*centers[1]),
-            ((dv_vector[2]/test_dict['tt_factor'][2])-centers[1]),
-        ])
-        
-        s2_limit = np.array([
-            (dv_vector[0]/test_dict['tt_factor'][0])-(centers[0]**2)-(2*centers[0]),
-            ((dv_vector[1]/test_dict['tt_factor'][1])-centers[0]) / 2,
-            (dv_vector[2]/test_dict['tt_factor'][2])-centers[0],
-        ])
+    #deterioration_matrix = [len(margin_nodes), len(input_specs)]
 
-        s1_limit = np.max(s1_limit)
-        s2_limit = np.max(s2_limit)
-        spec_limit = np.array([s1_limit,s2_limit])
+    # threshold matrix
+    nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
+    nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
+    target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
 
-        # deterioration matrix
-        signs = np.array([-1,-1])
-        nominal_specs = np.array([centers[0],centers[1]])
-        deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
-        deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
+    #target_thresholds = [len(margin_nodes), len(input_specs)]
 
-        #deterioration_matrix = [len(margin_nodes), len(input_specs)]
+    # Compute performances at the spec limit for each margin node
+    new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
+    new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
 
-        # threshold matrix
-        nominal_tt = np.array(b1(centers[0],centers[1])) * np.array(test_dict['tt_factor'])
-        nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
-        target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
+    new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
+    new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
+    new_thresholds = np.empty((len(margin_nodes),0))
+    new_thresholds = np.hstack((new_thresholds,new_tt_1))
+    new_thresholds = np.hstack((new_thresholds,new_tt_2))
 
-        #target_thresholds = [len(margin_nodes), len(input_specs)]
+    #new_thresholds = [len(margin_nodes), len(input_specs)]
 
-        # Compute performances at the spec limit for each margin node
-        new_tt_1 = np.array(b1(s1_limit,centers[1])) * np.array(test_dict['tt_factor'])
-        new_tt_2 = np.array(b1(centers[0],s2_limit)) * np.array(test_dict['tt_factor'])
+    test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
 
-        new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
-        new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
-        new_thresholds = np.empty((len(margin_nodes),0))
-        new_thresholds = np.hstack((new_thresholds,new_tt_1))
-        new_thresholds = np.hstack((new_thresholds,new_tt_2))
+    #test_absorption = [len(margin_nodes), len(input_specs)]
 
-        #new_thresholds = [len(margin_nodes), len(input_specs)]
+    # compute utilization
+    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_values = np.tile(decided_value,(1,len(input_specs)))
 
-        test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
+    #decided_values = [len(margin_nodes), len(input_specs)]
 
-        #test_absorption = [len(margin_nodes), len(input_specs)]
+    test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
 
-        # compute utilization
-        decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
-        decided_values = np.tile(decided_value,(1,len(input_specs)))
+    #test_utilization = [len(margin_nodes), len(input_specs)]
 
-        #decided_values = [len(margin_nodes), len(input_specs)]
+    assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
+    assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
 
-        test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
-
-        #test_utilization = [len(margin_nodes), len(input_specs)]
-
-        assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
-        assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
-
-@pytest.mark.parametrize('n_threads', [1,])
+@pytest.mark.dependency()
 def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                          deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                         design_parameters: List[DesignParam], n_threads:int):
+                         design_parameters: List[DesignParam]):
 
     """
     Tests the train performance surrogate functionality when decision nodes are present
     """
-
+    n_threads = 1
     ######################################################
     # Construct MAN
     behaviours, decisions, performances, margin_nodes = man_components
@@ -1198,8 +1192,7 @@ def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance]
     man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
 
     # Create surrogate model for estimating threshold performance
-    man.train_performance_surrogate(n_samples=100, sm_type='KRG', sampling_freq=1, 
-        num_threads=n_threads, bandwidth=[1e-3, ])
+    man.train_performance_surrogate(n_samples=500, sm_type='KRG', sampling_freq=1, num_threads=n_threads, bandwidth=[1e-3, ])
     man.init_decisions(num_threads=n_threads)
     man.forward()
     man.compute_impact()
@@ -1223,6 +1216,11 @@ def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance]
     test_impact = (p - p_t) / p_t
 
     assert np.allclose(man.impact_matrix.value, test_impact, rtol=1e-1)
+
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    man.save('impact_man',folder=folder)
 
 @pytest.mark.parametrize('n_threads', [1,])
 def test_behaviour(n_threads):
@@ -1280,3 +1278,69 @@ def test_nearest():
 
     assert all(pn == pn_test)
     assert np.isclose(d, d_test, rtol=1e-1)
+
+@pytest.mark.dependency(depends=["test_stochastic_MarginNode"])
+def test_margin_visualization(stochastic_inputs:Tuple[GaussianFunc, GaussianFunc]):
+
+    # Defining a MarginNode object
+    threshold, decided_value = stochastic_inputs
+    ThermalNode = MarginNode('EM1')
+
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    ThermalNode.load(os.path.join(folder,'test_margin_node'))
+
+    mu_excess = decided_value.mu - threshold.mu # calculate composite random variable mean
+    Sigma_excess = decided_value.Sigma + (((-1)**2) * threshold.Sigma) # calculate composite random variable variance
+    ######################################################
+    # Check CDF visualization
+    ThermalNode.excess.view_cdf(xlabel='Excess')
+    ######################################################
+    # Check visualization
+    ThermalNode.excess.view()
+
+@pytest.mark.dependency(depends=["test_deterministic_ImpactMatrix", "test_stochastic_ImpactMatrix", "test_mixed_variables"])
+def test_perf_visualization(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
+                            deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                            design_parameters: List[DesignParam]):
+
+    test_dict = {
+            'true_decisions' : ['1','1'],
+            'tt_factor' : [1.0,1.0,1.0],
+            'tt_vector' : [4.84,3.2,2.2],
+        }
+    man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
+
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    man.load('impact_man',folder=folder)
+    man.init_decisions()
+    man.forward()
+    ######################################################
+    # Check visualization
+    man.view_perf(e_indices=[0,1],p_index=0)
+    man.impact_matrix.view(2,1)
+
+@pytest.mark.dependency(depends=["test_stochastic_Absorption"])
+def test_absorption_visualization(stochastic_man: MarginNetwork):
+    man = stochastic_man
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    man.load('absorption_man',folder=folder)
+    man.init_decisions()
+    man.forward()
+    ######################################################
+    # Check visualization
+    man.deterioration_vector.view(0)
+    man.deterioration_vector.view(1)
+
+    man.absorption_matrix.view(0,0)
+    man.absorption_matrix.view(1,0)
+    man.absorption_matrix.view(2,0)
+
+    man.absorption_matrix.view(0,1)
+    man.absorption_matrix.view(1,1)
+    man.absorption_matrix.view(2,1)

@@ -2,7 +2,22 @@
 Changelog
 *********
 
-.. _release-0.5.3:
+.. _release-0.5.4:
+
+0.5.4
+=====
+
+:Date: April 10, 2022
+
+Fixes
+-----
+
+* Removed example scripts since they are more for research than for utility
+* Modified impact on performance calculation ``compute_impact`` to cap performance parameters by their maximum and minimum values
+* Fixed impact on performance calculation ``compute_impact`` to utilized target thresholds and decided values instead of excess values from surrogate
+* Added visualization tests
+
+.. _release-0.5.4:
 
 0.5.3
 =====
