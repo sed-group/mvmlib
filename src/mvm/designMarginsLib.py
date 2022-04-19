@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import scipy.stats as st
-from smt.surrogate_models import KRG, RMTB, QP, LS
+from smt.surrogate_models import KRG, LS, QP
 from smt.sampling_methods import LHS
 from smt.applications.mixed_integer import (
     FLOAT,
@@ -612,6 +612,8 @@ class InputSpec(ScalarParam):
 
         super().__init__(key=key, dims=[])
 
+        assert type(universe) == list, 'universe must be a list of length 2, got %s' %(universe)
+
         self.description = description
         self.symbol = symbol
         self.distribution = distribution
@@ -643,7 +645,7 @@ class InputSpec(ScalarParam):
             value of adjusted input specification change increments
         """
         if self.inc_type == 'rel':
-            _inc = (self.original * self.inc_user) / 100
+            _inc = (abs(self.original) * self.inc_user) / 100
         elif self.inc_type == 'abs':
             _inc = self.inc_user
         else:
@@ -768,6 +770,7 @@ class Performance(ScalarParam):
             _copy.key = self.key+'_copy_'+str(id(_copy))
             memo[id_self] = _copy 
         return _copy
+
 
 class MarginNode:
     def __init__(self, key: str = '', cutoff: float = 0.9, buffer_limit: float = 0.0, direction: str = 'must_exceed'):
@@ -900,8 +903,9 @@ class MarginNode:
             memo[id_self] = _copy 
         return _copy
 
+
 class Behaviour():
-    def __init__(self, key: str = ''):
+    def __init__(self, n_i: int, n_p: int, n_dv: int, n_tt: int, key: str = ''):
         """
         This class stores the method for calculating its outputs
             - Intermediate parameters
@@ -911,36 +915,217 @@ class Behaviour():
 
         Parameters
         ----------
+        n_i : int
+            number of intermediate parameters
+        n_p : int
+            number of performance parameters
+        n_dv : int
+            number of decided values
+        n_tt : int
+            number of target threshold
         key : str, optional
             string to tag instance with, default = ''
         """
         self.key = key
-        self.intermediate = None
-        self.performance = None
-        self.decided_value = None
-        self.threshold = None
+        self.n_i = n_i
+        self.n_p = n_p
+        self.n_dv = n_dv
+        self.n_tt = n_tt
+        self._intermediate = np.empty(self.n_i)
+        self._performance = np.empty(self.n_p)
+        self._decided_value = np.empty(self.n_dv)
+        self._threshold = np.empty(self.n_tt)
+        self._inverted = np.empty(1)
         self.surrogate_available = False
         self.xt = None
         self.yt = None
         self.sm = None
-        self.n_outputs = None
+        self.variable_dict = {}
+        self.xtypes = []
+        self.xlimits = []
+        self.surrogate_inv_available = False
+        self.xt_inv = None
+        self.yt_inv = None
+        self.sm_inv = None
+        self.xtypes_inv = []
+        self.xlimits_inv = []
+
+    @property
+    def intermediate(self) -> Union[float,List[float]]:
+        """
+        intermediate parameters getter
+
+        Returns
+        -------
+        Union[float,List[float]]
+            vector of intermediate parameters
+        """
+        if self.n_i == 1:
+            return self._intermediate[0]
+        else:
+            return list(self._intermediate)
+
+    @intermediate.setter
+    def intermediate(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the intermediate parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set intermediate parameters
+        """
+        if isinstance(i,(int,float,np.floating)):
+            assert self.n_i == 1
+            self._intermediate = np.array([i,])
+        else:
+            assert len(i) == self.n_i, 'expected %i parameters, got %i parameters' %(self.n_i,len(i))
+            self._intermediate = np.array(i)
+
+    @property
+    def performance(self) -> Union[float,List[float]]:
+        """
+        performance parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of performance parameters
+        """
+        if self.n_p == 1:
+            return self._performance[0]
+        else:
+            return list(self._performance)
+
+    @performance.setter
+    def performance(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the performance parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set performance parameters
+        """
+        if isinstance(i,(int,float,np.floating)):
+            assert self.n_p == 1
+            self._performance = np.array([i,])
+        else:
+            assert len(i) == self.n_p, 'expected %i parameters, got %i parameters' %(self.n_p,len(i))
+            self._performance = np.array(i)
+
+    @property
+    def decided_value(self) -> Union[float,List[float]]:
+        """
+        decided_value parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of decided_value parameters
+        """
+        if self.n_dv == 1:
+            return self._decided_value[0]
+        else:
+            return list(self._decided_value)
+
+    @decided_value.setter
+    def decided_value(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the decided_value parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set decided_value parameters
+        """
+        if isinstance(i,(int,float,np.floating)):
+            assert self.n_dv == 1
+            self._decided_value = np.array([i,])
+        else:
+            assert len(i) == self.n_dv, 'expected %i parameters, got %i parameters' %(self.n_dv,len(i))
+            self._decided_value = np.array(i)
+
+    @property
+    def threshold(self) -> Union[float,List[float]]:
+        """
+        threshold parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of threshold parameters
+        """
+        if self.n_tt == 1:
+            return self._threshold[0]
+        else:
+            return list(self._threshold)
+
+    @threshold.setter
+    def threshold(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the threshold parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set threshold parameters
+        """
+        if isinstance(i,(int,float,np.floating)):
+            assert self.n_tt == 1
+            self._threshold = np.array([i,])
+        else:
+            assert len(i) == self.n_tt, 'expected %i parameters, got %i parameters' %(self.n_tt,len(i))
+            self._threshold = np.array(i)
+
+    @property
+    def inverted(self) -> Union[float,List[float]]:
+        """
+        inverted parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of inverted parameters
+        """
+        return self._inverted[0]
+
+    @inverted.setter
+    def inverted(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the inverted parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set inverted parameters
+        """
+        if isinstance(i,(int,float,np.floating)):
+            self._inverted = np.array([i,])
+        else:
+            assert len(i) == 1, 'expected %i parameters, got %i parameters' %(1,len(i))
+            self._inverted = np.array(i)
 
     def train_surrogate(self,variable_dict: Dict[str, Dict[str,Union[Tuple[int,int], Tuple[float,float], List[str], str]] ],
-                        n_outputs: int, n_samples: int, bandwidth: List[float] = [0.01], num_threads: int = 1, *args, **kwargs):
+                        n_samples: int, bandwidth: List[float] = [0.01], num_threads: int = 1, sm_type: float = 'KRG', *args, **kwargs):
         """
         trains a Kriging surrogate model of the behaviour model to make computations less expensive
+        surrogate model returns an array of shape 
+        [n_samples , (n_intermediate + n_performance + n_decided_value + n_target_threshold) ]
+        the inputs are 
+        [n_samples , other arguments ]
 
         Parameters
         ----------
         variable_dict : Dict[str, Dict[str,Union[Tuple[int,int], Tuple[float,float], List[str], str]] ]
             A dictionary with the input variables as keys and their corresponding type ('INT','FLOAT','ENUM')
             and their limits a tuple pair for the upper and lower limits or a list of ints or strings for ENUM variables
-        n_outputs : int
-            number of outputs to learn
         n_samples : int
             number of samples drawn from the behaviour model for training
         bandwidth : List[float], optional
             bandwidth of the correlation function used by Kriging, by default [0.01]
+        sm_type : str, optional
+            type of surrogate model to train, possible values ['KRG','LS'], by default 'KRG'
         num_threads : int, optional
             number of threads to parallelize sampling the training data by, by default 1
         """
@@ -949,10 +1134,16 @@ class Behaviour():
                 , expecting "FLOAT", "INT", or "ENUM"' %(value['type'], key)
 
             if value['type'] in ['INT', 'FLOAT']:
-                assert type(value['limits']) == list, 'Unexpected limits (%s) for variable (%s) provided \
-                , expecting a list of ints or floats' %(str(value['limits']), key)
+                assert type(value['limits']) in [list,tuple], 'Unexpected limits (%s) for variable (%s) provided \
+                    , expecting a list of ints or floats' %(str(value['limits']), key)
+                if value['type'] == 'INT':
+                    assert all([isinstance(l,int) for l in variable_dict[key]['limits']]), \
+                        'only int limits are supported, variable %s contains strings in its limits' %(key)
+                if value['type'] == 'FLOAT':
+                    assert all([isinstance(l,(int,float,np.floating)) for l in variable_dict[key]['limits']]), \
+                        'only float limits are supported, variable %s contains strings in its limits' %(key)
                 assert len(value['limits']) == 2, 'limits for variable (%s) must be a \
-                pair of ints or floats' %key
+                    pair of ints or floats' %key
 
             elif value['type'] in ['ENUM']:
                 assert type(value['limits']) == list, 'Unexpected limits (%s) for variable (%s) provided \
@@ -962,11 +1153,13 @@ class Behaviour():
 
             elif value['type'] in ['fixed']:
                 assert type(value['limits']) in [int,str,float], 'Unexpected value (%s) for variable (%s) provided \
-                , expecting a string, int, or float' %(str(value['limits']), key)
+                    , expecting a string, int, or float' %(str(value['limits']), key)
+
+        self.variable_dict = variable_dict
 
         xtypes = []
         xlimits = []
-        for key,value in variable_dict.items():
+        for key,value in self.variable_dict.items():
             if value['type'] != 'fixed':
                 if value['type'] == 'FLOAT':
                     xtypes += [FLOAT, ]
@@ -982,7 +1175,9 @@ class Behaviour():
 
         assert len(xlimits) > 0, 'at least one variable should not be fixed'
 
-        sampling = MixedIntegerSamplingMethod(xtypes=xtypes, xlimits=xlimits,
+        self.xtypes = xtypes
+        self.xlimits = xlimits
+        sampling = MixedIntegerSamplingMethod(xtypes=self.xtypes, xlimits=self.xlimits,
                                                 sampling_method_class=LHS, criterion="ese")
 
         input_samples = sampling(n_samples)
@@ -997,39 +1192,127 @@ class Behaviour():
         fargs = args
         fkwargs = kwargs
         fkwargs['behaviours'] = behaviour_objs
-        fkwargs['variable_dict'] = variable_dict
+        fkwargs['variable_dict'] = self.variable_dict
 
         results = parallel_sampling(_sample_behaviour,vargs_iterator,vkwargs_iterator,fargs,fkwargs,num_threads=num_threads)
 
-        self.xt = np.empty((0,len(xtypes)))
-        self.yt = np.empty((0,n_outputs))
+        self.xt = np.empty((0,len(self.xtypes)))
+        self.yt = np.empty((0,self.n_i+self.n_p+self.n_dv+self.n_tt))
         # Retrieve sampling results
-        for sample,result in zip(input_samples,results):
+        for i,(sample,result) in enumerate(zip(input_samples,results)):
+
+            # intermediate, performance, decided_value, threshold = result
+            
+            isnan = False
+            for r in result:
+                if isinstance(r,(list,np.ndarray)):
+                    if np.isnan(r).any():
+                        isnan = True
+                else:
+                    if np.isnan(r):
+                        isnan = True
+
+            if isnan:
+                print('NaN encountered, skipping point %i' %i)
+                continue
 
             # concatenate input specifications
             sample = sample.reshape(1,self.xt.shape[1])
-            result = np.array(result).reshape(1,self.yt.shape[1])
+            result = np.concatenate((result)).reshape(1,self.yt.shape[1])
 
             self.xt = np.vstack((self.xt, sample))
             self.yt = np.vstack((self.yt, result))
 
 
+        if sm_type == 'LS': # LS
+            surrogate = LS(print_prediction=False)
+        elif sm_type == 'KRG': # Kriging surrogate
+            surrogate = KRG(theta0=bandwidth, print_prediction=False)
+        else:
+            Exception('Wrong model %s chosen, must provide either "KRG" or "LS"' %sm_type)
+
         self.sm = MixedIntegerSurrogateModel(
-            xtypes=xtypes, xlimits=xlimits, surrogate=KRG(theta0=bandwidth, print_prediction=False)
+            xtypes=self.xtypes, xlimits=self.xlimits, surrogate=surrogate
         )
         self.sm.set_training_values(self.xt, self.yt)
         self.sm.train()
-        self.n_outputs = n_outputs
         self.surrogate_available = True
+
+    def train_inverse(self,key: str = None, bandwidth: List[float] = [0.01], sm_type: float = 'KRG'):
+        """
+        trains a surrogate model to invert decided values back to a chosen input variable and the intermediate parameters
+        surrogate model returns an array of shape 
+        [n_samples , (optional variables + n_intermediate) ]
+        the inputs are 
+        [n_samples , (decided value + other arguments) ]
+
+        Parameters
+        ----------
+        key : str
+            unique key string for the variable to be inverted
+        bandwidth : List[float], optional
+            bandwidth of the correlation function used by Kriging, by default [0.01]
+        sm_type : str, optional
+            type of surrogate model to train, possible values ['KRG','LS'], by default 'KRG'
+        """
+
+        assert self.surrogate_available, 'surrogate must be trained first'
+        if key is not None:
+            assert all([isinstance(l,(float,int)) for l in self.variable_dict[key]['limits']]), \
+                'only float or int limits are supported, variable %s contains strings in its limits' %(key)
+
+        keys = list(self.variable_dict.keys())
+        i_index = self.n_i
+        p_index = self.n_i+self.n_p
+        dv_index = self.n_i+self.n_p+self.n_dv
+
+        self.xt_inv = np.empty((self.xt.shape[0],0))
+        self.yt_inv = np.empty((self.xt.shape[0],0))
+        self.xtypes_inv = []
+        self.xlimits_inv = []
+
+        if key is not None:
+            xt_inv_key = np.delete(self.xt, keys.index(key), axis=1) # delete the column of the variable
+            yt_inv_key = self.xt[:,keys.index(key)].reshape(self.xt.shape[0],-1)
+            self.xt_inv = np.hstack((self.xt_inv, xt_inv_key))
+            self.yt_inv = np.hstack((self.yt_inv, yt_inv_key))
+            self.xtypes_inv = [x for i,x in enumerate(self.xtypes) if i!=keys.index(key)] 
+            self.xlimits_inv = [x for i,x in enumerate(self.xlimits) if i!=keys.index(key)]
+
+        self.xt_inv = np.hstack((self.yt[:,p_index:dv_index], self.xt_inv)) # add decided values columns in front
+        self.yt_inv = np.hstack((self.yt_inv, self.yt[:,0:i_index])) # add intermediate columns
+
+        self.xtypes_inv = [FLOAT,] + self.xtypes_inv
+        self.xlimits_inv = [[min(self.yt[:,p_index:dv_index])[0], max(self.yt[:,p_index:dv_index])[0]],] + self.xlimits_inv # add decided values limits
+
+        if sm_type == 'LS': # LS
+            surrogate = LS(print_prediction=False)
+        elif sm_type == 'KRG': # Kriging surrogate
+            surrogate = KRG(theta0=bandwidth, print_prediction=False)
+        elif sm_type == 'QP': # Kriging surrogate
+            surrogate = QP(print_prediction=False)
+        else:
+            Exception('Wrong model %s chosen, must provide either "KRG" or "LS"' %sm_type)
+
+        if all([x == FLOAT for x in self.xtypes_inv]):
+            self.sm_inv = surrogate
+        else:
+            self.sm_inv = MixedIntegerSurrogateModel(
+                xtypes=self.xtypes_inv, xlimits=self.xlimits_inv, surrogate=surrogate
+            )
+        self.sm_inv.set_training_values(self.xt_inv, self.yt_inv)
+        self.sm_inv.train()
+        self.surrogate_inv_available = True 
 
     def reset(self):
         """
         Resets the stored variables
         """
-        self.intermediate = None
-        self.performance = None
-        self.decided_value = None
-        self.threshold = None
+        self._intermediate = np.empty(self.n_i)
+        self._performance = np.empty(self.n_p)
+        self._decided_value = np.empty(self.n_dv)
+        self._threshold = np.empty(self.n_tt)
+        self._inverted = np.empty(0)
 
     def save(self,filename='man'):
         """
@@ -1042,13 +1325,24 @@ class Behaviour():
         filename : str, optional
            basefile path, by default 'man'
         """
-        
         with open(filename+'_behaviour_%s.pkl' % self.key,'wb') as f:
             pickle.dump(self.surrogate_available,f)
             pickle.dump(self.xt,f)
             pickle.dump(self.yt,f)
             pickle.dump(self.sm,f)
-            pickle.dump(self.n_outputs,f)
+            pickle.dump(self.variable_dict,f)
+            pickle.dump(self.xtypes,f)
+            pickle.dump(self.xlimits,f)
+            pickle.dump(self.surrogate_inv_available,f)
+            pickle.dump(self.xt_inv,f)
+            pickle.dump(self.yt_inv,f)
+            pickle.dump(self.sm_inv,f)
+            pickle.dump(self.xtypes_inv,f)
+            pickle.dump(self.xlimits_inv,f)
+            pickle.dump(self.n_i,f)
+            pickle.dump(self.n_p,f)
+            pickle.dump(self.n_dv,f)
+            pickle.dump(self.n_tt,f)
 
     def load(self,filename='man'):
         """
@@ -1061,13 +1355,24 @@ class Behaviour():
         filename : str, optional
            basefile path, by default 'man'
         """
-        
         with open(filename+'_behaviour_%s.pkl' % self.key,'rb') as f:
             self.surrogate_available = pickle.load(f)
             self.xt = pickle.load(f)
             self.yt = pickle.load(f)
             self.sm = pickle.load(f)
-            self.n_outputs = pickle.load(f)
+            self.variable_dict = pickle.load(f)
+            self.xtypes = pickle.load(f)
+            self.xlimits = pickle.load(f)
+            self.surrogate_inv_available = pickle.load(f)
+            self.xt_inv = pickle.load(f)
+            self.yt_inv = pickle.load(f)
+            self.sm_inv = pickle.load(f)
+            self.xtypes_inv = pickle.load(f)
+            self.xlimits_inv = pickle.load(f)
+            self.n_i = pickle.load(f)
+            self.n_p = pickle.load(f)
+            self.n_dv = pickle.load(f)
+            self.n_tt = pickle.load(f)
 
     def __call__(self, *args):
         """
@@ -1096,7 +1401,9 @@ class Behaviour():
         >>> class MyBehaviour(Behaviour):
         >>>     def __call__(self,r,d,y):
         >>>         args = [r,d]
-        >>>         super().__call__(*args)
+        >>>         if self.surrogate_available:
+        >>>             # the function will terminate here
+        >>>             return MyBehaviour.__call__(self,*args)
         >>>         # some specific model-dependent behaviour
         >>>         self.intermediate = d * y
         >>>         self.performance = r*2+1 / d * y
@@ -1105,15 +1412,47 @@ class Behaviour():
         """
         # default code for the default behaviour
         if self.surrogate_available:
-            if self.n_outputs == 1:
-                return self.sm.predict_values(np.array(args).reshape(1,-1))[0][0]
-            else:
-                return self.sm.predict_values(np.array(args).reshape(1,-1))[0]
+            outputs = self.sm.predict_values(np.array(args[:len(self.xtypes_inv)]).reshape(1,-1))[0]
+            self._intermediate = outputs[0:self.n_i]
+            self._performance = outputs[self.n_i:self.n_i+self.n_p]
+            self._decided_value = outputs[self.n_i+self.n_p:self.n_i+self.n_p+self.n_dv]
+            self._threshold = outputs[self.n_i+self.n_p+self.n_dv:self.n_i+self.n_p+self.n_dv+self.n_tt]
+
+    def inv_call(self,decided_value: float,*args):
+        """
+        The function that will be used to calculate the decided values based on a selected variable
+        This method must be redefined by the user for every instance, otherwise 
+        a surrogate is used if the user has used the ``train_surrogate`` method earlier
+
+        Parameters
+        ----------
+        decided_value : float
+            the decided value to invert
+
+        Example
+        -------
+        >>> # [in the plugin file]
+        >>> from mvm import Behaviour
+        >>> class MyBehaviour(Behaviour):
+        >>>     def inv_call(self,decided_value,r):
+        >>>         # some specific model-dependent behaviour
+        >>>         self.intermediate = decided_value
+        >>>         self.inverted = r**2
+        """
+
+        i_index = self.n_i
+        # default code for the default behaviour
+        if self.surrogate_inv_available:
+            inputs = [decided_value,]+list(args[:len(self.xtypes_inv)-1])
+            inputs = np.array(inputs,dtype=object)
+            outputs = self.sm_inv.predict_values(inputs.reshape(1,-1))[0]
+            self._intermediate = outputs[0:i_index]
+            self._inverted = outputs[i_index:]
 
     def __copy__(self):
         """
         returns a shallow copy of Behaviour instance
-        https://stackoverflow.com/a/15774013
+        https://stackoverflow.com/a/15774013b b b
 
         Returns
         -------
@@ -1121,13 +1460,25 @@ class Behaviour():
             shallow copy of Behaviour instance
         """
         id_self = id(self) # memoization avoids unnecessary recursion
-        _copy = type(self)(self.key+'_copy_'+str(id(self)))
+        _copy = type(self)(self.n_i, self.n_p, self.n_dv, self.n_tt, self.key+'_copy_'+str(id(self)))
         if self.surrogate_available:
             _copy.surrogate_available = True
             _copy.xt = self.xt
             _copy.yt = self.yt
             _copy.sm = self.sm
-            _copy.n_outputs = self.n_outputs
+            _copy.variable_dict = self.variable_dict
+            _copy.xtypes = self.xtypes
+            _copy.xlimits = self.xlimits
+            _copy.surrogate_inv_available = self.surrogate_inv_available
+            _copy.xt_inv = self.xt_inv
+            _copy.yt_inv = self.yt_inv
+            _copy.sm_inv = self.sm_inv
+            _copy.xtypes_inv = self.xtypes_inv
+            _copy.xlimit_inv = self.xlimits_inv
+            _copy.n_i = self.n_i
+            _copy.n_p = self.n_p
+            _copy.n_dv = self.n_dv
+            _copy.n_tt = self.n_tt
         return _copy
     
     def __deepcopy__(self, memo): # memo is a dict of id's to copies
@@ -1149,16 +1500,29 @@ class Behaviour():
         _copy = memo.get(id_self)
         if _copy is None:
 
-            _copy = type(self)(self.key)
+            _copy = type(self)(self.n_i, self.n_p, self.n_dv, self.n_tt, self.key)
             _copy.key = self.key+'_copy_'+str(id(_copy))
             if self.surrogate_available:
                 _copy.surrogate_available = True
                 _copy.xt = deepcopy(self.xt,memo)
                 _copy.yt = deepcopy(self.yt,memo)
                 _copy.sm = deepcopy(self.sm,memo)
-                _copy.n_outputs = self.n_outputs
+                _copy.variable_dict = deepcopy(self.variable_dict,memo)
+                _copy.xtypes = deepcopy(self.xtypes,memo)
+                _copy.xlimits = deepcopy(self.xlimits,memo)
+                _copy.surrogate_inv_available = self.surrogate_inv_available
+                _copy.xt_inv = deepcopy(self.xt_inv,memo)
+                _copy.yt_inv = deepcopy(self.yt_inv,memo)
+                _copy.sm_inv = deepcopy(self.sm_inv,memo)
+                _copy.xtypes_inv = deepcopy(self.xtypes_inv,memo)
+                _copy.xlimits_inv = deepcopy(self.xlimits_inv,memo)
+                _copy.n_i = self.n_i
+                _copy.n_p = self.n_p
+                _copy.n_dv = self.n_dv
+                _copy.n_tt = self.n_tt
             memo[id_self] = _copy 
         return _copy
+
 
 class Decision:
     def __init__(self, universe: Union[Tuple[int,int],List[Union[int, str]]], variable_type: str, key: str = '',
@@ -1210,6 +1574,10 @@ class Decision:
         else:
             Exception('n_nodes must be a float or an int')
 
+        if decided_value_model is not None:
+            assert decided_value_model.n_dv == n_nodes, 'decided value model should return n_nodes decided values, \
+                got %i, expected %i decided values' %(decided_value_model.n_dv,n_nodes)
+
         self.variable_type = variable_type
         self.universe = universe
         self.key = key
@@ -1217,10 +1585,12 @@ class Decision:
         self.n_nodes = n_nodes
         self.description = description
         self.direction = direction
+        self._decided_value = np.empty(self.n_nodes)
+        self._threshold = np.empty(self.n_nodes)
 
         self.decided_values = None
         self.selection_value = None
-        self.decided_value = None
+        self.output_value = None
         self.i_min = None
 
         self.signs = np.empty(0)
@@ -1306,6 +1676,70 @@ class Decision:
 
         self._direction = _direction
 
+    @property
+    def decided_value(self) -> Union[float,List[float]]:
+        """
+        decided_value parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of decided_value parameters
+        """
+        if self.n_nodes == 1:
+            return self._decided_value[0]
+        else:
+            return list(self._decided_value)
+
+    @decided_value.setter
+    def decided_value(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the decided_value parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set decided_value parameters
+        """
+        if isinstance(i,(int,float,np.floating,np.integer)):
+            assert self.n_nodes == 1
+            self._decided_value = np.array([i,])
+        else:
+            assert len(i) == self.n_nodes, 'expected %i parameters, got %i parameters' %(self.n_nodes,len(i))
+            self._decided_value = np.array(i)
+
+    @property
+    def threshold(self) -> Union[float,List[float]]:
+        """
+        threshold parameters getter
+
+        Returns
+        -------
+        np.ndarray
+            vector of threshold parameters
+        """
+        if self.n_nodes == 1:
+            return self._threshold[0]
+        else:
+            return list(self._threshold)
+
+    @threshold.setter
+    def threshold(self, i: Union[float,List[float],np.ndarray]):
+        """
+        Sets the threshold parameters as a numpy array
+
+        Parameters
+        ----------
+        i : Union[float,List[float],np.ndarray]
+            value to set threshold parameters
+        """
+        if isinstance(i,(int,float,np.integer,np.floating)):
+            assert self.n_nodes == 1
+            self._threshold = np.array([i,])
+        else:
+            assert len(i) == self.n_nodes, 'expected %i parameters, got %i parameters' %(self.n_nodes,len(i))
+            self._threshold = np.array(i)
+
     def compute_decided_values(self, num_threads: int = 1, *args, **kwargs) -> np.ndarray:
         """
         Converts selected values to decided values
@@ -1338,13 +1772,10 @@ class Decision:
 
             decided_values = np.empty((0,self.n_nodes))
             # Retrieve sampling results
-            for decided_value in results:
-                
-                if type(decided_value) != list:
-                    decided_value = np.array([decided_value,])
-                else:
-                    decided_value = np.array(decided_value)
-                    assert(len(decided_value) == self.n_nodes)
+            for result in results:
+                # [intermediate, performance, decided_value, threshold] = results
+                decided_value = result[2]
+                assert(len(decided_value) == self.n_nodes)
 
                 decided_values = np.vstack((decided_values, decided_value))
 
@@ -1352,7 +1783,7 @@ class Decision:
         else:
             assert all([type(x) != str for x in self._universe]), \
                 'Decided value model must be provided to convert a non-int or float universe'
-            self.decided_values = self._universe
+            self.decided_values = np.array(self._universe).reshape(-1,1)
 
         return self.decided_values
 
@@ -1370,10 +1801,11 @@ class Decision:
         with open(filename+'_decision_%s.pkl' % self.key,'wb') as f:
             pickle.dump(self.decided_values,f)
             pickle.dump(self.selection_value,f)
-            pickle.dump(self.decided_value,f)
+            pickle.dump(self.output_value,f)
             pickle.dump(self.i_min,f)
 
-        self.decided_value_model.save(filename)
+        if self.decided_value_model is not None:
+            self.decided_value_model.save(filename)
 
     def load(self,filename='man'):
         """
@@ -1389,13 +1821,26 @@ class Decision:
         with open(filename+'_decision_%s.pkl' % self.key,'rb') as f:
             self.decided_values = pickle.load(f)
             self.selection_value = pickle.load(f)
-            self.decided_value = pickle.load(f)
+            self.output_value = pickle.load(f)
             self.i_min = pickle.load(f)
 
-        self.decided_value_model.load(filename)
+        if self.decided_value_model is not None:
+            self.decided_value_model.load(filename)
+
+    def reset(self):
+        """
+        Resets the stored variables
+        """
+        self.decided_values = None
+        self.selection_value = None
+        self.output_value = None
+        self.i_min = None
+        self._decided_value = np.empty(self.n_nodes)
+        self._threshold = np.empty(self.n_nodes)
 
     def __call__(self, target_threshold: Union[int, float, List[int], List[float]], 
-                 override: bool = False, recalculate=False, num_threads: int = 1, *args, **kwargs) -> Tuple[Union[int, float], Union[int, str]]:
+                 override: bool = False, recalculate=False, num_threads: int = 1, output='dv', 
+                 *args, **kwargs) -> Tuple[Union[int, float], Union[int, str]]:
         """
         Calculate the nearest decided value that yield a positive margin
 
@@ -1412,7 +1857,8 @@ class Decision:
             by default True
         num_threads : int, optional
             number of threads to parallelize decision universe computation, be default 1
-        
+        output : str, optional
+            whether to return the decided value or the target threshold, be default 'dv'   
 
         Returns
         -------
@@ -1420,42 +1866,41 @@ class Decision:
             The selected value from the design parameter and the corresponding decided value
         """
         
-        if target_threshold != list:
-            target_threshold = np.array([target_threshold,])
-        else:
-            target_threshold = np.array(target_threshold)
-            assert(len(target_threshold) == self.n_nodes)
+        assert output in ['dv','tt'], 'argument output must one of "dv" or "tt"'
+
+        self.threshold = target_threshold
 
         if recalculate:
             self.compute_decided_values(num_threads, *args, **kwargs)
         
         # find the selected value based on minimum excess
-        if not override: 
-            assert self.decided_values is not None, 'Decided values have not been computed. \
-                Use the `compute_decided_values` method or the `init_decisions` \
-                method of `MarginNetwork` class'
+        if not override:
+            if self.decided_value is None or recalculate:
+                assert self.decided_values is not None, 'Decided values have not been computed. \
+                    Use the `compute_decided_values` method or the `init_decisions` \
+                    method of `MarginNetwork` class'
 
-            # Compute excess vector for each value in the decision universe
-            excesses = np.empty((0,self.n_nodes))
-            for decided_value in self.decided_values:
-                e = (target_threshold - decided_value) * self.signs
-                excesses = np.vstack((excesses, e))
+                # Compute excess vector for each value in the decision universe
+                excesses = np.empty((0,self.n_nodes))
+                for decided_value in self.decided_values:
+                    e = (target_threshold - decided_value) * self.signs
+                    excesses = np.vstack((excesses, e))
 
-            valid_idx = np.where(np.all(excesses >= 0,axis=1))[0]
-            if len(valid_idx) > 0:
-                # if at least one excess value is positive get the smallest excess value
-                id_min, _ = np.unravel_index(np.argmin(excesses[valid_idx]),excesses[valid_idx].shape)
-                i_min = valid_idx[id_min]
-            else:
-                # if all excess are negative get the largest negative excess
-                i_min, _ = np.unravel_index(np.argmax(excesses),excesses.shape)
+                valid_idx = np.where(np.all(excesses >= 0,axis=1))[0]
+                if len(valid_idx) > 0:
+                    # if at least one excess value is positive get the smallest excess value
+                    id_min, _ = np.unravel_index(np.argmin(excesses[valid_idx]),excesses[valid_idx].shape)
+                    i_min = valid_idx[id_min]
+                else:
+                    # if all excess are negative get the largest negative excess
+                    i_min, _ = np.unravel_index(np.argmax(excesses),excesses.shape)
 
-            self.selection_value = self._universe[i_min]
-            if self.n_nodes == 1:
-                self.decided_value = self.decided_values[i_min,0]
-            else:
-                self.decided_value = list(self.decided_values[i_min,:])
-            self.i_min = i_min
+                self.selection_value = self._universe[i_min]
+                if self.n_nodes == 1:
+                    self.decided_value = self.decided_values[i_min,0]
+                else:
+                    self.decided_value = list(self.decided_values[i_min,:])
+                self.i_min = i_min
         else:
             assert self.selection_value is not None, 'the selected value for this node was not initialized'
             i_min = np.where([self.selection_value == v for v in self._universe])[0][0]
@@ -1479,7 +1924,12 @@ class Decision:
 
             self.i_min = i_min
 
-        return self.decided_value, self.selection_value
+        if output == 'dv':
+            self.output_value = self.decided_value
+        else:
+            self.output_value = self.threshold
+
+        return self.output_value, self.selection_value
 
     def __copy__(self):
         """
@@ -2106,16 +2556,8 @@ class MarginNetwork():
         node_values = self.dv_vector.reshape(1, -1)  # turn it into a 2D matrix
         input_specs = self.spec_vector.reshape(1, -1)  # turn it into a 2D matrix
 
-        # Compute performances at decided values first
-        if use_estimate:
-            # Use surrogate model
-            value = np.hstack((node_values, input_specs))
-            value = scaling(value, self.lb_inputs, self.ub_inputs, operation=1)
-            performances = self._bounded_perf(value)
-        else:
-            # Get performances from behaviour models
-            performances = self.perf_vector
-
+        # Get performances from behaviour models
+        performances = self.perf_vector
         performances = np.tile(performances, (len(self.margin_nodes), 1))
 
         # performances = [len(margin_nodes), len(performances)]
@@ -2127,12 +2569,27 @@ class MarginNetwork():
 
         np.fill_diagonal(input_node, self.tt_vector, wrap=False)  # works in place
 
-        # input_excess = [len(margin_nodes), len(margin_nodes)]
+        # input_node = [len(margin_nodes), len(margin_nodes)]
 
-        # concatenate input specifications
-        values = np.hstack((input_node, np.tile(self.nominal_spec_vector, (input_node.shape[0], 1))))
-        values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
-        thresh_perf = self._bounded_perf(values)
+        # Alternate decided values
+        if use_estimate:
+            # concatenate input specifications
+            values = np.hstack((input_node, np.tile(self.nominal_spec_vector, (input_node.shape[0], 1))))
+            values = scaling(values, self.lb_inputs, self.ub_inputs, operation=1)
+            thresh_perf = self._bounded_perf(values)
+        else:
+            assert len(self.decisions) == len(self.margin_nodes), \
+                'All excess margins must have a decision node associated with them, \
+                expected %i decision nodes, got %i decision nodes' %(len(self.margin_nodes),len(self.decisions))
+            
+            thresh_perf = np.empty(performances.shape)
+            for i in range(len(self.decisions)):
+                outputs = ['dv',] * len(self.decisions)
+                outputs[i] = 'tt'
+                self.forward(outputs=outputs)
+                thresh_perf[i,:] = self.perf_vector
+
+            self.reset(len(self.decisions))
 
         # thresh_perf = [len(margin_nodes), len(performances)]
 
@@ -2169,19 +2626,29 @@ class MarginNetwork():
                 n_inc = 0
                 delta_e = 1.0
 
-                while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4 and \
-                        all([d == di for d, di in zip(self.decision_vector, self.initial_decision)]):
+                # get nominal values
+                self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
+                n_inc += 1
+                spec_value = spec.value
+                nomina_tt_vector = self.tt_vector
+                tt_vector = self.tt_vector
+
+                while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4:
                     excess_last_inc = self.excess_vector
 
                     spec.value += spec.inc
                     # recalculate all the decisions
-                    self.forward(recalculate_decisions=True,num_threads=num_threads)  # do not randomize the man for deterioration
+                    self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
                     n_inc += 1
 
                     delta_e = np.min(self.excess_vector - excess_last_inc)
 
-                self.spec_limit = np.append(self.spec_limit, spec.value)
-                threshold_limit_vector = np.reshape(self.tt_vector, (len(self.margin_nodes), -1))
+                    if all(self.excess_vector >= 0):
+                        spec_value = spec.value
+                        tt_vector = self.tt_vector
+
+                self.spec_limit = np.append(self.spec_limit, spec_value)
+                threshold_limit_vector = np.reshape(tt_vector, (len(self.margin_nodes), -1))
                 self.threshold_limit = np.hstack((self.threshold_limit, threshold_limit_vector))
 
                 self.reset(n_inc)
@@ -2193,7 +2660,7 @@ class MarginNetwork():
 
         # Absorption computation
 
-        nominal_threshold = np.reshape(self.tt_vector, (len(self.margin_nodes), -1))
+        nominal_threshold = np.reshape(nomina_tt_vector, (len(self.margin_nodes), -1))
         target_thresholds = np.tile(nominal_threshold, (1, len(self.input_specs)))
 
         # target_thresholds = [len(margin_nodes), len(input_specs)]
@@ -2275,7 +2742,7 @@ class MarginNetwork():
 
         if plot_type == 'scatter':
 
-            ax.scatter(x, y, s=50, c=c)
+            ax.scatter(x, y, s=20, c=c)
 
         elif plot_type == 'mean':
 
@@ -2415,6 +2882,9 @@ class MarginNetwork():
             margin_node.reset(n)
         for performance in self.performances:
             performance.reset(n)
+        if n is None:
+            for decision in self.decisions:
+                decision.reset()
 
     def reset_outputs(self, n: int = None):
         """
@@ -2630,13 +3100,20 @@ def nearest(p1: np.ndarray, p2: np.ndarray, s: np.ndarray) -> Tuple[np.ndarray, 
     x2, y2 = p2
     xs, ys = s
     dx, dy = x2 - x1, y2 - y1
+
+    # n = (p2 - p1) / (np.linalg.norm(p1 - p2))
+    # n_o = np.array([-n[1], n[0]])
+
+    # qp = s - p1
+    # d = np.dot(qp,n_o) # distance
+    # s_n = s - np.dot(qp,n_o) * n_o # nearest point
+
     det = dx * dx + dy * dy
     a = (dy * (ys - y1) + dx * (xs - x1)) / det
+    s_n = np.array((x1 + a * dx, y1 + a * dy)) # nearest point
+    d = (np.cross(p2 - p1, s - p1)) / np.linalg.norm(p2 - p1) # distance
 
-    # calculate distance
-    d = (np.cross(p2 - p1, s - p1)) / np.linalg.norm(p2 - p1)
-
-    return np.array((x1 + a * dx, y1 + a * dy)), d
+    return s_n, d
 
 def _sample_man(input_i: np.ndarray, man: MarginNetwork, sampling_freq: int = 1) -> Tuple[np.ndarray,List[Union[int,float]],np.ndarray]:
     """
@@ -2764,6 +3241,8 @@ def _sample_behaviour(*args, variable_dict=None, **kwargs) -> List[Union[int,flo
     # only pass this argument if parallel computation is requested (this means the user 
     # does not need to pass **kwargs to decided_value_model)
     if pid is not None:
-        return behviour(*args_b,id=pid+1)
+        behviour(*args_b,id=pid+1)
     else:
-        return behviour(*args_b)
+        behviour(*args_b)
+     
+    return behviour._intermediate, behviour._performance, behviour._decided_value, behviour._threshold
