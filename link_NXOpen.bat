@@ -1,1 +1,0 @@
-echo %UGII_BIN%\python > .env\Lib\site-packages\NXOpen.pth

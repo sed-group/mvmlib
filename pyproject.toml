@@ -22,8 +22,9 @@ name = "mvm"
 
 [project.optional-dependencies]
 test = [
-    "pytest >=6.2.5",
-    "pytest-cov",
+    "pytest>=6.2.5",
+    "pytest-cov==3.0.0",
+    "pytest-dependency==0.5.1",
     "pandoc"
 ]
 doc = [
