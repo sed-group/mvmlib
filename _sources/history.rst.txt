@@ -2,6 +2,43 @@
 Changelog
 *********
 
+.. _release-0.5.5:
+
+0.5.5
+=====
+
+:Date: April 15, 2022
+
+Fixes
+-----
+* ``Behaviour`` objects now support the ``train_inverse`` method (works only if the ``train_surrogate`` method has completed successfully) for training a surrogate model that inverts decided variables to any variable of choice (given by the ``key`` argument) and intermediate parameters (given by the ``intermediate`` attribute)
+* ``Behaviour`` objects now support the ``inv_call`` which can be user defined (must define the ``intermediate`` and ``inverted`` attributes) or from the ``train_inverse`` method
+* if ``use_estimate`` is False, the ``MarginNetwork`` must have equal number of decision and margin nodes associated with each other (1:1 ratio)
+* The user-implemented ``forward`` method of the ``MarginNetwork`` object must include the ``outputs`` optional argument if using ``inv_call`` anywhere in the method
+* Added error handling for ``train_surrogate`` function by rejecting NaN values during sampling of the blackbox
+
+Incompatible changes
+--------------------
+
+* ``use_estimate`` argument of ``compute_impact`` method now relates to whether a surrogate is used or not for impact calculation
+* ``train_surrogate`` argument of ``Behaviour`` class now needs the arguments ``n_i``, ``n_p``, ``n_dv``, and ``n_tt`` for each of the output parameters
+* output of a decision node is given by the attribute ``output_value`` instead of ``decided_value``
+
+.. _release-0.5.4:
+
+0.5.4
+=====
+
+:Date: April 10, 2022
+
+Fixes
+-----
+
+* Removed example scripts since they are more for research than for utility
+* Modified impact on performance calculation ``compute_impact`` to cap performance parameters by their maximum and minimum values
+* Fixed impact on performance calculation ``compute_impact`` to utilized target thresholds and decided values instead of excess values from surrogate
+* Added visualization tests
+
 .. _release-0.5.3:
 
 0.5.3

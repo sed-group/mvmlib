@@ -1,18 +1,19 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Defining fuzzy logic system for evaluating TRS performance &#8212; mvmlib 0.5.3 documentation</title>
+    <title>Defining fuzzy logic system for evaluating TRS performance &#8212; mvmlib 0.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
     
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -38,7 +39,7 @@
         <li class="right" >
           <a href="../examples.html" title="Cookbook and Examples"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../examples.html" accesskey="U">Cookbook and Examples</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Defining fuzzy logic system for evaluating TRS performance</a></li> 
       </ul>
@@ -298,12 +299,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Defining-fuzzy-logic-system-for-evaluating-TRS-performance">
-<h1>Defining fuzzy logic system for evaluating TRS performance<a class="headerlink" href="#Defining-fuzzy-logic-system-for-evaluating-TRS-performance" title="Permalink to this headline">¶</a></h1>
+<h1>Defining fuzzy logic system for evaluating TRS performance<a class="headerlink" href="#Defining-fuzzy-logic-system-for-evaluating-TRS-performance" title="Permalink to this heading">¶</a></h1>
 <!-- ![load case](../images/TRS_example/load_case.png "Turbine rear structural thermal loads") --><p style="text-align:center;"><p><img alt="load case" class="no-scaled-link" src="../_images/load_case.png" style="width: 250px;" /></p>
 </p><p>This example shows how to evaluate the design margins of a turbine rear structure (TRS) when experiencing thermal loads. Two temperatures affect the TRS’ performance. They are the temperature of the nacelle compartment <span class="math notranslate nohighlight">\(T_1\)</span> and the temperature of the gas surface <span class="math notranslate nohighlight">\(T_1\)</span>. The output that we are interested in is the safety factor <span class="math notranslate nohighlight">\(n_\textrm{safety}\)</span>.</p>
 <p>Simulation results tell us that <span class="math notranslate nohighlight">\(n_\textrm{safety}\)</span> decreases when the difference <span class="math notranslate nohighlight">\({\lvert}T_2 - T_1{\rvert}\)</span> and vice versa. Based on this qualitative knowledge, we can use <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to quantify these parameters and find out how much change can a TRS absorb.</p>
 <section id="Define-fuzzy-parameters">
-<h2>Define fuzzy parameters<a class="headerlink" href="#Define-fuzzy-parameters" title="Permalink to this headline">¶</a></h2>
+<h2>Define fuzzy parameters<a class="headerlink" href="#Define-fuzzy-parameters" title="Permalink to this heading">¶</a></h2>
 <p>First let us import all the required tools to define the parameters <code class="docutils literal notranslate"><span class="pre">T1</span></code>, <code class="docutils literal notranslate"><span class="pre">T2</span></code>, and <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> as fuzzy parameters</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -405,7 +406,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Define-fuzzy-rules">
-<h2>Define fuzzy rules<a class="headerlink" href="#Define-fuzzy-rules" title="Permalink to this headline">¶</a></h2>
+<h2>Define fuzzy rules<a class="headerlink" href="#Define-fuzzy-rules" title="Permalink to this heading">¶</a></h2>
 <p>Next we define the <strong>fuzzy rules</strong> needed to infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code>. The <strong>antecedents</strong> are <code class="docutils literal notranslate"><span class="pre">T1</span></code> and <code class="docutils literal notranslate"><span class="pre">T2</span></code> and the <strong>consequent</strong> is <code class="docutils literal notranslate"><span class="pre">n_safety</span></code>. The following fuzzy rules should be applied in our fuzzy logic system:</p>
 <table><tr><th><p>Rule</p>
 </th><th><p>T1</p>
@@ -479,7 +480,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Fuzzy-inference-on-a-single-loadcase">
-<h2>Fuzzy inference on a single loadcase<a class="headerlink" href="#Fuzzy-inference-on-a-single-loadcase" title="Permalink to this headline">¶</a></h2>
+<h2>Fuzzy inference on a single loadcase<a class="headerlink" href="#Fuzzy-inference-on-a-single-loadcase" title="Permalink to this heading">¶</a></h2>
 <p>Next we define our fuzzy logic system based on the <strong>antecedents</strong>, <strong>consequents</strong>, and <strong>fuzzy rules</strong> we have defined so far. We infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> based on <code class="docutils literal notranslate"><span class="pre">T1=370</span></code> and <code class="docutils literal notranslate"><span class="pre">T2=580</span></code> using the centroid rule for defuzzification (default). The outputs are the crisp value <code class="docutils literal notranslate"><span class="pre">n_safety_value</span></code>, the aggregate membership function of the output <code class="docutils literal notranslate"><span class="pre">aggregate</span></code>, and the activation function value at the centroid.</p>
 <p>All of these outputs are displayed in the plot below.</p>
 <div class="nbinput nblast docutils container">
@@ -519,7 +520,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Fuzzy-inference-on-multiple-combinations-of-loads-(2D-parameter-space)">
-<h2>Fuzzy inference on multiple combinations of loads (2D parameter space)<a class="headerlink" href="#Fuzzy-inference-on-multiple-combinations-of-loads-(2D-parameter-space)" title="Permalink to this headline">¶</a></h2>
+<h2>Fuzzy inference on multiple combinations of loads (2D parameter space)<a class="headerlink" href="#Fuzzy-inference-on-multiple-combinations-of-loads-(2D-parameter-space)" title="Permalink to this heading">¶</a></h2>
 <p>Next we infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> for different combinations of <code class="docutils literal notranslate"><span class="pre">T1</span></code> and <code class="docutils literal notranslate"><span class="pre">T2</span></code> by sweeping over them. We first create a 2D full factorial grid of the variables</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -580,9 +581,9 @@ div.rendered_html tbody tr:hover {
 <p>The expected inverse relationship between temperature difference and structural performance can be seen above</p>
 </section>
 <section id="Definition-of-uncertain-requirements">
-<h2>Definition of uncertain requirements<a class="headerlink" href="#Definition-of-uncertain-requirements" title="Permalink to this headline">¶</a></h2>
+<h2>Definition of uncertain requirements<a class="headerlink" href="#Definition-of-uncertain-requirements" title="Permalink to this heading">¶</a></h2>
 <section id="Requirement-definition">
-<h3>Requirement definition<a class="headerlink" href="#Requirement-definition" title="Permalink to this headline">¶</a></h3>
+<h3>Requirement definition<a class="headerlink" href="#Requirement-definition" title="Permalink to this heading">¶</a></h3>
 <p>The requirements are high level system specifications. In this examples they are given a Normal distribution in terms of <span class="math notranslate nohighlight">\(T_1\)</span>$ and <span class="math notranslate nohighlight">\(T_2\)</span>:</p>
 <div class="math notranslate nohighlight">
 \[T_1,T_2 \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma})\]</div>
@@ -618,7 +619,7 @@ div.rendered_html tbody tr:hover {
 <p>The samples from the distribution follow the expected distribution</p>
 </section>
 <section id="A-requirement-that-is-used-as-a-target-threshold">
-<h3>A requirement that is used as a target threshold<a class="headerlink" href="#A-requirement-that-is-used-as-a-target-threshold" title="Permalink to this headline">¶</a></h3>
+<h3>A requirement that is used as a target threshold<a class="headerlink" href="#A-requirement-that-is-used-as-a-target-threshold" title="Permalink to this heading">¶</a></h3>
 <p>The target that the TRS must reach is a decided safety factor value that its own safety factor must exceed</p>
 <div class="math notranslate nohighlight">
 \[n_\textrm{safety} \ge n_\textrm{safety}^{decided}\]</div>
@@ -656,7 +657,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Elements-of-Margin-Analysis-Network-(MAN)">
-<h2>Elements of Margin Analysis Network (MAN)<a class="headerlink" href="#Elements-of-Margin-Analysis-Network-(MAN)" title="Permalink to this headline">¶</a></h2>
+<h2>Elements of Margin Analysis Network (MAN)<a class="headerlink" href="#Elements-of-Margin-Analysis-Network-(MAN)" title="Permalink to this heading">¶</a></h2>
 <p>In this section we define the inputs and outputs needed to construct a MAN. We begin with the input specifications, which stem from design requirements.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -668,7 +669,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Input-specifications">
-<h3>Input specifications<a class="headerlink" href="#Input-specifications" title="Permalink to this headline">¶</a></h3>
+<h3>Input specifications<a class="headerlink" href="#Input-specifications" title="Permalink to this heading">¶</a></h3>
 <p>There are three input specifications in this example, <span class="math notranslate nohighlight">\(T_1\)</span>, <span class="math notranslate nohighlight">\(T_2\)</span>, and <span class="math notranslate nohighlight">\(n_\textrm{safety}^{decided}\)</span></p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -676,16 +677,16 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
 <span></span><span class="c1"># define input specifications</span>
-<span class="n">s1</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">(</span><span class="mi">300</span><span class="p">,</span><span class="mi">450</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;nacelle temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
-<span class="n">s2</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;S2&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span><span class="mi">650</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;gas surface temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
-<span class="n">s3</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">decided_safety</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="s1">&#39;S3&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3.0</span><span class="p">,</span><span class="mf">5.0</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;decided safety&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;n_decided&#39;</span><span class="p">)</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">450</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;nacelle temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;S2&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mi">500</span><span class="p">,</span><span class="mi">650</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;gas surface temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">decided_safety</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="s1">&#39;S3&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">3.0</span><span class="p">,</span><span class="mf">5.0</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;decided safety&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;n_decided&#39;</span><span class="p">)</span>
 <span class="n">input_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">s3</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Behaviour">
-<h3>Behaviour<a class="headerlink" href="#Behaviour" title="Permalink to this headline">¶</a></h3>
+<h3>Behaviour<a class="headerlink" href="#Behaviour" title="Permalink to this heading">¶</a></h3>
 <p>Finally, the TRS own safety factor (governed by its behaviour) is given a simulation model or some other calculation. In this example it is given by the fuzzy logic system we defined. We use the normalized aggregate function to define an <strong>arbitrary</strong> PDF as follows</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -709,8 +710,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-3.8653407112411107
-0.9174057550749626
+3.8611940719318167
+0.9047038208119883
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -735,14 +736,14 @@ div.rendered_html tbody tr:hover {
         <span class="n">behaviour</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">aggregate</span><span class="p">,</span><span class="n">lb</span><span class="o">=</span><span class="n">lb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ub</span><span class="o">=</span><span class="n">ub</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_threshold</span> <span class="o">=</span> <span class="n">behaviour</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
 
-<span class="n">b1</span> <span class="o">=</span> <span class="n">B1</span><span class="p">(</span><span class="s1">&#39;B1&#39;</span><span class="p">)</span>
+<span class="n">b1</span> <span class="o">=</span> <span class="n">B1</span><span class="p">(</span><span class="n">n_i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_p</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_dv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_tt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;B1&#39;</span><span class="p">)</span>
 <span class="n">behaviours</span> <span class="o">=</span> <span class="p">[</span><span class="n">b1</span><span class="p">,]</span>
 </pre></div>
 </div>
 </div>
 </section>
 <section id="Margin-Nodes">
-<h3>Margin Nodes<a class="headerlink" href="#Margin-Nodes" title="Permalink to this headline">¶</a></h3>
+<h3>Margin Nodes<a class="headerlink" href="#Margin-Nodes" title="Permalink to this heading">¶</a></h3>
 <p>Now we define the margin node. Since <span class="math notranslate nohighlight">\(n_\textrm{safety} \ge n_\textrm{safety}^{decided}\)</span>, this is a <code class="docutils literal notranslate"><span class="pre">must_exceed</span></code> type of margin</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
@@ -757,7 +758,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Margin-Analysis-Network">
-<h3>Margin Analysis Network<a class="headerlink" href="#Margin-Analysis-Network" title="Permalink to this headline">¶</a></h3>
+<h3>Margin Analysis Network<a class="headerlink" href="#Margin-Analysis-Network" title="Permalink to this heading">¶</a></h3>
 <p>Now we define how all the previous elements are connected together inside a MAN</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
@@ -795,7 +796,7 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Running-the-MAN-inside-a-Monte-Carlo-simulation">
-<h2>Running the MAN inside a Monte-Carlo simulation<a class="headerlink" href="#Running-the-MAN-inside-a-Monte-Carlo-simulation" title="Permalink to this headline">¶</a></h2>
+<h2>Running the MAN inside a Monte-Carlo simulation<a class="headerlink" href="#Running-the-MAN-inside-a-Monte-Carlo-simulation" title="Permalink to this heading">¶</a></h2>
 <p>We loop over the defined MarginNetwork object as many times as needed to get the distribution of the margin node</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -900,7 +901,7 @@ Progress: 99%
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -920,14 +921,14 @@ Progress: 99%
         <li class="right" >
           <a href="../examples.html" title="Cookbook and Examples"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../examples.html" >Cookbook and Examples</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Defining fuzzy logic system for evaluating TRS performance</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2021, Khalil Al Handawi.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>

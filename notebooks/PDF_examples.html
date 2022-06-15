@@ -1,18 +1,19 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-    <title>Using mvmlib to define univariate and multivariate probability density functions &#8212; mvmlib 0.5.3 documentation</title>
+    <title>Using mvmlib to define univariate and multivariate probability density functions &#8212; mvmlib 0.5.5 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../_static/classic.css" />
     
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
@@ -38,7 +39,7 @@
         <li class="right" >
           <a href="strut_example.html" title="Identification of design margins in the design of a strut"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../examples.html" accesskey="U">Cookbook and Examples</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li> 
       </ul>
@@ -298,10 +299,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Using-mvmlib-to-define-univariate-and-multivariate-probability-density-functions">
-<h1>Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions<a class="headerlink" href="#Using-mvmlib-to-define-univariate-and-multivariate-probability-density-functions" title="Permalink to this headline">¶</a></h1>
+<h1>Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions<a class="headerlink" href="#Using-mvmlib-to-define-univariate-and-multivariate-probability-density-functions" title="Permalink to this heading">¶</a></h1>
 <p>This tutorial explains how to define different probability density functions using both standard built-in distributions and user-defined custom probability density functions</p>
 <section id="Simple-1-dimensional-uniform-distribution">
-<h2>Simple 1-dimensional uniform distribution<a class="headerlink" href="#Simple-1-dimensional-uniform-distribution" title="Permalink to this headline">¶</a></h2>
+<h2>Simple 1-dimensional uniform distribution<a class="headerlink" href="#Simple-1-dimensional-uniform-distribution" title="Permalink to this heading">¶</a></h2>
 <p>We define a uniform distribution function given by:</p>
 <div class="math notranslate nohighlight">
 \[X \sim \mathcal{U}(c,r),\]</div>
@@ -388,7 +389,7 @@ Exact standard deviation: 2.886751
 </div>
 </section>
 <section id="1-dimensional-Gaussian-distribution">
-<h2>1-dimensional Gaussian distribution<a class="headerlink" href="#1-dimensional-Gaussian-distribution" title="Permalink to this headline">¶</a></h2>
+<h2>1-dimensional Gaussian distribution<a class="headerlink" href="#1-dimensional-Gaussian-distribution" title="Permalink to this heading">¶</a></h2>
 <p>We repeat the same exercise for the Gaussian distribution given by:</p>
 <div class="math notranslate nohighlight">
 \[X \sim \mathcal{N}(\mu,\sigma),\]</div>
@@ -463,7 +464,7 @@ Exact standard deviation: 5.000000
 </div>
 </section>
 <section id="1-dimensional-arbitrary-distribution">
-<h2>1-dimensional arbitrary distribution<a class="headerlink" href="#1-dimensional-arbitrary-distribution" title="Permalink to this headline">¶</a></h2>
+<h2>1-dimensional arbitrary distribution<a class="headerlink" href="#1-dimensional-arbitrary-distribution" title="Permalink to this heading">¶</a></h2>
 <p>We define a random distribution using a custom piecewise linear probability density function given by:</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}f(x)={
@@ -562,7 +563,7 @@ Exact standard deviation: 5.000000
 </div>
 </section>
 <section id="2-dimensional-Gaussian-distribution">
-<h2>2-dimensional Gaussian distribution<a class="headerlink" href="#2-dimensional-Gaussian-distribution" title="Permalink to this headline">¶</a></h2>
+<h2>2-dimensional Gaussian distribution<a class="headerlink" href="#2-dimensional-Gaussian-distribution" title="Permalink to this heading">¶</a></h2>
 <p>We define a 2-dimensional joint probability density function using the same built-in <code class="docutils literal notranslate"><span class="pre">Guassian</span></code> class. The joint PDF is given as follows</p>
 <div class="math notranslate nohighlight">
 \[X \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma}),\]</div>
@@ -659,7 +660,7 @@ Exact standard deviations (diagonal of cov matrix):
 </div>
 </section>
 <section id="Define-a-two-dimensional-arbitrary-joint-PDF">
-<h2>Define a two dimensional arbitrary joint PDF<a class="headerlink" href="#Define-a-two-dimensional-arbitrary-joint-PDF" title="Permalink to this headline">¶</a></h2>
+<h2>Define a two dimensional arbitrary joint PDF<a class="headerlink" href="#Define-a-two-dimensional-arbitrary-joint-PDF" title="Permalink to this heading">¶</a></h2>
 <p>This requires more effort from the user to define the two-dimensional joint probability density function. We show this can be done to reproduce the 2D Gaussian function above. The <code class="docutils literal notranslate"><span class="pre">Gaussian</span></code> class provides the <code class="docutils literal notranslate"><span class="pre">compute_density</span></code> method for getting the density values.</p>
 <p>We use the design of experiments library in <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to calculate a full-factorial 2D grid of density values first.</p>
 <div class="nbinput docutils container">
@@ -735,7 +736,7 @@ Exact standard deviations (diagonal of cov matrix):
     </form>
     </div>
 </div>
-<script>$('#searchbox').show(0);</script>
+<script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
       <div class="clearer"></div>
@@ -755,14 +756,14 @@ Exact standard deviations (diagonal of cov matrix):
         <li class="right" >
           <a href="strut_example.html" title="Identification of design margins in the design of a strut"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.3 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">mvmlib 0.5.5 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../examples.html" >Cookbook and Examples</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2021, Khalil Al Handawi.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 4.5.0.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.0.1.
     </div>
   </body>
 </html>
