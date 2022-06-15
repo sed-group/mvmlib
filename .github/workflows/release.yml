@@ -1,16 +1,13 @@
 name: release
 on:
   # the 1st condition
-  workflow_run:
-    workflows: ["tests"]
+  release:
     branches: [master]
-    types:
-      - completed
+    types: [published]
 jobs:
   docs:
     name: documentation
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }} # the 2nd condition
     steps:
 
     - name: Checkout
@@ -53,10 +50,40 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: gh-pages
 
+  tests:
+    name: pre-release tests
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+    - name: setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+        cache: 'pip'
+
+    - name: install dependencies
+      run: |
+        pip install -r requirements_dev.txt
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Build flit package and install dependencies
+      run: |
+        # install package using flit locally to run documentation notebooks
+        flit build
+        flit install --deps=develop --symlink
+
+    - name: Run unit tests
+      run: python -m pytest --import-mode=append tests/
+
   deploy_test:
     name: publish test PyPI
-    needs: [docs]
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: [docs,tests]
     runs-on: ubuntu-latest
 
     steps:
@@ -85,8 +112,7 @@ jobs:
 
   deploy:
     name: publish PyPI
-    needs: [docs,deploy_test]
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    needs: [docs,tests,deploy_test]
     runs-on: ubuntu-latest
 
     steps:
