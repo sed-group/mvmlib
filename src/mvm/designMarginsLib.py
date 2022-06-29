@@ -199,8 +199,12 @@ class ScalarParam(Cache):
         values : np.ndarray
             Vector of values
         """
-        value_hist = np.histogram(values, bins=50, density=True)
-        self._value_dist = Distribution(value_hist[0], lb=min(value_hist[1]), ub=max(value_hist[1]))
+        try:
+            with np.errstate(divide='ignore'):
+                value_hist = np.histogram(values, bins=50, density=True)
+                self._value_dist = Distribution(value_hist[0], lb=min(value_hist[1]), ub=max(value_hist[1]))
+        except:
+            self._value_dist = None
 
     def view(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
         """
@@ -654,16 +658,22 @@ class InputSpec(ScalarParam):
 
         return _inc
 
-    def reset(self, n: int = None):
+    def reset(self, n: Union[int,str] = None):
         """
         Resets accumulated random observations and value distributions
 
         Parameters
         -----------
-        n : int, optional
-            if provided deletes only the last n_samples, by default None
+        n : Union[int,str], optional
+            if provided deletes only the last n_samples and resets specs to original nominal value, 
+            if the string 'all' is provided deletes all samples and resets specs to original nominal value,
+            if None is provied resets specs to original nominal value only, by default None
         """
-        super().reset(n)
+        if n is not None and isinstance(n,int): # only reset if an integer is provided (to avoid clearing samples)
+            super().reset(n)
+        elif n == 'all':
+            super().reset(None)
+            
         self.value = self.original
 
     def random(self, n: int = 1) -> np.ndarray:
@@ -683,6 +693,7 @@ class InputSpec(ScalarParam):
             N is the number of requested samples
         """
 
+        self.distribution.random(n) # draw a sample from distribution
         if self.stochastic:
             assert self.distribution.samples.shape[1] >= n
             sampled_values = self.distribution.samples[self.cov_index, -n:]  # retrieve last N samples
@@ -716,7 +727,7 @@ class InputSpec(ScalarParam):
             _copy = type(self)(self.value, self.key, deepcopy(self.universe, memo), self.variable_type,
                                self.description, self.symbol, deepcopy(self.distribution, memo),
                                self.cov_index, self.inc, self.inc_type)
-            _copy.key = self.key+'_copy_'+str(id(_copy))
+            _copy.key = self.key
             _copy._values = self._values
             _copy.value = self.value
             _copy._value_dist = self._value_dist
@@ -767,7 +778,7 @@ class Performance(ScalarParam):
         if _copy is None:
 
             _copy = type(self)(self.key, self.direction)
-            _copy.key = self.key+'_copy_'+str(id(_copy))
+            _copy.key = self.key
             memo[id_self] = _copy 
         return _copy
 
@@ -896,7 +907,7 @@ class MarginNode:
         if _copy is None:
 
             _copy = type(self)(self.key, self.cutoff, self.buffer_limit, self.direction)
-            _copy.key = self.key+'_copy_'+str(id(_copy))
+            _copy.key = self.key
             _copy.target = deepcopy(self.target,memo)
             _copy.decided_value = deepcopy(self.decided_value,memo)
             _copy.excess = deepcopy(self.excess,memo)
@@ -943,12 +954,16 @@ class Behaviour():
         self.variable_dict = {}
         self.xtypes = []
         self.xlimits = []
+        self.lb_outputs = None
+        self.ub_outputs = None
         self.surrogate_inv_available = False
         self.xt_inv = None
         self.yt_inv = None
         self.sm_inv = None
         self.xtypes_inv = []
         self.xlimits_inv = []
+        self.lb_outputs_inv = None
+        self.ub_outputs_inv = None
 
     @property
     def intermediate(self) -> Union[float,List[float]]:
@@ -1223,6 +1238,9 @@ class Behaviour():
             self.xt = np.vstack((self.xt, sample))
             self.yt = np.vstack((self.yt, result))
 
+        # Get lower and upper bounds of output values
+        self.lb_outputs = np.min(self.yt, axis=0)
+        self.ub_outputs = np.max(self.yt, axis=0)
 
         if sm_type == 'LS': # LS
             surrogate = LS(print_prediction=False)
@@ -1285,6 +1303,10 @@ class Behaviour():
         self.xtypes_inv = [FLOAT,] + self.xtypes_inv
         self.xlimits_inv = [[min(self.yt[:,p_index:dv_index])[0], max(self.yt[:,p_index:dv_index])[0]],] + self.xlimits_inv # add decided values limits
 
+        # Get lower and upper bounds of output values
+        self.lb_outputs_inv = np.min(self.yt_inv, axis=0)
+        self.ub_outputs_inv = np.max(self.yt_inv, axis=0)
+
         if sm_type == 'LS': # LS
             surrogate = LS(print_prediction=False)
         elif sm_type == 'KRG': # Kriging surrogate
@@ -1333,12 +1355,16 @@ class Behaviour():
             pickle.dump(self.variable_dict,f)
             pickle.dump(self.xtypes,f)
             pickle.dump(self.xlimits,f)
+            pickle.dump(self.lb_outputs,f)
+            pickle.dump(self.ub_outputs,f)
             pickle.dump(self.surrogate_inv_available,f)
             pickle.dump(self.xt_inv,f)
             pickle.dump(self.yt_inv,f)
             pickle.dump(self.sm_inv,f)
             pickle.dump(self.xtypes_inv,f)
             pickle.dump(self.xlimits_inv,f)
+            pickle.dump(self.lb_outputs_inv,f)
+            pickle.dump(self.ub_outputs_inv,f)
             pickle.dump(self.n_i,f)
             pickle.dump(self.n_p,f)
             pickle.dump(self.n_dv,f)
@@ -1363,12 +1389,16 @@ class Behaviour():
             self.variable_dict = pickle.load(f)
             self.xtypes = pickle.load(f)
             self.xlimits = pickle.load(f)
+            self.lb_outputs = pickle.load(f)
+            self.ub_outputs = pickle.load(f)
             self.surrogate_inv_available = pickle.load(f)
             self.xt_inv = pickle.load(f)
             self.yt_inv = pickle.load(f)
             self.sm_inv = pickle.load(f)
             self.xtypes_inv = pickle.load(f)
             self.xlimits_inv = pickle.load(f)
+            self.lb_outputs_inv = pickle.load(f)
+            self.ub_outputs_inv = pickle.load(f)
             self.n_i = pickle.load(f)
             self.n_p = pickle.load(f)
             self.n_dv = pickle.load(f)
@@ -1412,7 +1442,7 @@ class Behaviour():
         """
         # default code for the default behaviour
         if self.surrogate_available:
-            outputs = self.sm.predict_values(np.array(args[:len(self.xtypes_inv)]).reshape(1,-1))[0]
+            outputs = self._bounded_pred(np.array(args[:len(self.xtypes_inv)]).reshape(1,-1))[0]
             self._intermediate = outputs[0:self.n_i]
             self._performance = outputs[self.n_i:self.n_i+self.n_p]
             self._decided_value = outputs[self.n_i+self.n_p:self.n_i+self.n_p+self.n_dv]
@@ -1445,9 +1475,43 @@ class Behaviour():
         if self.surrogate_inv_available:
             inputs = [decided_value,]+list(args[:len(self.xtypes_inv)-1])
             inputs = np.array(inputs,dtype=object)
-            outputs = self.sm_inv.predict_values(inputs.reshape(1,-1))[0]
+            outputs = self._bounded_pred(inputs.reshape(1,-1),'inv')[0]
             self._intermediate = outputs[0:i_index]
             self._inverted = outputs[i_index:]
+
+    def _bounded_pred(self,inputs: np.ndarray, type: str = 'base') -> np.ndarray:
+        """
+        Retrieve performance estimates from the surrogate
+
+        Parameters
+        ----------
+        inputs : np.ndarray
+            inputs at which to make predictions must be of size
+            n_samples x n_inputs
+        inputs : np.ndarray, optional
+            can 'base' or 'inv', if 'inv used lb_outputs_inv and ub_outputs_inv, by defaul is 'base'
+
+        Returns
+        -------
+        np.ndarray
+            array of estimated performance parameters
+        """
+        assert type in ['base','inv'], 'type must be either "base" or "inv", got %d' %type
+
+        if type == 'base':
+            sm = self.sm
+            lb = self.lb_outputs
+            ub = self.ub_outputs
+        elif type == 'inv':
+            sm = self.sm_inv
+            lb = self.lb_outputs_inv
+            ub = self.ub_outputs_inv
+
+        estimate = sm.predict_values(inputs)
+        for col in range(estimate.shape[1]):
+            estimate[estimate[:,col] >= ub[col],col] = ub[col]
+            estimate[estimate[:,col] <= lb[col],col] = lb[col]
+        return estimate
 
     def __copy__(self):
         """
@@ -1469,12 +1533,16 @@ class Behaviour():
             _copy.variable_dict = self.variable_dict
             _copy.xtypes = self.xtypes
             _copy.xlimits = self.xlimits
+            _copy.lb_outputs = self.lb_outputs
+            _copy.ub_outputs = self.ub_outputs
             _copy.surrogate_inv_available = self.surrogate_inv_available
             _copy.xt_inv = self.xt_inv
             _copy.yt_inv = self.yt_inv
             _copy.sm_inv = self.sm_inv
             _copy.xtypes_inv = self.xtypes_inv
             _copy.xlimit_inv = self.xlimits_inv
+            _copy.lb_outputs_inv = self.lb_outputs_inv
+            _copy.ub_outputs_inv = self.ub_outputs_inv
             _copy.n_i = self.n_i
             _copy.n_p = self.n_p
             _copy.n_dv = self.n_dv
@@ -1501,7 +1569,7 @@ class Behaviour():
         if _copy is None:
 
             _copy = type(self)(self.n_i, self.n_p, self.n_dv, self.n_tt, self.key)
-            _copy.key = self.key+'_copy_'+str(id(_copy))
+            _copy.key = self.key
             if self.surrogate_available:
                 _copy.surrogate_available = True
                 _copy.xt = deepcopy(self.xt,memo)
@@ -1510,12 +1578,16 @@ class Behaviour():
                 _copy.variable_dict = deepcopy(self.variable_dict,memo)
                 _copy.xtypes = deepcopy(self.xtypes,memo)
                 _copy.xlimits = deepcopy(self.xlimits,memo)
+                _copy.lb_outputs = deepcopy(self.lb_outputs)
+                _copy.ub_outputs = deepcopy(self.ub_outputs)
                 _copy.surrogate_inv_available = self.surrogate_inv_available
                 _copy.xt_inv = deepcopy(self.xt_inv,memo)
                 _copy.yt_inv = deepcopy(self.yt_inv,memo)
                 _copy.sm_inv = deepcopy(self.sm_inv,memo)
                 _copy.xtypes_inv = deepcopy(self.xtypes_inv,memo)
                 _copy.xlimits_inv = deepcopy(self.xlimits_inv,memo)
+                _copy.lb_outputs_inv = deepcopy(self.lb_outputs_inv)
+                _copy.ub_outputs_inv = deepcopy(self.ub_outputs_inv)
                 _copy.n_i = self.n_i
                 _copy.n_p = self.n_p
                 _copy.n_dv = self.n_dv
@@ -1585,11 +1657,11 @@ class Decision:
         self.n_nodes = n_nodes
         self.description = description
         self.direction = direction
-        self._decided_value = np.empty(self.n_nodes)
-        self._threshold = np.empty(self.n_nodes)
+        self._decided_value = np.zeros(self.n_nodes)
+        self._threshold = np.zeros(self.n_nodes)
+        self._selection_value = None
 
         self.decided_values = None
-        self.selection_value = None
         self.output_value = None
         self.i_min = None
 
@@ -1709,6 +1781,45 @@ class Decision:
             self._decided_value = np.array(i)
 
     @property
+    def selection_value(self) -> Union[float,str,int]:
+        """
+        selection_value parameters getter
+
+        Returns
+        -------
+        Union[float,str,int]
+            vector of selection_value parameters
+        """
+
+        return self._selection_value
+
+    @selection_value.setter
+    def selection_value(self, i: Union[float,str,int]):
+        """
+        Sets the selection_value parameter
+
+        Parameters
+        ----------
+        i : Union[float,str,int]
+            value to set selection_value parameters
+        """
+
+        if i is not None:
+            assert i in self._universe, 'invalid selection provided, \
+                value must be in universe %s or equal to None, got %d' %(','.join(map(str, self._universe)),i)
+
+            if self.variable_type == 'INT':
+                assert isinstance(i,(int,np.integer)) or i.is_integer(), \
+                    'selection value must be of type int'
+                if isinstance(i,(float,np.floating)):
+                    self._selection_value = int(i)
+                else:
+                    self._selection_value = int(i)
+            elif self.variable_type == 'ENUM':
+                assert isinstance(i,(int,np.integer,float,np.floating,str)), 'selection value must be of type str'
+                self._selection_value = i
+
+    @property
     def threshold(self) -> Union[float,List[float]]:
         """
         threshold parameters getter
@@ -1787,6 +1898,53 @@ class Decision:
 
         return self.decided_values
 
+    def allocate_margin(self, target_threshold: Union[int, float, List[int], List[float]], 
+                        strategy: str = 'min_excess'):
+        """
+        Calculate the nearest decided value that yield a positive margin
+
+        Parameters
+        ----------
+        target_threshold : Union[int, float, List[int], List[float]]
+            target threshold from intermediate calculations that feeds the margin node describing the capability
+            of the design.
+        strategy : str, optional
+            Can be of value 'min_exces', 'manual'. If 'manual', the self.decision_vector must be defined earlier, 
+            by default 'min_excess'
+        """
+
+        assert self.decided_values is not None, 'Decided values have not been computed. \
+            Use the `compute_decided_values` method or the `init_decisions` \
+            method of `MarginNetwork` class'
+
+        if strategy == 'min_excess':
+            # find the selected value based on minimum excess
+
+            # Compute excess vector for each value in the decision universe
+            excesses = np.empty((0,self.n_nodes))
+            for decided_value in self.decided_values:
+                e = (target_threshold - decided_value) * self.signs
+                excesses = np.vstack((excesses, e))
+
+            valid_idx = np.where(np.all(excesses >= 0,axis=1))[0]
+            if len(valid_idx) > 0:
+                # if at least one excess value is positive get the smallest excess value
+                id_min, _ = np.unravel_index(np.argmin(excesses[valid_idx]),excesses[valid_idx].shape)
+                i_min = valid_idx[id_min]
+            else:
+                # if all excess are negative get the largest negative excess
+                i_min, _ = np.unravel_index(np.argmax(excesses),excesses.shape)
+
+        elif strategy == 'manual':
+            i_min = np.where([self.selection_value == v for v in self._universe])[0][0]
+
+        self.selection_value = self._universe[i_min]
+        if self.n_nodes == 1:
+            self.decided_value = self.decided_values[i_min,0]
+        else:
+            self.decided_value = list(self.decided_values[i_min,:])
+        self.i_min = i_min
+
     def save(self,filename='man'):
         """
         saves the Decisions's surrogate model and decided values,
@@ -1839,8 +1997,8 @@ class Decision:
         self._threshold = np.empty(self.n_nodes)
 
     def __call__(self, target_threshold: Union[int, float, List[int], List[float]], 
-                 override: bool = False, recalculate=False, num_threads: int = 1, output='dv', 
-                 *args, **kwargs) -> Tuple[Union[int, float], Union[int, str]]:
+                 recalculate=False, allocate: bool = False, strategy: str = 'min_excess', 
+                 num_threads: int = 1, output='dv', *args, **kwargs) -> Tuple[Union[int, float], Union[int, str]]:
         """
         Calculate the nearest decided value that yield a positive margin
 
@@ -1849,12 +2007,15 @@ class Decision:
         target_threshold : Union[int, float, List[int], List[float]]
             target threshold from intermediate calculations that feeds the margin node describing the capability
             of the design.
-        override : bool, optional
-            if True override the decision nodes outputs and return the last stored selection and decided values,
-            by default False
         recalculate : bool, optional
             if True calculates all the decided values on the universe,
             by default True
+        allocate : bool, optional
+            if True allocate the decided values using supplied strategy,
+            by default False
+        strategy : str, optional
+            Can be of value 'min_exces', 'manual'. If 'manual', the self.decision_vector must be defined earlier, 
+            by default 'min_excess'
         num_threads : int, optional
             number of threads to parallelize decision universe computation, be default 1
         output : str, optional
@@ -1872,36 +2033,11 @@ class Decision:
 
         if recalculate:
             self.compute_decided_values(num_threads, *args, **kwargs)
-        
-        # find the selected value based on minimum excess
-        if not override:
-            if self.decided_value is None or recalculate:
-                assert self.decided_values is not None, 'Decided values have not been computed. \
-                    Use the `compute_decided_values` method or the `init_decisions` \
-                    method of `MarginNetwork` class'
 
-                # Compute excess vector for each value in the decision universe
-                excesses = np.empty((0,self.n_nodes))
-                for decided_value in self.decided_values:
-                    e = (target_threshold - decided_value) * self.signs
-                    excesses = np.vstack((excesses, e))
+        if allocate:
+            self.allocate_margin(target_threshold,strategy)
 
-                valid_idx = np.where(np.all(excesses >= 0,axis=1))[0]
-                if len(valid_idx) > 0:
-                    # if at least one excess value is positive get the smallest excess value
-                    id_min, _ = np.unravel_index(np.argmin(excesses[valid_idx]),excesses[valid_idx].shape)
-                    i_min = valid_idx[id_min]
-                else:
-                    # if all excess are negative get the largest negative excess
-                    i_min, _ = np.unravel_index(np.argmax(excesses),excesses.shape)
-
-                self.selection_value = self._universe[i_min]
-                if self.n_nodes == 1:
-                    self.decided_value = self.decided_values[i_min,0]
-                else:
-                    self.decided_value = list(self.decided_values[i_min,:])
-                self.i_min = i_min
-        else:
+        if not allocate and not recalculate:
             assert self.selection_value is not None, 'the selected value for this node was not initialized'
             i_min = np.where([self.selection_value == v for v in self._universe])[0][0]
 
@@ -1968,7 +2104,7 @@ class Decision:
             _copy = type(self)(copy(self.universe), self.variable_type, self.key, 
                                copy(self.direction), deepcopy(self.decided_value_model,memo),
                                self.n_nodes, self.description)
-            _copy.key = self.key+'_copy_'+str(id(_copy))
+            _copy.key = self.key
             memo[id_self] = _copy 
         return _copy
 
@@ -2001,6 +2137,8 @@ class MarginNetwork():
             list of MarginNode instances
         margin_nodes : List[Performance]
             list of Performance instances
+        distributions : List[Distribution]
+            list of Distribution instances
         key : str, optional
             string to tag instance with, default = ''
         """
@@ -2325,7 +2463,20 @@ class MarginNetwork():
             number of threads to parallelize sampling process, by default 1
         """
 
-        self.forward(recalculate_decisions=True,num_threads=num_threads)  # do not randomize the man for deterioration
+        self.forward(recalculate_decisions=True,num_threads=num_threads,outputs=['tt',]*len(self.decisions))  # do not randomize the man for deterioration
+        self.reset(n=1)
+
+    def allocate_margins(self, strategy: str = 'min_excess'):
+        """
+        allocates MAN margins according to some strategy
+
+        Parameters
+        ----------
+        strategy : str, optional
+            Can be of value 'min_exces', 'manual'. If 'manual', the self.decision_vector must be defined earlier, 
+            by default 'min_excess'
+        """
+        self.forward(allocate_margin=True, strategy=strategy)  # do not randomize the man for deterioration
         self.initial_decision = self.decision_vector
         self.reset(n=1)
 
@@ -2414,6 +2565,7 @@ class MarginNetwork():
         # xt = self.xt
 
         self.reset()
+        self.reset_inputs()
         assert len(bandwidth) == 1 or len(bandwidth) == xt.shape[1], \
             'bandwidth list size must be at least %i or 1' % xt.shape[1]
 
@@ -2650,7 +2802,8 @@ class MarginNetwork():
                 self.spec_limit = np.append(self.spec_limit, spec_value)
                 threshold_limit_vector = np.reshape(tt_vector, (len(self.margin_nodes), -1))
                 self.threshold_limit = np.hstack((self.threshold_limit, threshold_limit_vector))
-
+                
+                self.reset_inputs()
                 self.reset(n_inc)
                 self.decision_vector = self.initial_decision
 
@@ -2682,7 +2835,8 @@ class MarginNetwork():
 
         # decided_values = [len(margin_nodes), len(input_specs)]
 
-        utilization = 1 - ((decided_values - self.threshold_limit) / (decided_values - target_thresholds))
+        with np.errstate(divide='ignore',invalid='ignore'):
+            utilization = 1 - ((decided_values - self.threshold_limit) / (decided_values - target_thresholds))
 
         # utilization = [len(margin_nodes), len(input_specs)]
 
@@ -2846,7 +3000,7 @@ class MarginNetwork():
         >>> class MyMarginNetwork(MarginNetwork):
         >>>     def randomize(self):
         >>>         pass
-        >>>     def forward(self,num_threads=1,recalculate_decisions=False,override_decisions=False):
+        >>>     def forward(self,num_threads=1,recalculate_decisions=False,allocate_margin=False):
         >>>         # some specific model-dependent behaviour
         >>>         d1 = self.design_params[0]
         >>>         s1 = self.input_specs[0]
@@ -2872,10 +3026,6 @@ class MarginNetwork():
             if provided deletes only the last n_samples, where possible, by default None
         """
 
-        for design_param in self.design_params:
-            design_param.reset()
-        for input_spec in self.input_specs:
-            input_spec.reset()
         for behaviour in self.behaviours:
             behaviour.reset()
         for margin_node in self.margin_nodes:
@@ -2886,20 +3036,37 @@ class MarginNetwork():
             for decision in self.decisions:
                 decision.reset()
 
+    def reset_inputs(self, n: int = None):
+        """
+        Resets Design parameters and input specifications
+
+        Parameters
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, where possible, by default None
+        """
+
+        for design_param in self.design_params:
+            design_param.reset()
+        for input_spec in self.input_specs:
+            input_spec.reset(n)
+
     def reset_outputs(self, n: int = None):
         """
-        Resets Impact, Absorption, and Deterioration matrices
+        Resets Impact, Absorption, Deterioration, and Utilization matrices
 
         Parameters
         -----------
         n : int, optional
             if provided deletes only the last n_samples, by default None
         """
-
+        
+        self.utilization_matrix.reset(n)
+        self.deterioration_vector.reset(n)
         self.impact_matrix.reset(n)
         self.absorption_matrix.reset(n)
 
-    def save(self,filename='man',folder='/'):
+    def save(self,filename: str='man',folder: str='/',results_only: bool=False):
         """
         saves the initial state of the MarginNetwork:
         Performance surrogate and decision univere
@@ -2908,21 +3075,27 @@ class MarginNetwork():
         Parameters
         ----------
         filename : str, optional
-           basefile path, by default 'man'
+           prefix before saved files, by default 'man'
+        folder : str, optional
+           basefile path, by default is current directory
+        results_only : bool, optional
+           if True only saves results related objects such as margin nodes, 
+           input specs, performances, and impact and absorption matrices, by default False
         """
         check_folder(folder)
         path = os.path.join(folder,filename)
-
-        with open(path+'_init'+'.pkl','wb') as f:
-            pickle.dump(self.lb_inputs,f)
-            pickle.dump(self.ub_inputs,f)
-            pickle.dump(self.lb_outputs,f)
-            pickle.dump(self.ub_outputs,f)
-            pickle.dump(self.xt,f)
-            pickle.dump(self.yt,f)
-            pickle.dump(self.sm_perf,f)
-            pickle.dump(self.initial_decision,f)
-            pickle.dump(self.decision_vector,f)
+        
+        if not results_only:
+            with open(path+'_init'+'.pkl','wb') as f:
+                pickle.dump(self.lb_inputs,f)
+                pickle.dump(self.ub_inputs,f)
+                pickle.dump(self.lb_outputs,f)
+                pickle.dump(self.ub_outputs,f)
+                pickle.dump(self.xt,f)
+                pickle.dump(self.yt,f)
+                pickle.dump(self.sm_perf,f)
+                pickle.dump(self.initial_decision,f)
+                pickle.dump(self.decision_vector,f)
 
         with open(path+'_samples'+'.pkl','wb') as f:
             pickle.dump(self.deterioration_vector,f)
@@ -2930,16 +3103,28 @@ class MarginNetwork():
             pickle.dump(self.absorption_matrix,f)
             pickle.dump(self.utilization_matrix,f)
 
-        for decision in self.decisions:
-            decision.save(filename=path)
+        with open(path+'_specs'+'.pkl','wb') as f:
+            for input_spec in self.input_specs:
+                pickle.dump(input_spec,f)
+
+        if not results_only:
+            for decision in self.decisions:
+                decision.save(filename=path)
 
         for margin_node in self.margin_nodes:
             margin_node.save(filename=path)
 
-        for behaviour in self.behaviours:
-            behaviour.save(filename=path)
+        with open(path+'_performances'+'.pkl','wb') as f:
+            for performance in self.performances:
+                pickle.dump(performance,f)
 
-    def load(self,filename='man',folder=''):
+            margin_node.save(filename=path)
+
+        if not results_only:
+            for behaviour in self.behaviours:
+                behaviour.save(filename=path)
+
+    def load(self,filename: str='man',folder: str='/',results_only: bool=False):
         """
         loads the initial state of the MarginNetwork:
         Performance surrogate and decision univere
@@ -2948,20 +3133,26 @@ class MarginNetwork():
         Parameters
         ----------
         filename : str, optional
-           basefile path, by default 'man'
+           prefix before loaded files, by default 'man'
+        folder : str, optional
+           basefile path, by default is current directory
+        results_only : bool, optional
+           if True only loads results related objects such as margin nodes, 
+           input specs, performances, and impact and absorption matrices, by default False
         """
         path = os.path.join(folder,filename)
 
-        with open(path+'_init'+'.pkl','rb') as f:
-            self.lb_inputs = pickle.load(f)
-            self.ub_inputs = pickle.load(f)
-            self.lb_outputs = pickle.load(f)
-            self.ub_outputs = pickle.load(f)
-            self.xt = pickle.load(f)
-            self.yt = pickle.load(f)
-            self.sm_perf = pickle.load(f)
-            self.initial_decision = pickle.load(f)
-            self.decision_vector = pickle.load(f)
+        if not results_only:
+            with open(path+'_init'+'.pkl','rb') as f:
+                self.lb_inputs = pickle.load(f)
+                self.ub_inputs = pickle.load(f)
+                self.lb_outputs = pickle.load(f)
+                self.ub_outputs = pickle.load(f)
+                self.xt = pickle.load(f)
+                self.yt = pickle.load(f)
+                self.sm_perf = pickle.load(f)
+                self.initial_decision = pickle.load(f)
+                self.decision_vector = pickle.load(f)
 
         with open(path+'_samples'+'.pkl','rb') as f:
             self.deterioration_vector = pickle.load(f)
@@ -2969,14 +3160,24 @@ class MarginNetwork():
             self.absorption_matrix = pickle.load(f)
             self.utilization_matrix = pickle.load(f)
 
-        for decision in self.decisions:
-            decision.load(filename=path)
+        with open(path+'_specs'+'.pkl','rb') as f:
+            for i in range(len(self.input_specs)):
+                self.input_specs[i] = pickle.load(f)
+
+        if not results_only:
+            for decision in self.decisions:
+                decision.load(filename=path)
 
         for margin_node in self.margin_nodes:
             margin_node.load(filename=path)
 
-        for behaviour in self.behaviours:
-            behaviour.load(filename=path)
+        with open(path+'_performances'+'.pkl','rb') as f:
+            for p in range(len(self.performances)):
+                self.performances[p] = pickle.load(f)
+
+        if not results_only:
+            for behaviour in self.behaviours:
+                behaviour.load(filename=path)
 
     def _sample_inputs(self,n_samples: int) -> np.ndarray:
         """
@@ -3152,12 +3353,14 @@ def _sample_man(input_i: np.ndarray, man: MarginNetwork, sampling_freq: int = 1)
     man.design_vector = design  # Set design parameters to their respective values
     man.spec_vector = spec  # Set input specifications to their respective values
     man.decision_vector = decisions  # Set decisions to their respective values
+    man.init_decisions() # to accomodate decided values dependant on design parameters
 
     node_samples = np.empty((0, len(man.margin_nodes)))
     perf_samples = np.empty((0, len(man.performances)))
     for n in range(sampling_freq):
         # man.randomize() # Randomize the MAN
-        man.forward(override_decisions=True)  # Run one pass of the MAN
+        man.allocate_margins('manual')
+        man.forward()  # Run one pass of the MAN
 
         node_samples = np.vstack((node_samples, man.dv_vector.reshape(1, node_samples.shape[1])))
         perf_samples = np.vstack((perf_samples, man.perf_vector.reshape(1, perf_samples.shape[1])))

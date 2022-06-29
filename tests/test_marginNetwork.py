@@ -359,7 +359,9 @@ def stochastic_man(design_parameters: List[DesignParam],
 
     class MAN(MarginNetwork):
         def randomize(self):
-            dist.random()
+            # retrieve input specs
+            s1 = self.input_specs[0]
+            s2 = self.input_specs[1]
             s1.random()
             s2.random()
 
@@ -419,7 +421,7 @@ def decision_man(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,override_decisions=False,**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -454,10 +456,10 @@ def decision_man(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[0], override_decisions, recalculate_decisions)
+            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy)
             b3(decision_1.selection_value)
 
-            decision_2(tt_vector[1], override_decisions, recalculate_decisions)
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy)
             b4(decision_2.selection_value)
 
             # Compute excesses
@@ -489,7 +491,7 @@ def decision_man_no_surrogate(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,override_decisions=False,outputs=['dv','dv','dv'],**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',outputs=['dv','dv','dv'],**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -526,9 +528,9 @@ def decision_man_no_surrogate(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[0], override_decisions, recalculate_decisions, output=outputs[0])
-            decision_2(tt_vector[1], override_decisions, recalculate_decisions, output=outputs[1])
-            decision_4(tt_vector[2], override_decisions, recalculate_decisions, output=outputs[2])
+            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy, output=outputs[0])
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy, output=outputs[1])
+            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy, output=outputs[2])
 
             # Compute excesses
             e1(tt_vector[0],decision_1.decided_value)
@@ -578,7 +580,7 @@ def decision_man_inverse(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,override_decisions=False,outputs=['dv','dv','dv'],**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',outputs=['dv','dv','dv'],**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -621,17 +623,17 @@ def decision_man_inverse(design_parameters: List[DesignParam],
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
 
-            args = [
-                s1.value, # s1
-                s2.value # s2
+            args = [ # decided values cannot depend on input specifications (to avoid moving goal post)
+                s1.original, # s1
+                s2.original # s2
                 ]
-            decision_5(tt_vector[0], override_decisions, recalculate_decisions, 1, outputs[0], *args)
+            decision_5(tt_vector[0], recalculate_decisions, allocate_margin, strategy, 1, outputs[0], *args)
             b9.inv_call(decision_5.output_value,s1.value,s2.value)
 
-            decision_2(tt_vector[1], override_decisions, recalculate_decisions, 1, outputs[1])
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy, 1, outputs[1])
             b10.inv_call(decision_2.output_value)
 
-            decision_4(tt_vector[2], override_decisions, recalculate_decisions, 1, outputs[2])
+            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy, 1, outputs[2])
             b7(decision_4.output_value)
 
             b8(b9.inverted,b10.intermediate,b7.intermediate)
@@ -666,7 +668,7 @@ def multidecision_man(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,override_decisions=False,**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',**kwargs):
 
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -701,7 +703,7 @@ def multidecision_man(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[:2], override_decisions, recalculate_decisions)
+            decision_1(tt_vector[:2], recalculate_decisions, allocate_margin, strategy)
             b5(decision_1.selection_value)
 
             # Compute excesses
@@ -1253,6 +1255,7 @@ def test_decision(man_components: Tuple[List[Behaviour],List[Performance],List[M
     # Check outputs
     man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
     man.init_decisions()
+    man.allocate_margins()
     man.forward()
     man.compute_absorption()
 
@@ -1374,6 +1377,7 @@ def test_decision_multinode(man_components: Tuple[List[Behaviour],List[Performan
     # Check outputs
     man = multidecision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
     man.init_decisions()
+    man.allocate_margins()
     man.forward(override_decisions=False)
     man.compute_absorption()
 
@@ -1481,8 +1485,9 @@ def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance]
     man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
 
     # Create surrogate model for estimating threshold performance
-    man.train_performance_surrogate(n_samples=500, sm_type='KRG', sampling_freq=1, num_threads=n_threads, bandwidth=[1e-3, ])
+    man.train_performance_surrogate(n_samples=100, sm_type='KRG', sampling_freq=1, num_threads=n_threads, bandwidth=[1e-3, ])
     man.init_decisions(num_threads=n_threads)
+    man.allocate_margins()
     man.forward()
     man.compute_impact(use_estimate=True)
 
@@ -1544,6 +1549,7 @@ def test_mixed_variables_no_surrogate(man_components: Tuple[List[Behaviour],List
 
     # Create surrogate model for estimating threshold performance
     man.init_decisions(num_threads=n_threads)
+    man.allocate_margins()
     man.forward()
     man.compute_impact(use_estimate=False)
 
@@ -1607,6 +1613,7 @@ def test_mixed_variables_inverse(man_components: Tuple[List[Behaviour],List[Perf
 
     # Create surrogate model for estimating threshold performance
     man.init_decisions(num_threads=n_threads)
+    man.allocate_margins()
     man.forward()
     man.compute_impact(use_estimate=False)
 
@@ -1677,7 +1684,7 @@ def test_absorption_inverse(man_components,deterministic_specs,design_parameters
 
     ######################################################
     # absorption calculation
-
+    man.allocate_margins()
     man.forward()
     man.compute_absorption()
 
@@ -1751,6 +1758,113 @@ def test_absorption_inverse(man_components,deterministic_specs,design_parameters
 
     assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
     assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
+
+@pytest.mark.dependency(depends=["impact_i1","impact_i2"])
+def test_manual_margins(man_components,deterministic_specs,design_parameters):
+    """
+    Tests the absorption functionality when decision nodes and surrogates are present
+    """
+    ######################################################
+    # Construct MAN
+    behaviours, decisions, performances, margin_nodes = man_components
+    centers,input_specs = deterministic_specs
+
+    b1 = behaviours[0]
+    ######################################################
+    # Loop over different decision possibilities
+
+    # Check outputs
+    test_dict = {
+            'true_decisions' : [1.6,'1','1'],
+            'tt_factor' : [1.0,1.0,1.0],
+            'tt_vector' : [4.84,3.2,2.2],
+        }
+
+    man = decision_man_inverse(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'],use_surrogates=False)
+
+    test_dir = os.path.dirname(os.path.realpath(__file__))
+    folder = os.path.join(test_dir,'..','test_dumps')
+
+    man.load('inverse_man',folder=folder)
+
+    ######################################################
+    # absorption calculation
+    man.decision_vector = [1.2,'2','2']
+    man.allocate_margins(strategy='manual')
+    man.forward()
+    man.compute_absorption()
+
+    mean_absorption = np.mean(man.absorption_matrix.values,axis=2)
+    mean_utilization = np.mean(man.utilization_matrix.values,axis=2)
+
+    # Check outputs
+    dv_vector = man.dv_vector
+    
+    s1_limit = np.array([
+        -1 + np.sqrt(1-centers[1]+dv_vector[0]),
+        (dv_vector[1]-2*centers[1]),
+        (dv_vector[2]-centers[1]),
+    ])
+    
+    s2_limit = np.array([
+        dv_vector[0]-(centers[0]**2)-(2*centers[0]),
+        (dv_vector[1]-centers[0]) / 2,
+        dv_vector[2]-centers[0],
+    ])
+
+    s1_limit = np.max(s1_limit)
+    s2_limit = np.max(s2_limit)
+    spec_limit = np.array([s1_limit,s2_limit])
+
+    # deterioration matrix
+    signs = np.array([-1,-1])
+    nominal_specs = np.array([centers[0],centers[1]])
+    deterioration = signs*(spec_limit - nominal_specs) / nominal_specs
+    deterioration_matrix = np.tile(deterioration,(len(margin_nodes),1))
+
+    #deterioration_matrix = [len(margin_nodes), len(input_specs)]
+
+    # threshold matrix
+    nominal_tt = np.array(b1(centers[0],centers[1]))
+    nominal_tt = np.reshape(nominal_tt,(len(margin_nodes),-1))
+    target_thresholds = np.tile(nominal_tt,(1,len(input_specs)))
+
+    #target_thresholds = [len(margin_nodes), len(input_specs)]
+
+    # Compute thresholds at the spec limit for each margin node
+    new_tt_1 = np.array(b1(s1_limit,centers[1]))
+    new_tt_2 = np.array(b1(centers[0],s2_limit))
+
+    new_tt_1 = np.reshape(new_tt_1,(len(margin_nodes),-1))
+    new_tt_2 = np.reshape(new_tt_2,(len(margin_nodes),-1))
+    new_thresholds = np.empty((len(margin_nodes),0))
+    new_thresholds = np.hstack((new_thresholds,new_tt_1))
+    new_thresholds = np.hstack((new_thresholds,new_tt_2))
+
+    #new_thresholds = [len(margin_nodes), len(input_specs)]
+
+    test_absorption = abs(new_thresholds - target_thresholds) / (target_thresholds * deterioration_matrix)
+    # test_absorption = np.array([
+    #     [ 1.08    , 0.207     ],
+    #     [ 0.389   , 0.625     ],
+    #     [ 0.566   , 0.45454545]
+    #     ])
+
+    #test_absorption = [len(margin_nodes), len(input_specs)]
+
+    # compute utilization
+    decided_value = np.reshape(dv_vector,(len(margin_nodes),-1))
+    decided_values = np.tile(decided_value,(1,len(input_specs)))
+
+    #decided_values = [len(margin_nodes), len(input_specs)]
+
+    test_utilization = 1 - ((new_thresholds - decided_values) / (target_thresholds - decided_values))
+
+    #test_utilization = [len(margin_nodes), len(input_specs)]
+
+    assert np.allclose(mean_absorption, test_absorption, rtol=1e-1)
+    assert np.allclose(mean_utilization, test_utilization, rtol=1e-1)
+
 
 @pytest.mark.parametrize('n_threads', [1,])
 def test_behaviour(n_threads):
@@ -1847,6 +1961,7 @@ def test_perf_visualization(man_components: Tuple[List[Behaviour],List[Performan
 
     man.load('impact_man',folder=folder)
     man.init_decisions()
+    man.allocate_margins()
     man.forward()
     ######################################################
     # Check visualization
@@ -1861,6 +1976,7 @@ def test_absorption_visualization(stochastic_man: MarginNetwork):
 
     man.load('absorption_man',folder=folder)
     man.init_decisions()
+    man.allocate_margins()
     man.forward()
     ######################################################
     # Check visualization
