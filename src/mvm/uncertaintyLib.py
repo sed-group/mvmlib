@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -799,7 +799,8 @@ class VisualizeDist:
         self.cutoff = cutoff
         self.buffer_limit = buffer_limit
 
-    def view(self, xlabel: str = '', folder: str = '', file: str = None, img_format: str = 'pdf'):
+    def view(self, xlabel: str = '', folder: str = '', file: str = None, img_format: str = 'pdf', 
+             bins: Union[int,List[Union[int,float,str]]] = 100, bar_width: float = 1.0):
         """
         view 1D or 2D plot of probability distribution of value
 
@@ -814,12 +815,18 @@ class VisualizeDist:
             name of image file, if not provide then an image is not saved, by default None
         img_format : str, optional
             format of the image to be stored, by default 'pdf'
+        bins : Union[int,List[Union[int,float,str]]], optional
+            bins to show, by default 100
+        bar_width : float, optional
+            relative width of histogram bars, by default 1.0
         """
 
         fig, ax = plt.subplots(figsize=(8, 3))
-        ax.hist(self.values, bins=100, density=True)
+        ax.hist(self.values, bins=bins, density=True, rwidth=bar_width)
         ax.set_xlabel(xlabel)
         ax.set_ylabel('density')
+        if type(bins) == list:
+            ax.set_xticks(bins)
 
         if file is not None:
             # Save figure to image

@@ -19,6 +19,9 @@ def check_folder(folder='render/'):
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
+        return False
+    else:
+        return True
 
 def starmap_with_kwargs(pool, fn, args_iter, kwargs_iter):
     """

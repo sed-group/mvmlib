@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-from gettext import find
-from tabnanny import check
-from turtle import xcor
 from typing import Tuple, List, Union, Callable, Dict
 from copy import copy,deepcopy
 import multiprocess as mp
@@ -108,7 +105,7 @@ class Cache(ABC):
         self.value = value  # store value
         self.values = value  # add to list of samples
 
-    def __deepcopy__(self, memo): # memo is a dict of id's to copies
+    def __deepcopy__(self, memo, datatype: str = None): # memo is a dict of id's to copies
         """
         creates a deep independent copy of the class instance self.
         https://stackoverflow.com/a/15774013
@@ -117,6 +114,9 @@ class Cache(ABC):
         ----------
         memo : Dict
             memoization dictionary of id(original) (or identity numbers) to copies
+        datatype : str, optional
+            The type of values being stored in ScalarParams, 
+            possible values : {'continuous', 'categorical'}, by default None
 
         Returns
         -------
@@ -126,7 +126,10 @@ class Cache(ABC):
         id_self = id(self) # memoization avoids unnecessary recursion
         _copy = memo.get(id_self)
         if _copy is None:
-            _copy = type(self)(self.key, deepcopy(self.dims))
+            if datatype is not None:
+                _copy = type(self)(self.key, deepcopy(self.dims), datatype)
+            else:
+                _copy = type(self)(self.key, deepcopy(self.dims))
             _copy._values = self._values
             _copy.value = self.value
             memo[id_self] = _copy 
@@ -134,7 +137,7 @@ class Cache(ABC):
 
 
 class ScalarParam(Cache):
-    def __init__(self, key: str, dims: List[int]):
+    def __init__(self, key: str, dims: List[int], datatype: str = 'continuous'):
         """
         Stores observations data. This class is an attribute of the MarginNetwork class, 
         Cache subclasses are instantiated by the MarginNetwork class during its initialization
@@ -145,9 +148,16 @@ class ScalarParam(Cache):
             unique identifier
         dims : List[int]
             The dimension along each axis (if empty then a float is assumed)
+        datatype : str, optional
+            The type of values being stored, 
+            possible values : {'continuous', 'categorical'}, by default 'categorical'
         """
         super().__init__(key, dims)
 
+        assert datatype in ['continuous','categorical'], \
+            'expected datatype in "continuous", "categorical", got %d' %datatype
+
+        self.datatype = datatype
         self._value_dist = None
 
     @property
@@ -199,6 +209,9 @@ class ScalarParam(Cache):
         values : np.ndarray
             Vector of values
         """
+
+        assert self.datatype == 'continuous', 'This method cannot be used with categorical variables'
+
         try:
             with np.errstate(divide='ignore'):
                 value_hist = np.histogram(values, bins=50, density=True)
@@ -206,7 +219,8 @@ class ScalarParam(Cache):
         except:
             self._value_dist = None
 
-    def view(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
+    def view(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf',
+             bins: List[Union[int,float,str]] = None):
         """
         Views the distribution of the parameter
 
@@ -221,12 +235,19 @@ class ScalarParam(Cache):
             name of image file, if not provide then an image is not saved, by default None
         img_format : str, optional
             format of the image to be stored, by default 'pdf'
+        bins : List[Union[int,float,str]], optional
+            bins to show, by default None
         """
         if xlabel is None:
             xlabel = '%s' % self.key
-
+        
         vis = VisualizeDist(values=self.values)
-        vis.view(xlabel=xlabel, folder=self.key, file=file, img_format=img_format)
+
+        if self.datatype == 'continuous':
+            vis.view(xlabel=xlabel, folder=self.key, file=file, img_format=img_format)
+        elif self.datatype == 'categorical':
+            vis.view(xlabel=xlabel, folder=self.key, file=file, img_format=img_format,
+                bins=bins, bar_width=0.7)
 
     def view_cdf(self, xlabel: str = None, folder: str = '', file: str = None, img_format: str = 'pdf'):
         """
@@ -244,6 +265,8 @@ class ScalarParam(Cache):
         img_format : str, optional
             format of the image to be stored, by default 'pdf'
         """
+        assert self.datatype == 'continuous', 'This method cannot be used with categorical variables'
+
         if xlabel is None:
             xlabel = '%s' % self.key
 
@@ -261,11 +284,12 @@ class ScalarParam(Cache):
         """
 
         super().reset(n)
-        if n is not None and len(self.values) > 0:
-            assert n >= 0, 'n must be nonnegative %i' %n
-            self.value_dist = self.values
-        else:
-            self._value_dist = None
+        if self.datatype == 'continuous':
+            if n is not None and len(self.values) > 0:
+                assert n >= 0, 'n must be nonnegative %i' %n
+                self.value_dist = self.values
+            else:
+                self._value_dist = None
 
     def __call__(self, value: Union[float, np.ndarray]):
         """
@@ -279,7 +303,9 @@ class ScalarParam(Cache):
         """
 
         super().__call__(value)
-        self.value_dist = self.values
+
+        if self.datatype == 'continuous':
+            self.value_dist = self.values
 
     def __deepcopy__(self, memo): # memo is a dict of id's to copies
         """
@@ -296,7 +322,7 @@ class ScalarParam(Cache):
         Decision
             copy of ScalarParam instance
         """
-        _copy = super().__deepcopy__(memo)
+        _copy = super().__deepcopy__(memo, self.datatype)
         _copy._value_dist = self._value_dist
         return _copy
 
@@ -476,7 +502,7 @@ class ParamFactory:
     """
 
     @staticmethod
-    def build_param(key: str, dims: List[int]) -> Union[ScalarParam, VectorParam, MatrixParam]:
+    def build_param(key: str, dims: List[int], datatype: str = 'continuous') -> Union[ScalarParam, VectorParam, MatrixParam]:
         """
         Returns appropriate parameter class based on supplied dimensions
 
@@ -486,6 +512,9 @@ class ParamFactory:
             unique string identifier
         dims : List[int]
             The dimensions of the parameter
+        datatype : str, optional
+            The type of values being stored, 
+            possible values : {'continuous', 'categorical'}, by default 'categorical'
 
         Returns
         -------
@@ -493,7 +522,7 @@ class ParamFactory:
             an instance of the correct class
         """
         if len(dims) == 0:
-            return ScalarParam(key, dims)
+            return ScalarParam(key, dims, datatype)
         elif len(dims) == 1:
             return VectorParam(key, dims)
         elif len(dims) == 2:
@@ -1244,15 +1273,19 @@ class Behaviour():
 
         if sm_type == 'LS': # LS
             surrogate = LS(print_prediction=False)
+            xt = self.xt
+            yt = self.yt
         elif sm_type == 'KRG': # Kriging surrogate
             surrogate = KRG(theta0=bandwidth, print_prediction=False)
+            xt = self.xt[:self.xt.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
+            yt = self.yt[:self.xt.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
         else:
             Exception('Wrong model %s chosen, must provide either "KRG" or "LS"' %sm_type)
 
         self.sm = MixedIntegerSurrogateModel(
             xtypes=self.xtypes, xlimits=self.xlimits, surrogate=surrogate
         )
-        self.sm.set_training_values(self.xt, self.yt)
+        self.sm.set_training_values(xt, yt)
         self.sm.train()
         self.surrogate_available = True
 
@@ -1309,10 +1342,16 @@ class Behaviour():
 
         if sm_type == 'LS': # LS
             surrogate = LS(print_prediction=False)
+            xt_inv = self.xt_inv
+            yt_inv = self.yt_inv
         elif sm_type == 'KRG': # Kriging surrogate
             surrogate = KRG(theta0=bandwidth, print_prediction=False)
+            xt_inv = self.xt_inv[:self.xt_inv.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
+            yt_inv = self.yt_inv[:self.xt_inv.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
         elif sm_type == 'QP': # Kriging surrogate
             surrogate = QP(print_prediction=False)
+            xt_inv = self.xt_inv
+            yt_inv = self.yt_inv
         else:
             Exception('Wrong model %s chosen, must provide either "KRG" or "LS"' %sm_type)
 
@@ -1322,7 +1361,7 @@ class Behaviour():
             self.sm_inv = MixedIntegerSurrogateModel(
                 xtypes=self.xtypes_inv, xlimits=self.xlimits_inv, surrogate=surrogate
             )
-        self.sm_inv.set_training_values(self.xt_inv, self.yt_inv)
+        self.sm_inv.set_training_values(xt_inv, yt_inv)
         self.sm_inv.train()
         self.surrogate_inv_available = True 
 
@@ -1661,6 +1700,8 @@ class Decision:
         self._threshold = np.zeros(self.n_nodes)
         self._selection_value = None
 
+        self.selection_values = ParamFactory.build_param(key=self.key, dims=[], datatype='categorical')
+
         self.decided_values = None
         self.output_value = None
         self.i_min = None
@@ -1939,13 +1980,14 @@ class Decision:
             i_min = np.where([self.selection_value == v for v in self._universe])[0][0]
 
         self.selection_value = self._universe[i_min]
+        self.selection_values(self._universe[i_min])  # Store selection_value
         if self.n_nodes == 1:
             self.decided_value = self.decided_values[i_min,0]
         else:
             self.decided_value = list(self.decided_values[i_min,:])
         self.i_min = i_min
 
-    def save(self,filename='man'):
+    def save(self,filename='man',results_only: bool=False):
         """
         saves the Decisions's surrogate model and decided values,
         selected value,  decided value, and i_min
@@ -1954,6 +1996,9 @@ class Decision:
         ----------
         filename : str, optional
            basefile path, by default 'man'
+        results_only : bool, optional
+           if True only saves results related objects such as decided_values, 
+           selection_value, output_value, i_min, and selection_values, by default False
         """
         
         with open(filename+'_decision_%s.pkl' % self.key,'wb') as f:
@@ -1961,11 +2006,12 @@ class Decision:
             pickle.dump(self.selection_value,f)
             pickle.dump(self.output_value,f)
             pickle.dump(self.i_min,f)
+            pickle.dump(self.selection_values,f)
 
-        if self.decided_value_model is not None:
+        if self.decided_value_model is not None and not results_only:
             self.decided_value_model.save(filename)
 
-    def load(self,filename='man'):
+    def load(self,filename='man',results_only: bool=False):
         """
         loads the Decisions's surrogate model and decided values,
         selected value,  decided value, and i_min
@@ -1974,6 +2020,9 @@ class Decision:
         ----------
         filename : str, optional
            basefile path, by default 'man'
+        results_only : bool, optional
+           if True only loads results related objects such as decided_values, 
+           selection_value, output_value, i_min, and selection_values, by default False
         """
         
         with open(filename+'_decision_%s.pkl' % self.key,'rb') as f:
@@ -1981,8 +2030,9 @@ class Decision:
             self.selection_value = pickle.load(f)
             self.output_value = pickle.load(f)
             self.i_min = pickle.load(f)
+            self.selection_values = pickle.load(f)
 
-        if self.decided_value_model is not None:
+        if self.decided_value_model is not None and not results_only:
             self.decided_value_model.load(filename)
 
     def reset(self):
@@ -1995,6 +2045,17 @@ class Decision:
         self.i_min = None
         self._decided_value = np.empty(self.n_nodes)
         self._threshold = np.empty(self.n_nodes)
+
+    def reset_outputs(self, n: int = None):
+        """
+        Resets the stored observations for selection_values
+
+        Parameters
+        -----------
+        n : int, optional
+            if provided deletes only the last n_samples, where possible, by default None
+        """
+        self.selection_values.reset(n)
 
     def __call__(self, target_threshold: Union[int, float, List[int], List[float]], 
                  recalculate=False, allocate: bool = False, strategy: str = 'min_excess', 
@@ -2577,7 +2638,9 @@ class MarginNetwork():
         elif sm_type == 'KRG':
             # Kriging surrogate
             self.sm_perf = KRG(theta0=bandwidth, print_prediction=False)
-            self.sm_perf.set_training_values(xt, self.yt)
+            xt = xt[:self.xt.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
+            yt = self.yt[:self.xt.shape[1]*100,:] # truncate training data to avoid bad Kriging Matrix
+            self.sm_perf.set_training_values(xt, yt)
             self.sm_perf.train()
         else:
             Exception('Wrong model %s chosen, must provide either "KRG" or "LS"' %sm_type)
@@ -3065,6 +3128,8 @@ class MarginNetwork():
         self.deterioration_vector.reset(n)
         self.impact_matrix.reset(n)
         self.absorption_matrix.reset(n)
+        for decision in self.decisions:
+            decision.reset_outputs(n)
 
     def save(self,filename: str='man',folder: str='/',results_only: bool=False):
         """
@@ -3107,9 +3172,8 @@ class MarginNetwork():
             for input_spec in self.input_specs:
                 pickle.dump(input_spec,f)
 
-        if not results_only:
-            for decision in self.decisions:
-                decision.save(filename=path)
+        for decision in self.decisions:
+            decision.save(filename=path,results_only=results_only)
 
         for margin_node in self.margin_nodes:
             margin_node.save(filename=path)
@@ -3164,9 +3228,8 @@ class MarginNetwork():
             for i in range(len(self.input_specs)):
                 self.input_specs[i] = pickle.load(f)
 
-        if not results_only:
-            for decision in self.decisions:
-                decision.load(filename=path)
+        for decision in self.decisions:
+            decision.load(filename=path,results_only=results_only)
 
         for margin_node in self.margin_nodes:
             margin_node.load(filename=path)
