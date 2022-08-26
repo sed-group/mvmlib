@@ -1,6 +1,37 @@
+.. toctree::
+   :titlesonly:
+
 *********
 Changelog
 *********
+
+.. _release-0.5.6:
+
+0.5.6
+=====
+
+:Date: June 29, 2022
+
+Features
+--------
+* The method ``allocate_margins()`` allows the user to specify a margin allocation strategy such as ``min_excess`` or ``manual``
+* The ``Decision`` class now stores ``selection_values`` in order to allow the use to probe the frequency of each decision made
+
+Fixes
+-----
+* Fixed case when errors occur in ``MarginNode`` objects due to ``value_dist`` property, when attempting to generate histogram from samples
+* ``random()`` method of  ``Specification`` now calls the ``random()`` method of ``Distribution`` implicitly
+* ``MarginNetwork`` instances now store ``Specification`` instances when using the ``save`` and ``load`` methods
+* ``MarginNetwork`` instances now store ``deterioration_vector``and ``utilization_matrix``
+* Fixed the ``train_surrogate``, ``train_inverse``, and ``train_performance_surrogate`` methods to cap data at 100 * dim for ``KRG`` models
+
+Incompatible changes
+--------------------
+
+* ``forward()`` method of ``MarginNetwork`` now requires two optional arguments ``allocate_margin``, and ``strategy`` for all ``Decision`` instances
+* ``__call__()`` method of ``Decision`` now requires two arguments ``allocate_margin``, and ``strategy``
+* The method ``allocate_margins()`` must now be called before every ``forward()`` call of a ``MarginNetwork`` instance
+* It is recommended to use ``self.input_spec`` instead of those defined globally outside ``forward()`` and ``randomize()`` implementations
 
 .. _release-0.5.5:
 
