@@ -1,11 +1,11 @@
-name: tests
+name: tests_dev
 on:
   push:
-    branches: [ master,dev ]
+    branches: [ dev ]
     tags:
       - "v*"
   pull_request:
-    branches: [ master,dev ]
+    branches: [ dev ]
     tags:
       - "v*"
     
