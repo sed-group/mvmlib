@@ -1,3 +1,5 @@
+.. _examples:
+
 Cookbook and Examples
 =====================
 
