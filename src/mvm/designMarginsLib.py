@@ -273,40 +273,6 @@ class ScalarParam(Cache):
         vis = VisualizeDist(values=self.values)
         vis.view_cdf(xlabel=xlabel, folder=self.key, file=file, img_format=img_format)
 
-    def reset(self, n: int):
-        """
-        Resets accumulated random observations and value distributions
-
-        Parameters
-        -----------
-        n : int, optional
-            if provided deletes only the last n_samples, by default None
-        """
-
-        super().reset(n)
-        if self.datatype == 'continuous':
-            if n is not None and len(self.values) > 0:
-                assert n >= 0, 'n must be nonnegative %i' %n
-                self.value_dist = self.values
-            else:
-                self._value_dist = None
-
-    def __call__(self, value: Union[float, np.ndarray]):
-        """
-        Set the value of the parameter
-
-        Parameters
-        ----------
-        value : Union[float,np.ndarray]
-            values of the parameter.
-            The length of this vector equals the number of samples
-        """
-
-        super().__call__(value)
-
-        if self.datatype == 'continuous':
-            self.value_dist = self.values
-
     def __deepcopy__(self, memo): # memo is a dict of id's to copies
         """
         creates a deep independent copy of the class instance self.
