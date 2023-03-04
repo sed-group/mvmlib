@@ -5,6 +5,28 @@
 Changelog
 *********
 
+.. _release-0.5.7:
+
+0.5.7
+=====
+
+:Date: March 04, 2023
+
+Features
+--------
+* ``compute_absorption()`` method of  ``MarginNetwork`` now has an optional ``method`` argument for specifying different root finding algorithms
+* Margins can now be allocated using different margin allocation strategies for each margin node using the ``allocate_margins`` method
+* Added technical documentation explaining the theory of the Margin Value Method
+
+Fixes
+-----
+* Removed the update of ``Distribution`` histograms ``self.value_dist = self.values`` on every ``__call__`` of scalar parameters to improve performance
+
+Incompatible changes
+--------------------
+
+* ``forward()`` method of ``MarginNetwork`` now requires the argument ``strategy`` to be a list of strategies one for each ``Decision`` instance
+
 .. _release-0.5.6:
 
 0.5.6

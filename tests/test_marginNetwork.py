@@ -10,7 +10,16 @@ matplotlib.use('Agg')
 
 from mvm import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
     InputSpec, DesignParam, Behaviour, Decision, compute_cdf, nearest
+from mvm.designMarginsLib import _secant_method
 from mvm.utilities import check_folder
+
+# root finding functions
+@pytest.fixture
+def f():
+    def _f(x):
+        return x ** 2 - 2
+
+    return _f
 
 # Input set 1
 @pytest.fixture
@@ -421,7 +430,7 @@ def decision_man(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy=['min_excess',]*len(margin_nodes),**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -456,10 +465,10 @@ def decision_man(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy)
+            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy[0])
             b3(decision_1.selection_value)
 
-            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy)
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy[1])
             b4(decision_2.selection_value)
 
             # Compute excesses
@@ -491,7 +500,7 @@ def decision_man_no_surrogate(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',outputs=['dv','dv','dv'],**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy=['min_excess',]*len(margin_nodes),outputs=['dv',]*len(margin_nodes),**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -528,9 +537,9 @@ def decision_man_no_surrogate(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy, output=outputs[0])
-            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy, output=outputs[1])
-            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy, output=outputs[2])
+            decision_1(tt_vector[0], recalculate_decisions, allocate_margin, strategy[0], output=outputs[0])
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy[1], output=outputs[1])
+            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy[2], output=outputs[2])
 
             # Compute excesses
             e1(tt_vector[0],decision_1.decided_value)
@@ -580,7 +589,7 @@ def decision_man_inverse(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',outputs=['dv','dv','dv'],**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy=['min_excess',]*len(margin_nodes),outputs=['dv',]*len(margin_nodes),**kwargs):
             
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -627,13 +636,13 @@ def decision_man_inverse(design_parameters: List[DesignParam],
                 s1.original, # s1
                 s2.original # s2
                 ]
-            decision_5(tt_vector[0], recalculate_decisions, allocate_margin, strategy, 1, outputs[0], *args)
+            decision_5(tt_vector[0], recalculate_decisions, allocate_margin, strategy[0], 1, outputs[0], *args)
             b9.inv_call(decision_5.output_value,s1.value,s2.value)
 
-            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy, 1, outputs[1])
+            decision_2(tt_vector[1], recalculate_decisions, allocate_margin, strategy[1], 1, outputs[1])
             b10.inv_call(decision_2.output_value)
 
-            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy, 1, outputs[2])
+            decision_4(tt_vector[2], recalculate_decisions, allocate_margin, strategy[2], 1, outputs[2])
             b7(decision_4.output_value)
 
             b8(b9.inverted,b10.intermediate,b7.intermediate)
@@ -668,7 +677,7 @@ def multidecision_man(design_parameters: List[DesignParam],
         def randomize(self):
             pass
 
-        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy='min_excess',**kwargs):
+        def forward(self,recalculate_decisions=False,allocate_margin=False,strategy=['min_excess',]*len(margin_nodes),**kwargs):
 
             # retrieve design parameters
             d1 = self.design_params[0]
@@ -703,7 +712,7 @@ def multidecision_man(design_parameters: List[DesignParam],
 
             # Execute decision node and translation model
             tt_vector = [f*t for f,t in zip(tt_factor,b1.threshold)]
-            decision_1(tt_vector[:2], recalculate_decisions, allocate_margin, strategy)
+            decision_1(tt_vector[:2], recalculate_decisions, allocate_margin, strategy[0])
             b5(decision_1.selection_value)
 
             # Compute excesses
@@ -1004,6 +1013,23 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
         assert len(node.excess.values) == n_runs - 5
         assert len(node.decided_value.values) == n_runs - 5
         assert len(node.target.values) == n_runs - 5
+
+@pytest.mark.parametrize(
+    "f, a, b, expected",
+    [
+        (lambda x: x, -5, 5, [0,]),
+        (lambda x: x ** 2 - 4, -5, -1, [-2,2]),
+        (lambda x: x ** 3 - 7 * x, 1, 2, [-2.645751308189697,0,2.645751308189697]),
+    ],
+    ids=["secant_1", "secant_2", "secant_3"],
+)
+@pytest.mark.dependency()
+def test_secant_method(f, a, b, expected):
+    """
+    Test the secant method algorithm
+    """
+    result = _secant_method(f, a, b)
+    assert any([abs(result - e) < 1e-6 for e in expected])
 
 def test_deterministic_Absorption(deterministic_man: MarginNetwork,
     man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
