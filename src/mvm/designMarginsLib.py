@@ -23,7 +23,7 @@ from smt.applications import MOE
 
 from .DOELib import Design, scaling
 from .uncertaintyLib import Distribution, GaussianFunc, UniformFunc, VisualizeDist
-from .utilities import check_folder, parallel_sampling
+from .utilities import check_folder, parallel_sampling, clamp
 
 """Design margins library for computing buffer and excess"""
 
@@ -1513,9 +1513,7 @@ class Behaviour():
             ub = self.ub_outputs_inv
 
         estimate = sm.predict_values(inputs)
-        for col in range(estimate.shape[1]):
-            estimate[estimate[:,col] >= ub[col],col] = ub[col]
-            estimate[estimate[:,col] <= lb[col],col] = lb[col]
+        estimate = np.clip(estimate,lb,ub)
         return estimate
 
     def __copy__(self):
@@ -2198,6 +2196,7 @@ class MarginNetwork():
         self.spec_limit = np.empty(0)
         self.threshold_limit = np.empty((len(self.margin_nodes), 0))
         self.initial_decision = self.decision_vector
+        self.n_forwards = 0
 
         # Design parameter space
         universe_d = []
@@ -2493,16 +2492,27 @@ class MarginNetwork():
         self.forward(recalculate_decisions=True,num_threads=num_threads,outputs=['tt',]*len(self.decisions))  # do not randomize the man for deterioration
         self.reset(n=1)
 
-    def allocate_margins(self, strategy: str = 'min_excess'):
+    def allocate_margins(self, strategy: Union[str,List[str]] = 'min_excess'):
         """
         allocates MAN margins according to some strategy
 
         Parameters
         ----------
-        strategy : str, optional
-            Can be of value 'min_exces', 'manual'. If 'manual', the self.decision_vector must be defined earlier, 
+        strategy : Union[str,List[str]], optional
+            Can be of value 'min_excess', 'manual' or a list of strings corresponding to each margin node. 
+            If 'manual', the self.decision_vector must be defined earlier.
+            If a single string is provided all margin nodes are allocated identically,
             by default 'min_excess'
         """
+        assert type(strategy) in [list,str], 'argument strategy must be a string or a list of strings'
+        if type(strategy) == list:
+            assert len(strategy) == len(self.margin_nodes), \
+                'list of strings must have the same number of margin nodes, %i provided' %len(strategy)
+            assert all([s in ['min_excess','manual'] for s in strategy]), 'only "min_excess","manual" are allowed'
+        elif type(strategy) == str:
+            assert strategy in ['min_excess','manual'], 'only "min_excess","manual" are allowed'
+            strategy = [strategy,] * len(self.margin_nodes)
+
         self.forward(allocate_margin=True, strategy=strategy)  # do not randomize the man for deterioration
         self.initial_decision = self.decision_vector
         self.reset(n=1)
@@ -2780,7 +2790,7 @@ class MarginNetwork():
 
         self.impact_matrix(impact)  # Store impact matrix
 
-    def compute_absorption(self, num_threads: int = 1, recalculate: bool = True, **kwargs):
+    def compute_absorption(self, num_threads: int = 1, recalculate: bool = True, method: str = "fixed", max_iter: int = 100, **kwargs):
         """
         Computes the change absorption capability (CAC) matrix of the MVM that has a size
         [n_margins, n_input_specs] and appends its absorption matrix if called
@@ -2793,47 +2803,93 @@ class MarginNetwork():
             number of threads to parallelize sampling process, by default 1
         recalculate : bool, optional
             Does not recompute the specification limits or the initial decision vector
+        method : bool, optional
+            root finding algorithm to use, possible values ['fixed','secant'], by default 'secant'
+        max_iter : int, optional
+            maximum number of iterations to use during root finding, by default 100
         """
 
         # Deterioration computation
+        
+        assert method in ["fixed","secant"], "method %s is invalid, possible values are 'secant', 'secant'" %(method)
+        def evaluate_man(a):
+            spec.value = a
+            # recalculate all the decisions
+            self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
+            self.n_forwards += 1
+
+        def residual_fixed(a):
+            evaluate_man(a)
+            return min(self.excess_vector)
+
+        def residual_root(a,n):
+            evaluate_man(a)
+            return self.excess_vector[n]
 
         if recalculate:
             # Compute target threshold at the spec limit for each margin node
             self.spec_limit = np.empty(0)
             self.threshold_limit = np.empty((len(self.margin_nodes), 0))
 
+            # get nominal values
+            self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
+            self.n_forwards += 1
+            nomina_tt_vector = self.tt_vector
+
             for spec in self.input_specs:
 
-                n_inc = 0
-                delta_e = 1.0
-
-                # get nominal values
-                self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
-                n_inc += 1
                 spec_value = spec.value
-                nomina_tt_vector = self.tt_vector
+
+                if method == "fixed":
+                    # iterate until limit is reached
+                    root_value = _fixed_step_method(residual_fixed,spec_value,spec.inc,delta_max=1e3,max_iter=max_iter)
+                    if root_value is None:
+                        spec_value = min(spec.universe) if spec.inc < 0 else max(spec.universe)
+                    else:
+                        spec_value = root_value
+                    evaluate_man(spec_value)
+                    tt_vector = self.tt_vector
+
+                elif method == "secant":
+
+                    root_found = False
+                    for node_i in range(len(self.margin_nodes)):
+                        root_value = _secant_method(lambda a : residual_root(a,node_i), 
+                                                    a=min(spec.universe), b=max(spec.universe),
+                                                    lb=min(spec.universe), ub=max(spec.universe),
+                                                    max_iter=max_iter)
+                        if root_value is None:
+                            continue
+                        else:
+                            evaluate_man(root_value)
+                            relative_excess = np.abs(np.min(self.excess_vector/nomina_tt_vector))
+                            if relative_excess <= 1e-6:
+                                root_found = True
+                                break
+                            else:
+                                root_found = False
+                        
+                    if not root_found:
+                        # iterate until limit is reached
+                        root_value = _fixed_step_method(residual_fixed,spec_value,spec.inc,delta_max=1e3,max_iter=max_iter)
+                        if root_value is None:
+                            spec_value = min(spec.universe) if spec.inc < 0 else max(spec.universe)
+                        else:
+                            spec_value = root_value
+                    else:
+                        spec_value = root_value
+                        
+                evaluate_man(spec_value)
                 tt_vector = self.tt_vector
 
-                while all(self.excess_vector >= 0) and delta_e <= 1e3 and n_inc <= 1e4:
-                    excess_last_inc = self.excess_vector
-
-                    spec.value += spec.inc
-                    # recalculate all the decisions
-                    self.forward(recalculate_decisions=False,outputs=['tt',]*len(self.decisions),num_threads=num_threads)  # do not randomize the man for deterioration
-                    n_inc += 1
-
-                    delta_e = np.min(self.excess_vector - excess_last_inc)
-
-                    if all(self.excess_vector >= 0):
-                        spec_value = spec.value
-                        tt_vector = self.tt_vector
-
+                # retrieve final state
                 self.spec_limit = np.append(self.spec_limit, spec_value)
                 threshold_limit_vector = np.reshape(tt_vector, (len(self.margin_nodes), -1))
                 self.threshold_limit = np.hstack((self.threshold_limit, threshold_limit_vector))
                 
                 self.reset_inputs()
-                self.reset(n_inc)
+                self.reset(self.n_forwards)
+                self.n_forwards = 0
                 self.decision_vector = self.initial_decision
 
         deterioration = np.max((self.spec_signs * (self.spec_limit - self.nominal_spec_vector) / np.abs(self.nominal_spec_vector),
@@ -3258,9 +3314,7 @@ class MarginNetwork():
             array of estimated performance parameters
         """
         perf_estimate = self.sm_perf.predict_values(inputs)
-        for col in range(perf_estimate.shape[1]):
-            perf_estimate[perf_estimate[:,col] >= self.ub_outputs[col],col] = self.ub_outputs[col]
-            perf_estimate[perf_estimate[:,col] <= self.lb_outputs[col],col] = self.lb_outputs[col]
+        perf_estimate = np.clip(perf_estimate,self.lb_outputs,self.ub_outputs)
         return perf_estimate
 
     def __copy__(self):
@@ -3478,3 +3532,98 @@ def _sample_behaviour(*args, variable_dict=None, **kwargs) -> List[Union[int,flo
         behviour(*args_b)
      
     return behviour._intermediate, behviour._performance, behviour._decided_value, behviour._threshold
+
+def _secant_method(f: callable, a: float, b: float, lb: float = -np.inf, ub: float = np.inf, 
+                   eps: float = 1e-12, tol: float=1e-6, max_iter: int=100) -> float:
+    """
+    Finds a root of the function f using the secant method.
+
+    Parameters
+    ----------
+    f : callable
+        The function to find the root of
+    a : float
+        The first initial guess
+    b : float
+        The second initial guess
+    lb : float
+        The lower bounds for the search
+    ub : float
+        The upper bounds for the search
+    eps : float, optional
+        The convergence tolerance. The algorithm stops when the relative
+        error between two successive iterates is less than eps. Default is 1e-9
+    tol : float, optional
+        The desired tolerance for the root
+    max_iter : int, optional
+        The maximum number of iterations
+
+    Returns
+    -------
+    float or None
+        The estimated root of the function f, or None if the maximum number of iterations is reached
+    """
+
+    # Initialize variables
+    iter_count = 0
+
+    if abs(f(b) - f(a)) <= tol:
+        a += eps
+
+    # Loop until the tolerance is achieved or maximum iterations are reached
+    while iter_count < max_iter and abs(a) <= 1e40 and abs(b) <= 1e40:
+        c = clamp(b - (f(b) * (b - a + eps)) / (f(b) - f(a) + eps),lb,ub)
+        if abs(f(c)) < tol:
+            return c
+        a = clamp(b,lb,ub)
+        b = clamp(c,lb,ub)
+        iter_count += 1
+
+    # If the maximum number of iterations is reached, return None
+    return None
+
+def _fixed_step_method(f: callable, a: float, alpha: float, delta_max: float = 1e3, max_iter: int=1e4) -> float:
+    """
+    Finds a root of the function f using the secant method.
+
+    Parameters
+    ----------
+    f : callable
+        The function to find the root of
+    a : float
+        The first initial guess
+    alpha : float
+        The step size parameter
+    delta_max : float, optional
+        The maximum allowable change in the function f
+    max_iter : int, optional
+        The maximum number of iterations
+
+    Returns
+    -------
+    float or None
+        The estimated root of the function f, or None if the maximum number of iterations is reached
+    """
+
+    # Initialize variables
+    iter_count = 0
+
+    # Loop until the tolerance is achieved or maximum iterations are reached
+    delta = 0.0
+    fold = f(a)
+    a_final = a
+    while iter_count <= max_iter and delta <= delta_max:
+        a += alpha
+        fnew = f(a)
+        delta = abs(fnew - fold)
+        fold = fnew
+        iter_count += 1
+
+        if fold >= 0:
+            a_final = a
+
+        if fold < 0:
+            return a_final
+
+    # If the maximum number of iterations is reached, return None
+    return None

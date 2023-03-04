@@ -71,7 +71,7 @@ Documentation contents
 .. Outlines the library's application programming interface (:term:`API`) and history of revisions.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Code Documentation
 
    api

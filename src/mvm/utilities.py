@@ -99,6 +99,8 @@ def parallel_sampling(func:Callable,
 
     return results
 
+def clamp(n, smallest, largest): return max(smallest, min(n, largest))
+
 @contextmanager
 def suppress_stdout():
     with open(os.devnull, "w") as devnull:
