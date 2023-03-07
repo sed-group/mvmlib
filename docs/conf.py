@@ -21,7 +21,7 @@ copyright = '2021, Khalil Al Handawi'
 author = 'Khalil Al Handawi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5.6'
+release = '0.5.7'
 
 # -- General configuration ---------------------------------------------------
 
@@ -34,7 +34,12 @@ extensions = [
     'sphinx.ext.autosummary',
     'nbsphinx',
     'sphinx.ext.githubpages',
+    'sphinxcontrib.bibtex',
+    'sphinxcontrib.pseudocode',
 ]
+
+# bibliography
+bibtex_bibfiles = ['refs.bib']
 
 autodoc_default_flags = ['members', 'inherited-members']
 
@@ -64,4 +69,8 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ['_static']
+html_css_files = ['css/custom.css',]
+
+# for algroithmic display (this is necessary)
+numfig = True
