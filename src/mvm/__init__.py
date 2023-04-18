@@ -8,7 +8,7 @@ uncertainty modelling
 
 """
 
-__version__ = '0.5.7'
+__version__ = '0.5.8'
 __all__ = ['TriangularFunc', 'FuzzySet', 'FuzzyRule', 'FuzzySystem', 'GaussianFunc', 'UniformFunc', 'Distribution',
            'VisualizeDist', 'compute_cdf', 'Design', 'MarginNode', 'InputSpec', 'FixedParam', 'DesignParam',
            'Behaviour', 'MatrixParam', 'ScalarParam', 'VectorParam', 'Performance', 'MarginNetwork', 'Decision', 'nearest']

@@ -551,10 +551,10 @@ class GaussianFunc(Distribution):
         """
 
         if (self.ndim % 2) == 0:
-            v_d = (np.pi ** (self.ndim / 2)) / np.math.factorial(self.ndim / 2)  # if self.ndim is even
+            v_d = (np.pi ** (self.ndim / 2)) / np.math.factorial(int(self.ndim / 2))  # if self.ndim is even
         else:
             v_d = (2 ** self.ndim) * (np.pi ** ((self.ndim - 1) / 2)) / \
-                  (np.math.factorial((self.ndim - 1) / 2) / np.math.factorial(self.ndim))  # if self.ndim is odd
+                  (np.math.factorial(int((self.ndim - 1) / 2)) / np.math.factorial(self.ndim))  # if self.ndim is odd
 
         return v_d * np.power(np.linalg.det(self.Sigma), 0.5) * (r ** self.ndim)
 

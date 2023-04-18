@@ -5,6 +5,17 @@
 Changelog
 *********
 
+.. _release-0.5.8:
+
+0.5.8
+=====
+
+:Date: April 18, 2023
+
+Fixes
+-----
+* Fix the ``compute_volume`` method to avoid float object TypeError on call to ``math.factorial``
+
 .. _release-0.5.7:
 
 0.5.7
