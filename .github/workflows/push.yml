@@ -1,0 +1,130 @@
+
+name: push changes
+on: push
+
+env:
+  documentation-source-directory: ./docs
+  documentation-build-directory: ./docs/build
+  deploy-python-version: '3.11'
+
+jobs:
+  tests:
+    name: tests_master
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+    - name: setup python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements_dev.txt
+        python -m pip install -r requirements.txt
+        python -m pip install -e .
+
+    - name: Build flit package and install dependencies
+      run: |
+        # install package using flit locally to run documentation notebooks
+        flit build
+        flit install --deps=develop --symlink
+
+    - name: Run unit tests
+      run: python -m pytest --import-mode=append tests/
+
+  docs:
+    name: documentation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10', '3.11' ]
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+    - name: setup python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: setup pandoc environment
+      uses: r-lib/actions/setup-pandoc@v1
+      with:
+        pandoc-version: '2.3' # The pandoc version to download (if necessary) and use.
+
+    - name: install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements_dev.txt
+
+    - name: Build flit package and install dependencies
+      run: |
+        # install package using flit locally to run documentation notebooks
+        flit build
+        flit install --deps=develop --symlink
+
+    - name: Build documentation
+      run: |
+        sphinx-build ${{env.documentation-source-directory}} ${{env.documentation-build-directory}}
+
+    - name: Cache built documentation
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-docs
+      with:
+        path: ${{env.documentation-build-directory}} # documentation path
+        key: ${{ runner.os }}-docs-${{ env.cache-name }}-python-${{ matrix.python-version }}
+
+    - name: Archive built documentation
+      uses: actions/upload-artifact@v3
+      if: github.ref != 'refs/heads/master' # only on other branches
+      with:
+        name: documentation html (${{ matrix.python-version }})
+        path: ${{env.documentation-build-directory}}
+        retention-days: 1
+
+  deploy_docs:
+    name: publish_docs
+    needs: [docs,tests]
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@master
+      with:
+        fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+    - name: Cache built documentation
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-docs
+      with:
+        path: ${{env.documentation-build-directory}} # built documentation path
+        key: ${{ runner.os }}-docs-${{ env.cache-name }}-python-${{env.deploy-python-version}}
+    
+    - name: Deploy documentation to gh pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/master' # only publish docs if you are on master
+      with:
+        publish_branch: gh-pages
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ${{env.documentation-build-directory}}
+        force_orphan: true
