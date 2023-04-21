@@ -12,7 +12,7 @@ on:
 
 jobs:
   tests:
-    name: tests
+    name: tests_master
     runs-on: ubuntu-latest
     steps:
 
@@ -24,14 +24,15 @@ jobs:
     - name: setup python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.11'
         cache: 'pip'
 
     - name: install dependencies
       run: |
-        pip install -r requirements_dev.txt
-        pip install -r requirements.txt
-        pip install -e .
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements_dev.txt
+        python -m pip install -r requirements.txt
+        python -m pip install -e .
 
     - name: Build flit package and install dependencies
       run: |
@@ -56,18 +57,18 @@ jobs:
     - name: setup python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.11'
         cache: 'pip'
 
     - name: setup pandoc environment
       uses: r-lib/actions/setup-pandoc@v1
       with:
-        pandoc-version: '2.0.1' # The pandoc version to download (if necessary) and use.
+        pandoc-version: '2.3' # The pandoc version to download (if necessary) and use.
 
     - name: install dependencies
       run: |
-        pip install -r requirements_dev.txt
-        echo "# Test" | pandoc -t html
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements_dev.txt
 
     - name: Build flit package and install dependencies
       run: |

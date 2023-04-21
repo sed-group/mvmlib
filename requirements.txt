@@ -1,4 +1,4 @@
-matplotlib==3.4.3
+matplotlib==3.7.0
 pyDOE==0.3.8
 scikit-fuzzy==0.4.2
 ipykernel==6.4.1
