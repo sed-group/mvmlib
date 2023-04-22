@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identification of design margins in the design of a strut &mdash; mvmlib 0.5.8 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using mvmlib to define univariate and multivariate probability density functions" href="PDF_examples.html" />
+    <link rel="prev" title="Defining fuzzy logic system for evaluating TRS performance" href="TRS_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Cookbook and Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="TRS_example.html">Defining fuzzy logic system for evaluating TRS performance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Identification of design margins in the design of a strut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PDF_examples.html">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Cookbook and Examples</a></li>
+      <li class="breadcrumb-item active">Identification of design margins in the design of a strut</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/strut_example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="Identification-of-design-margins-in-the-design-of-a-strut">
+<h1>Identification of design margins in the design of a strut<a class="headerlink" href="#Identification-of-design-margins-in-the-design-of-a-strut" title="Permalink to this heading"></a></h1>
+<section id="Defining-the-components-of-the-margin-analysis-network">
+<h2>Defining the components of the margin analysis network<a class="headerlink" href="#Defining-the-components-of-the-margin-analysis-network" title="Permalink to this heading"></a></h2>
+<p>The components of the margin analysis network are:</p>
+<ul class="simple">
+<li><p>Input parameters</p>
+<ul>
+<li><p>Design parameters</p></li>
+<li><p>Fixed parameters</p></li>
+<li><p>Input specifications</p></li>
+</ul>
+</li>
+<li><p>Intermediate parameters</p></li>
+<li><p>Decision nodes</p></li>
+<li><p>Output parameters</p>
+<ul>
+<li><p>Performance parameters</p></li>
+<li><p>Target thresholds</p></li>
+<li><p>Decided values</p></li>
+</ul>
+</li>
+</ul>
+<section id="Design-parameters">
+<h3>Design parameters<a class="headerlink" href="#Design-parameters" title="Permalink to this heading"></a></h3>
+<figure><center><p><p><img alt="be433caa075b40c2bb43e0ff6642e3de" class="no-scaled-link" src="../_images/strut_overview.png" style="width: 950pt;" /></p>
+<figcaption><p>Fig.1 Schematic of strut design example</p>
+</figcaption></figure><p>This example shows how to evaluate the design margins of a strut which is a part of the turbine rear frame of an aeroengine. In this example, we consider three design parameters of the strut the lean angle <span class="math notranslate nohighlight">\(\theta\)</span>, the vane width <span class="math notranslate nohighlight">\(w\)</span>, and the vane height <span class="math notranslate nohighlight">\(h\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import DesignParam
+
+# define design parameters
+d1 = DesignParam(100.0, &#39;D1&#39;, universe=(70.0, 130.0), variable_type=&#39;FLOAT&#39;, description=&#39;vane length&#39;, symbol=&#39;w&#39;)
+d2 = DesignParam(15.0, &#39;D2&#39;, universe=(5.0, 20.0), variable_type=&#39;FLOAT&#39;, description=&#39;vane height&#39;, symbol=&#39;h&#39;)
+d3 = DesignParam(10.0, &#39;D3&#39;, universe=(0.0, 30.0), variable_type=&#39;FLOAT&#39;, description=&#39;lean angle&#39;, symbol=&#39;theta&#39;)
+design_params = [d1,d2,d3]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Fixed-parameters">
+<h3>Fixed parameters<a class="headerlink" href="#Fixed-parameters" title="Permalink to this heading"></a></h3>
+<p>We also specify some constants for this example, such as elastic modulus <span class="math notranslate nohighlight">\(E\)</span>, coefficient of thermal expansion <span class="math notranslate nohighlight">\(\alpha\)</span>, hub and shroud radii, <span class="math notranslate nohighlight">\(r_1\)</span> and <span class="math notranslate nohighlight">\(r_2\)</span>, respectively, and ambient temperature <span class="math notranslate nohighlight">\(T_\mathrm{sink}\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import FixedParam
+
+# define fixed parameters
+i1 = FixedParam(7.17E-06, &#39;I1&#39;, description=&#39;Coefficient of thermal expansion&#39;, symbol=&#39;alpha&#39;)
+i2 = FixedParam(156.3E3, &#39;I2&#39;, description=&#39;Youngs modulus&#39;, symbol=&#39;E&#39;)
+i3 = FixedParam(346.5, &#39;I3&#39;, description=&#39;Radius of the hub&#39;, symbol=&#39;r1&#39;)
+i4 = FixedParam(536.5, &#39;I4&#39;, description=&#39;Radius of the shroud&#39;, symbol=&#39;r2&#39;)
+i5 = FixedParam(25.0, &#39;I6&#39;, description=&#39;ambient temperature&#39;, symbol=&#39;T_sink&#39;)
+
+fixed_params = [i1, i2, i3, i4, i5]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Input-specifications">
+<h3>Input specifications<a class="headerlink" href="#Input-specifications" title="Permalink to this heading"></a></h3>
+<p>The strut experiences a compressive force <span class="math notranslate nohighlight">\(F\)</span> and bending moment <span class="math notranslate nohighlight">\(M\)</span> as a result of non-uniform expansion of the turbine rear frame during operation. This is attributed to two temperatures <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> that occur at the shroud and hub surfaces, respectively as shown below:</p>
+<figure><center><p><p><img alt="7a7063930c8641a0a055c34140306d10" class="no-scaled-link" src="../_images/simplified_strut_model.png" style="width: 250pt;" /></p>
+<figcaption><p>Fig.2 Temperature loads</p>
+</figcaption></figure><p>The temperatures <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> are defined as input specifications. The argument <code class="docutils literal notranslate"><span class="pre">inc</span></code> specifies the expected direction of change of these temperatures during operation and will be used later on to compute the ability of a design margin to absorb change of said temperatures</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(T_1\)</span> is expected to decrease by 1% of the nominal value</p></li>
+<li><p><span class="math notranslate nohighlight">\(T_2\)</span> is expected to increase by 1% of the nominal value</p></li>
+</ul>
+<p>If the absolute change is to be specified, then change the argument <code class="docutils literal notranslate"><span class="pre">inc_type</span></code> to <code class="docutils literal notranslate"><span class="pre">'abs'</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import InputSpec
+
+# define input specifications
+s1 = InputSpec(450, &#39;S1&#39;, universe=[325, 550], variable_type=&#39;FLOAT&#39;, description=&#39;nacelle temperature&#39;,
+               symbol=&#39;T1&#39;, inc=-1e-0, inc_type=&#39;rel&#39;)
+s2 = InputSpec(425, &#39;S2&#39;, universe=[325, 550], variable_type=&#39;FLOAT&#39;, description=&#39;gas surface temperature&#39;,
+               symbol=&#39;T2&#39;, inc=+1e-0, inc_type=&#39;rel&#39;)
+input_specs = [s1, s2]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Performance-parameters">
+<h3>Performance parameters<a class="headerlink" href="#Performance-parameters" title="Permalink to this heading"></a></h3>
+<p>we then calculate weight and cost as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}W = \rho whL\\
+\mathrm{cost} = c\rho whL,\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(c\)</span> is the raw material cost per unit weight. and <span class="math notranslate nohighlight">\(L\)</span> is the length of the strut given by <span class="math notranslate nohighlight">\(L = -r_1\cos{\theta} + \sqrt{{r_2}^2 - {r_1}^2\sin^2{\theta}}\)</span></p>
+<p><span class="math notranslate nohighlight">\(W\)</span> and <span class="math notranslate nohighlight">\(\mathrm{cost}\)</span> are <em>performance parameters</em>. Their calculation is given by a <em>behaviour</em> model <code class="docutils literal notranslate"><span class="pre">b1</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import Behaviour
+import numpy as np
+
+# this is the weight and cost model
+class B1(Behaviour):
+    def __call__(self, rho, w, h, theta, r1, r2, cost_coeff):
+        L = -r1 * np.cos(np.deg2rad(theta)) + np.sqrt(r2 ** 2 - (r1 * np.sin(np.deg2rad(theta))) ** 2)
+        weight = rho * w * h * L
+        cost = weight * cost_coeff
+        self.performance = [weight, cost]
+
+b1 = B1(n_i=0, n_p=2, n_dv=0, n_tt=0, key=&#39;B1&#39;)
+</pre></div>
+</div>
+</div>
+<p>We specify whether increasing this parameter is beneficial or detrimental to the design’s performance using the <code class="docutils literal notranslate"><span class="pre">direction</span></code> argument</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import Performance
+# Define performances
+p1 = Performance(&#39;P1&#39;, direction=&#39;less_is_better&#39;)
+p2 = Performance(&#39;P2&#39;, direction=&#39;less_is_better&#39;)
+performances = [p1, p2]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Target-thresholds">
+<h3>Target thresholds<a class="headerlink" href="#Target-thresholds" title="Permalink to this heading"></a></h3>
+<p>The strut must support the forces shown perviously on Figure 2:</p>
+<ul class="simple">
+<li><p>A compressive stress <span class="math notranslate nohighlight">\(\sigma_a\)</span> due to the force <span class="math notranslate nohighlight">\(F\)</span></p></li>
+<li><p>A bending stress <span class="math notranslate nohighlight">\(\sigma_m\)</span> due to the bending moment <span class="math notranslate nohighlight">\(M\)</span></p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\begin{split}\sigma_a = \dfrac{E\alpha}{L}\left(T_2r_2 - T_1r_1 - T_\text{sink}(r_2-r_1)\right)\cos{\theta}\\
+\sigma_m =\dfrac{3}{2}\dfrac{Eh\alpha}{L^2}\left(T_2r_2 - T_1r_1 - T_\text{sink}(r_2-r_1)\right)\sin{\theta}\end{split}\]</div>
+<p>The maximum stress value becomes the <em>target threshold</em>.</p>
+<div class="math notranslate nohighlight">
+\[\sigma_\mathrm{max} = \max{\left(\sigma_a,\sigma_m\right)}\]</div>
+<p>This is defined by <em>behaviour</em> model <code class="docutils literal notranslate"><span class="pre">b2</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># this is the stress model
+class B2(Behaviour):
+    def __call__(self, T1, T2, h, theta, alpha, E, r1, r2, T_sink):
+        L = -r1 * np.cos(np.deg2rad(theta)) + np.sqrt(r2 ** 2 - (r1 * np.sin(np.deg2rad(theta))) ** 2)
+        sigma_a = (E * alpha) * ((T2 * r2) - (T1 * r1) - (T_sink * (r2 - r1))) * np.cos(np.deg2rad(theta)) / L
+        sigma_m = (3 / 2) * ((E * h) / (L ** 2)) * (
+                alpha * ((T2 * r2) - (T1 * r1) - (T_sink * (r2 - r1))) * np.sin(np.deg2rad(theta)))
+        self.threshold = max([sigma_a, sigma_m])
+
+b2 = B2(n_i=0, n_p=0, n_dv=0, n_tt=1, key=&#39;B2&#39;)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Decided-values-(from-Decision-nodes)">
+<h3>Decided values (from Decision nodes)<a class="headerlink" href="#Decided-values-(from-Decision-nodes)" title="Permalink to this heading"></a></h3>
+<p>After calculating the target thresholds (what the design needs to do) we have to make decisions regarding certain ‘off-the-shelf’ components. The decided value in this case is given by the yield stress of the selected material. We define a decision node using the <code class="docutils literal notranslate"><span class="pre">Design</span></code> class and a corresponding <code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> model to translate the selected material to a decided value. The material model also supplies two additional intermediate parameters that are required by the cost model in <code class="docutils literal notranslate"><span class="pre">b1</span></code>. They
+are the density <span class="math notranslate nohighlight">\(\rho\)</span> and the cost density <span class="math notranslate nohighlight">\(c\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import Decision
+
+class B3(Behaviour):
+    def __call__(self, material):
+        material_dict = {
+            &#39;dummy&#39;   : {
+                &#39;sigma_y&#39; : 92, # MPa
+                &#39;rho&#39; : 11.95e-06, # kg/mm3
+                &#39;cost&#39; : 0.1 # USD/kg
+            },
+            &#39;Steel&#39;   : {
+                &#39;sigma_y&#39; : 250, # MPa
+                &#39;rho&#39; : 10.34e-06, # kg/mm3
+                &#39;cost&#39; : 0.09478261, # USD/kg
+                },
+            &#39;Inconel&#39;  : {
+                &#39;sigma_y&#39; : 460,  # MPa
+                &#39;rho&#39; : 8.19e-06,  # kg/mm3
+                &#39;cost&#39; : 0.46,  # USD/kg
+                },
+            &#39;Titanium&#39;  : {
+                &#39;sigma_y&#39; : 828, # MPa
+                &#39;rho&#39; : 4.43e-06, # kg/mm3
+                &#39;cost&#39; : 1.10 # USD/kg
+                },
+        }
+        chosen_mat = material_dict[material]
+
+        self.intermediate = [chosen_mat[&#39;rho&#39;], chosen_mat[&#39;cost&#39;]]
+        self.decided_value = chosen_mat[&#39;sigma_y&#39;]
+
+        return self.decided_value
+
+b3 = B3(n_i=2, n_p=0, n_dv=1, n_tt=0, key=&#39;B3&#39;)
+
+# Define decision nodes and a model to convert to decided values
+decision_1 = Decision(universe=[&#39;Steel&#39;, &#39;Inconel&#39;, &#39;Titanium&#39;], variable_type=&#39;ENUM&#39;, key=&#39;decision_1&#39;,
+                      direction=&#39;must_not_exceed&#39;, decided_value_model=b3, description=&#39;The type of material&#39;)
+
+decisions = [decision_1, ]
+</pre></div>
+</div>
+</div>
+<p>We concatenate all behaviour models into a list</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>behaviours = [b1,b2,b3]
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Excess-margins">
+<h3>Excess margins<a class="headerlink" href="#Excess-margins" title="Permalink to this heading"></a></h3>
+<p>The design must support the following loads</p>
+<ul class="simple">
+<li><p>A maximum stress <strong>less than</strong> the yield stress <span class="math notranslate nohighlight">\(\sigma_y\)</span></p></li>
+</ul>
+<p>We have one design margin given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}e_1 = \sigma_y - \sigma_\mathrm{max}\\\end{split}\]</div>
+<p>It is of the <code class="docutils literal notranslate"><span class="pre">must_not_exceed</span></code> type</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import MarginNode
+
+# Define margin nodes
+e1 = MarginNode(&#39;E1&#39;, direction=&#39;must_not_exceed&#39;)
+margin_nodes = [e1,]
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Calculation-of-the-value-of-excess-margins-in-the-strut">
+<h2>Calculation of the value of excess margins in the strut<a class="headerlink" href="#Calculation-of-the-value-of-excess-margins-in-the-strut" title="Permalink to this heading"></a></h2>
+<section id="Constructing-the-margin-analysis-network">
+<h3>Constructing the margin analysis network<a class="headerlink" href="#Constructing-the-margin-analysis-network" title="Permalink to this heading"></a></h3>
+<p>We combine all the perviously defined parameters and behaviour models inside a <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> object. The <code class="docutils literal notranslate"><span class="pre">forward</span></code> method represents a single calculation pass of the margin analysis network</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">randomize</span></code> method is optional and is used to randomly seed any probabilistic input specifications or behaviour models (see example in next section). The <code class="docutils literal notranslate"><span class="pre">MAN</span></code> object below mimics the MAN shown in the figure below:</p>
+<figure><center><p><p><img alt="4e7a96210462447da7099d8814dcf84d" class="no-scaled-link" src="../_images/MAN.png" style="width: 950pt;" /></p>
+<figcaption><p>Fig.3 Margin analysis network of the strut example</p>
+</figcaption></figure><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import MarginNetwork
+
+# Define the MAN
+class MAN(MarginNetwork):
+
+    def randomize(self):
+        pass
+
+    def forward(self, num_threads=1, recalculate_decisions=False, allocate_margin=False, strategy=[&#39;min_excess&#39;,], outputs=[&#39;dv&#39;,]):
+        # retrieve MAN components
+        w = self.design_params[0].value  # w
+        h = self.design_params[1].value  # h
+        theta = self.design_params[2].value  # theta
+
+        T1 = self.input_specs[0].value  # T1 (could be stochastic)
+        T2 = self.input_specs[1].value  # T2 (could be stochastic)
+
+        alpha = self.fixed_params[0].value  # alpha
+        E = self.fixed_params[1].value  # E
+        r1 = self.fixed_params[2].value  # r1
+        r2 = self.fixed_params[3].value  # r2
+        T_sink = self.fixed_params[4].value  # T_sink
+
+        b1 = self.behaviours[0]  # calculates weight and cost
+        b2 = self.behaviours[1]  # calculates maximum of axial and bending stresses
+        b3 = self.behaviours[2]  # calculates material properties
+
+        decision_1 = self.decisions[0]  # select a material based on maximum bending or axial stress
+
+        e1 = self.margin_nodes[0]  # margin against axial or bending failure (sigma_max,sigma_y)
+
+        p1 = self.performances[0]  # weight
+        p2 = self.performances[1]  # cost
+
+        # Execute behaviour models
+
+        # T1, T2, h, theta, alpha, E, r1, r2, T_sink
+        b2(T1, T2, h, theta, alpha, E, r1, r2, T_sink)
+        sigma_max = b2.threshold # the applied load as the target threshold
+
+        # Execute decision node and translation model
+        decision_1(sigma_max, recalculate_decisions, allocate_margin, strategy[0], num_threads, outputs[0])
+        sigma_prime = decision_1.output_value # this either the target threshold (sigma_max) or the decided value (sigma_y)
+        sigma_y = decision_1.decided_value # the yield stress of the chosen material
+
+        # invert decided value: to get rho, and cost_coeff
+        b3.inv_call(sigma_prime)
+        rho = b3.intermediate[0]
+        cost_coeff = b3.intermediate[1]
+
+        # Compute excesses
+        e1(sigma_max, sigma_y)
+
+        # Compute performances
+        # rho, w, h, theta, r1, r2, cost_coeff
+        b1(rho, w, h, theta, r1, r2, cost_coeff)
+        p1(b1.performance[0])
+        p2(b1.performance[1])
+
+
+man = MAN(design_params, input_specs, fixed_params,
+          behaviours, decisions, margin_nodes, performances, &#39;MAN_1&#39;)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Calculating-the-impact-of-excess-margin-on-performance">
+<h3>Calculating the impact of excess margin on performance<a class="headerlink" href="#Calculating-the-impact-of-excess-margin-on-performance" title="Permalink to this heading"></a></h3>
+<p>To calculate the level of overdesign w.r.t margin node <span class="math notranslate nohighlight">\(m\)</span> and performance parameter <span class="math notranslate nohighlight">\(j\)</span> given by</p>
+<div class="math notranslate nohighlight">
+\[\text{impact}_{mj} = \dfrac{p_j - p^\text{threshold}_{mj}}{p^\text{threshold}_{mj}}\]</div>
+<p>we need to calculate the threshold performance <span class="math notranslate nohighlight">\(p^\text{threshold}_{mj}\)</span>, i.e., the weight of a hypothetical design where margin node <span class="math notranslate nohighlight">\(e_m = 0\)</span>, To do so, we construct a surrogate model associated with each behaviour model that is connected to a decision node to allow interpolation of this hypothetical design. In this example it is <code class="docutils literal notranslate"><span class="pre">b3</span></code> associated with <code class="docutils literal notranslate"><span class="pre">decision_1</span></code>.</p>
+<p>This allows the MAN’s performance parameters <span class="math notranslate nohighlight">\(\mathbf{p}\)</span> to be expressed as functions in terms of the margin values <span class="math notranslate nohighlight">\(\mathbf{e}\)</span> and input specifications <span class="math notranslate nohighlight">\(\mathbf{s}\)</span></p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathbf{p}} = f(\mathbf{e},\mathbf{s})\]</div>
+<p>we substitute <span class="math notranslate nohighlight">\(e_m = 0\)</span> while holding all the other components at their nominal values.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># train material surrogate
+variable_dict = {
+    &#39;material&#39; : {&#39;type&#39; : &#39;ENUM&#39;, &#39;limits&#39; : decision_1.universe},
+}
+b3.train_surrogate(variable_dict,n_samples=50,sm_type=&#39;KRG&#39;)
+b3.train_inverse(sm_type=&#39;LS&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Warning: multiple x input features have the same value (at least same row twice).
+___________________________________________________________________________
+
+                                    LS
+___________________________________________________________________________
+
+ Problem size
+
+      # training points.        : 50
+
+___________________________________________________________________________
+
+ Training
+
+   Training ...
+   Training - done. Time (sec):  0.0020039
+</pre></div></div>
+</div>
+<p>We now calculate the impact using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> using the Kriging surrogate model</p>
+<div class="math notranslate nohighlight">
+\[\text{impact}_{mj} = \dfrac{p_j - \hat{p}^\text{threshold}_{mj}}{\hat{p}^\text{threshold}_{mj}}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>man.reset()
+man.init_decisions()
+man.allocate_margins()
+man.forward()
+
+man.compute_impact()
+man.impact_matrix.value
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-0.08317661,  0.26427392]])
+</pre></div></div>
+</div>
+<ul class="simple">
+<li><p>The margin node (against yielding) has a positive impact on cost (i.e., its elimination will increase raw material cost).</p></li>
+<li><p>However, the margin node (against yielding) has a negative on weight (i.e., its elimination will reduce weight).</p></li>
+</ul>
+</section>
+<section id="Calculation-of-change-absorption-capability">
+<h3>Calculation of change absorption capability<a class="headerlink" href="#Calculation-of-change-absorption-capability" title="Permalink to this heading"></a></h3>
+<p>We now calculate the ability of the design to absorb deviation in the input specifications from their nominal values. We incrementally increase or decrease each specification <span class="math notranslate nohighlight">\(s_i\)</span> until one of the margin nodes is equal to 0. The value of the specification at this point is called <span class="math notranslate nohighlight">\(s^\text{max}_i\)</span>. The maximum allowable deterioration in the input specification is give by</p>
+<div class="math notranslate nohighlight">
+\[\text{deterioration}_i = \dfrac{s^\text{max}_i - s_i}{s_i}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>man.compute_absorption()
+man.spec_vector - man.deterioration_vector.value * man.spec_vector
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([414.  , 403.75])
+</pre></div></div>
+</div>
+<p>The value of the target thresholds when <span class="math notranslate nohighlight">\(s^\text{max}_i\)</span> is reached is <span class="math notranslate nohighlight">\(\mathbf{t}^\text{new}\)</span>. The value of the target thresholds at the nominal specifications <span class="math notranslate nohighlight">\(s_i\)</span> is <span class="math notranslate nohighlight">\(\mathbf{t}^\text{nominal}\)</span>. The change absorption per unit deterioration is given by</p>
+<div class="math notranslate nohighlight">
+\[\text{absorption}_{mi} = \dfrac{t^\text{new}_{mi} - t^\text{nominal}_{mi}}{t^\text{nominal}_{mi}\times\text{deterioration}_i}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>man.absorption_matrix.value
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[2.31557453, 3.38611472]])
+</pre></div></div>
+</div>
+</section>
+<section id="Aggregation-of-impact-and-absorption">
+<h3>Aggregation of impact and absorption<a class="headerlink" href="#Aggregation-of-impact-and-absorption" title="Permalink to this heading"></a></h3>
+<p>We average the absorption and impact across all input specifications and performance parameters for each margin node (assuming equal weighting)</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}{a}_m = \dfrac{1}{n_\text{specs}}\sum_{i=0}^{n_\text{specs}} \text{absorption}_{mi} \\
+{i}_m = \dfrac{1}{n_\text{perf}}\sum_{j=0}^{n_\text{perf}} \text{impact}_{mj} \\\end{split}\]</div>
+<p>as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>mean_absorption_node_1 = np.mean(man.absorption_matrix.value,axis=1)[0]
+mean_impact_node_1 = np.mean(man.impact_matrix.value,axis=1)[0]
+print(mean_absorption_node_1,mean_impact_node_1)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.850844625951363 0.09054865861919995
+</pre></div></div>
+</div>
+<p>Alternatively, we can aggregate across margin nodes instead</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}{a}_i = \dfrac{1}{n_\text{nodes}}\sum_{m=0}^{n_\text{nodes}} \text{absorption}_{mi} \\
+{i}_j = \dfrac{1}{n_\text{nodes}}\sum_{m=0}^{n_\text{nodes}} \text{impact}_{mj} \\\end{split}\]</div>
+<p>as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>mean_absorption_spec_1 = np.mean(man.absorption_matrix.value,axis=0)[0]
+mean_absorption_spec_2 = np.mean(man.absorption_matrix.value,axis=0)[1]
+
+mean_impact_perf_1 = np.mean(man.impact_matrix.value,axis=0)[0]
+mean_impact_perf_2 = np.mean(man.impact_matrix.value,axis=0)[1]
+print(mean_absorption_spec_1,mean_impact_perf_1)
+print(mean_absorption_spec_2,mean_impact_perf_2)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.3155745312790024 -0.08317660600149152
+3.3861147206237234 0.2642739232398914
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Effect-of-uncertainty-in-the-nominal-values-of-the-input-specifications-T_1-and-T_2">
+<h2>Effect of uncertainty in the nominal values of the input specifications <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span><a class="headerlink" href="#Effect-of-uncertainty-in-the-nominal-values-of-the-input-specifications-T_1-and-T_2" title="Permalink to this heading"></a></h2>
+<p>This caused by unequal temperatures <span class="math notranslate nohighlight">\(T_1\)</span>, and <span class="math notranslate nohighlight">\(T_2\)</span>. Their exact values are not known and are expected to vary. We model this uncertainty using a joint probability density function:</p>
+<div class="math notranslate nohighlight">
+\[T_1,T_2 \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> are the means and covariances, respectively of multivariate normal distribution. For more examples of different probability density functions supported by the library, see the examples <a class="reference external" href="https://sed-group.github.io/mvmlib/notebooks/PDF_examples.html">here</a></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import GaussianFunc, UniformFunc
+import numpy as np
+
+# T1,T2 distribution (Gaussian)
+center = np.array([450, 425])
+Sigma = np.array([
+    [50, 12.5],
+    [37.5, 50],
+])
+Requirement = GaussianFunc(center, Sigma, &#39;temp&#39;)
+
+Requirement.random(1000)
+Requirement.view(xlabel=&#39;Thermal loads $T_1,T_2 \
+    \sim \mathcal{N}(\mu,\Sigma)$&#39;)
+Requirement.reset()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_38_0.png" src="../_images/notebooks_strut_example_38_0.png" />
+</div>
+</div>
+<p>We define the random input specifications as follows by supplying the arguments <code class="docutils literal notranslate"><span class="pre">cov_index</span></code> and <code class="docutils literal notranslate"><span class="pre">distribution</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import InputSpec
+
+# define input specifications
+s1 = InputSpec(center[0], &#39;S1&#39;, universe=[325, 550], variable_type=&#39;FLOAT&#39;, cov_index=0,
+               description=&#39;nacelle temperature&#39;, distribution=Requirement,
+               symbol=&#39;T1&#39;, inc=-1e-0, inc_type=&#39;rel&#39;)
+s2 = InputSpec(center[1], &#39;S2&#39;, universe=[325, 550], variable_type=&#39;FLOAT&#39;, cov_index=1,
+               description=&#39;gas surface temperature&#39;, distribution=Requirement,
+               symbol=&#39;T2&#39;, inc=+1e-0, inc_type=&#39;rel&#39;)
+input_specs = [s1, s2]
+</pre></div>
+</div>
+</div>
+<p>Instead of redifining the MAN from scratch, we can subclass the original deterministic <code class="docutils literal notranslate"><span class="pre">MAN</span></code> and extend it by defining the <code class="docutils literal notranslate"><span class="pre">randomize</span></code> method to allow the MAN to draw random samples on input specs <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span>. The new stochastic version of the previous MAN is defined by <code class="docutils literal notranslate"><span class="pre">StoMAN</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># Define the stochastic MAN
+class StoMAN(MAN):
+
+    def randomize(self):
+        s1 = self.input_specs[0]
+        s2 = self.input_specs[1]
+        s1.random()
+        s2.random()
+
+sto_man = StoMAN(design_params,input_specs,fixed_params,
+    behaviours,decisions,margin_nodes,performances,&#39;MAN_2&#39;)
+</pre></div>
+</div>
+</div>
+<p>We use a Monte-Carlo simulation to obtain the distribution of impact and absorption in the design</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>import sys
+
+# Perform Monte-Carlo simulation
+n_epochs = 1000
+for n in range(n_epochs):
+
+    sys.stdout.write(&quot;Progress: %d%%   \r&quot; %((n/n_epochs)* 100)) # display progress
+    sys.stdout.flush()
+
+    sto_man.randomize()
+    sto_man.init_decisions()
+    sto_man.allocate_margins()
+    sto_man.forward()
+    sto_man.compute_impact()
+    sto_man.compute_absorption()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 99%
+</pre></div></div>
+</div>
+<p>We view the distribution of excess</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># View distribution of excess
+sto_man.margin_nodes[0].excess.view()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_46_0.png" src="../_images/notebooks_strut_example_46_0.png" />
+</div>
+</div>
+<p>we view the distribution of impact on performance</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># View distribution of Impact on Performance
+sto_man.impact_matrix.view(0,0)
+sto_man.impact_matrix.view(0,1)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_48_0.png" src="../_images/notebooks_strut_example_48_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_48_1.png" src="../_images/notebooks_strut_example_48_1.png" />
+</div>
+</div>
+<p>We view the distribution of change absorption capability of margin node 1</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>sto_man.absorption_matrix.view(0,0)
+sto_man.absorption_matrix.view(0,1)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_50_0.png" src="../_images/notebooks_strut_example_50_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_50_1.png" src="../_images/notebooks_strut_example_50_1.png" />
+</div>
+</div>
+<p>Finally, we view the margin value plot</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span># display the margin value plot
+sto_man.compute_mvp(&#39;scatter&#39;)
+sto_man.compute_mvp(&#39;density&#39;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_52_0.png" src="../_images/notebooks_strut_example_52_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_52_1.png" src="../_images/notebooks_strut_example_52_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.006975229345006109
+</pre></div></div>
+</div>
+</section>
+<section id="The-effect-of-design-parameters-on-change-absorption-and-impact-on-performance">
+<h2>The effect of design parameters on change absorption and impact on performance<a class="headerlink" href="#The-effect-of-design-parameters-on-change-absorption-and-impact-on-performance" title="Permalink to this heading"></a></h2>
+<p>Let us look at an alternative design given by different values of <span class="math notranslate nohighlight">\(w\)</span>, <span class="math notranslate nohighlight">\(h\)</span>, and <span class="math notranslate nohighlight">\(\theta\)</span></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import Design
+import matplotlib.pyplot as plt
+
+# Effect of alternative designs
+n_designs = 100
+n_epochs = 10
+lb = np.array(man.universe_d)[:, 0]
+ub = np.array(man.universe_d)[:, 1]
+design_doe = Design(lb, ub, n_designs, &#39;LHS&#39;)
+
+# create empty figure
+fig, ax = plt.subplots(figsize=(7, 8))
+ax.set_xlabel(&#39;Impact on performance&#39;)
+ax.set_ylabel(&#39;Change absoption capability&#39;)
+
+X = np.empty((1,len(man.margin_nodes)))
+Y = np.empty((1,len(man.margin_nodes)))
+D = np.empty((1,len(man.design_params)))
+
+for d,design in enumerate(design_doe.unscale()):
+    sto_man.nominal_design_vector = design
+    sto_man.reset()
+    sto_man.reset_outputs()
+
+    # Perform Monte-Carlo simulation
+    for n in range(n_epochs):
+
+        sys.stdout.write(&quot;Progress: %d%%   \r&quot; % ((d * n_epochs + n) / (n_designs * n_epochs) * 100))
+        sys.stdout.flush()
+
+        sto_man.randomize()
+        sto_man.init_decisions()
+        sto_man.allocate_margins()
+        sto_man.forward()
+        sto_man.compute_impact()
+        sto_man.compute_absorption()
+
+    # Extract x and y
+    x = np.mean(sto_man.impact_matrix.values,axis=(1,2)).ravel() # average along performance parameters (assumes equal weighting)
+    y = np.mean(sto_man.absorption_matrix.values,axis=(1,2)).ravel() # average along input specs (assumes equal weighting)
+
+    if not all(np.isnan(y)):
+        X = np.vstack((X,x))
+        Y = np.vstack((Y,y))
+        D = np.vstack((D,design))
+
+    # plot the results
+    color = np.random.random((1,3))
+    ax.scatter(x,y,c=color)
+
+plt.show()
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 99%
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_54_1.png" src="../_images/notebooks_strut_example_54_1.png" />
+</div>
+</div>
+<p>Now we calculate the distance to the neutral line to rank different designs</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span>from mvm import nearest
+
+# Calculate distance metric
+p1 = np.array([X.min(),Y.min()])
+p2 = np.array([X.max(),Y.max()])
+p1 = p1 - 0.1*abs(p2 - p1)
+p2 = p2 + 0.1*abs(p2 - p1)
+
+distances = np.empty(0)
+for i,(x,y) in enumerate(zip(X,Y)):
+
+    dist = 0
+    for node in range(len(x)):
+        s = np.array([x[node],y[node]])
+        pn,d = nearest(p1,p2,s)
+        dist += d
+
+    distances = np.append(distances,dist)
+
+# create empty figure
+fig, ax = plt.subplots(figsize=(7, 8))
+ax.set_xlabel(&#39;Overall distance from the neutral line&#39;)
+ax.set_ylabel(&#39;Frequency&#39;)
+ax.hist(distances,bins=len(distances))
+
+plt.show()
+
+best_i = np.argmax(distances)
+best_design = D[best_i,:]
+
+print(&#39;---------------------------------&#39;)
+result = &#39;The best design:\n&#39;
+for value,d_object in zip(best_design,sto_man.design_params):
+    result += d_object.symbol + &#39; = &#39; + &#39;%.3f&#39;%value + &#39;\n&#39;
+
+result += &#39;---------------------------------&#39;
+print(result)
+
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_56_0.png" src="../_images/notebooks_strut_example_56_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+---------------------------------
+The best design:
+w = 123.166
+h = 17.147
+theta = 1.103
+---------------------------------
+</pre></div></div>
+</div>
+<p>Let us visualize the distance calculation for three different designs</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+
+<span></span># display distances only for three designs
+X_plot = X[0:3,:]
+Y_plot = Y[0:3,:]
+
+# create empty figure
+colors = [&#39;#FF0000&#39;,&#39;#27BE1E&#39;,&#39;#0000FF&#39;]
+fig, ax = plt.subplots(figsize=(7, 8))
+ax.set_xlabel(&#39;Impact on performance&#39;)
+ax.set_ylabel(&#39;Change absoption capability&#39;)
+ax.set_xlim(p1[0],p2[0])
+ax.set_ylim(p1[1],p2[1])
+
+p = ax.plot([0, 1], [0, 1], transform=ax.transAxes, color=&#39;k&#39;,linestyle=(5,(10,5)))
+
+distances = np.empty(0)
+for i,(x,y) in enumerate(zip(X_plot,Y_plot)):
+
+    ax.scatter(x,y,c=colors[i])
+
+    dist = 0
+    for node in range(len(x)):
+        s = np.array([x[node],y[node]])
+        pn,d = nearest(p1,p2,s)
+        dist += d
+
+        x_d = [s[0],pn[0]]
+        y_d = [s[1],pn[1]]
+        ax.plot(x_d,y_d,marker=&#39;.&#39;,linestyle=&#39;--&#39;,color=colors[i])
+
+    distances = np.append(distances,dist)
+
+plt.show()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_58_0.png" src="../_images/notebooks_strut_example_58_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="TRS_example.html" class="btn btn-neutral float-left" title="Defining fuzzy logic system for evaluating TRS performance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="PDF_examples.html" class="btn btn-neutral float-right" title="Using mvmlib to define univariate and multivariate probability density functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
