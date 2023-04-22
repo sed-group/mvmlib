@@ -5,13 +5,21 @@ from scipy.stats import norm
 import matplotlib
 from typing import List, Tuple
 from scipy.optimize import fsolve, minimize
+import random
 
+random.seed(0)
+np.random.seed(0)
 matplotlib.use('Agg')
 
 from mvm import Design, GaussianFunc, UniformFunc, MarginNode, Performance, MarginNetwork, \
     InputSpec, DesignParam, Behaviour, Decision, compute_cdf, nearest
 from mvm.designMarginsLib import _secant_method
 from mvm.utilities import check_folder
+
+# numpy random number generator instance (for reproducing SMT related tests)
+@pytest.fixture
+def random_generator() -> np.random.RandomState:
+    return np.random.RandomState(0)
 
 # root finding functions
 @pytest.fixture
@@ -560,6 +568,7 @@ def decision_man_no_surrogate(design_parameters: List[DesignParam],
 def decision_man_inverse(design_parameters: List[DesignParam],
                          man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                          deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
+                         random_generator: np.random.RandomState,
                          tt_factor: List[float]=3*[1.0,], use_surrogates: bool=False) -> MarginNetwork:
     ######################################################
     # Construct MAN
@@ -576,13 +585,13 @@ def decision_man_inverse(design_parameters: List[DesignParam],
             's1' : {'type' : 'FLOAT', 'limits' : s1.universe},
             's2' : {'type' : 'FLOAT', 'limits' : s2.universe},
         }
-        behaviours[8].train_surrogate(variable_dict,n_samples=100,sm_type='KRG')
+        behaviours[8].train_surrogate(variable_dict,n_samples=100,sm_type='KRG',random_state=random_generator)
         behaviours[8].train_inverse('w')
 
         variable_dict = {
             'value' : {'type' : 'ENUM', 'limits' : decision_2.universe},
         }
-        behaviours[9].train_surrogate(variable_dict,n_samples=100,sm_type='KRG')
+        behaviours[9].train_surrogate(variable_dict,n_samples=100,sm_type='KRG',random_state=random_generator)
         behaviours[9].train_inverse(sm_type='LS')
 
     class MAN(MarginNetwork):
@@ -823,7 +832,7 @@ def test_stochastic_MarginNode(stochastic_inputs:Tuple[GaussianFunc, GaussianFun
     ]
 )
 def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
-    Impact_test_inputs:Tuple[np.ndarray,np.ndarray],deviation:float):
+    Impact_test_inputs:Tuple[np.ndarray,np.ndarray],deviation:float,random_generator: np.random.RandomState):
     """
     Tests the ImpactMatrix calculation method for deterministic threshold and decided values
     """
@@ -877,7 +886,7 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
     p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
     p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,sm_type='KRG',ext_samples=(doe_node+dv_vector,p_space))
+    man.train_performance_surrogate(n_samples=100,sm_type='KRG',ext_samples=(doe_node+dv_vector,p_space),random_state=random_generator)
     man.forward()
     man.view_perf(e_indices=[0,1],p_index=0)
     man.compute_impact(use_estimate=True)
@@ -907,7 +916,8 @@ def test_deterministic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Pe
 
 @pytest.mark.dependency()
 def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Performance],List[MarginNode]],
-                                 Impact_test_inputs:Tuple[np.ndarray,np.ndarray], noise:GaussianFunc):
+                                 Impact_test_inputs:Tuple[np.ndarray,np.ndarray], noise:GaussianFunc, 
+                                 random_generator: np.random.RandomState):
     """
     Tests the ImpactMatrix calculation method for stochastic threshold and decided values
     """
@@ -961,7 +971,7 @@ def test_stochastic_ImpactMatrix(man_components:Tuple[List[Behaviour],List[Perfo
     p_space[:,0] = np.apply_along_axis(man.behaviours[1].p1_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
     p_space[:,1] = np.apply_along_axis(man.behaviours[1].p2_model,axis=1,arr=doe_node+dv_vector) # mat + vec is automatically broadcasted
 
-    man.train_performance_surrogate(n_samples=100,ext_samples=(doe_node+dv_vector,p_space))
+    man.train_performance_surrogate(n_samples=100,ext_samples=(doe_node+dv_vector,p_space),random_state=random_generator)
 
     n_runs = 1000
     for n in range(n_runs):
@@ -1480,7 +1490,8 @@ def test_decision_multinode(man_components: Tuple[List[Behaviour],List[Performan
 @pytest.mark.dependency()
 def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                          deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                         design_parameters: List[DesignParam]):
+                         design_parameters: List[DesignParam],
+                         random_generator: np.random.RandomState):
 
     """
     Tests the train performance surrogate functionality when decision nodes are present
@@ -1511,7 +1522,7 @@ def test_mixed_variables(man_components: Tuple[List[Behaviour],List[Performance]
     man = decision_man(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'])
 
     # Create surrogate model for estimating threshold performance
-    man.train_performance_surrogate(n_samples=100, sm_type='KRG', sampling_freq=1, num_threads=n_threads, bandwidth=[1e-3, ])
+    man.train_performance_surrogate(n_samples=100, sm_type='KRG', sampling_freq=1, num_threads=n_threads, bandwidth=[1e-3, ], random_state=random_generator)
     man.init_decisions(num_threads=n_threads)
     man.allocate_margins()
     man.forward()
@@ -1608,7 +1619,8 @@ def test_mixed_variables_no_surrogate(man_components: Tuple[List[Behaviour],List
 )
 def test_mixed_variables_inverse(man_components: Tuple[List[Behaviour],List[Performance],List[MarginNode]],
                                  deterministic_specs: Tuple[np.ndarray,List[InputSpec]],
-                                 design_parameters: List[DesignParam], surrogate: bool):
+                                 design_parameters: List[DesignParam], surrogate: bool,
+                                 random_generator: np.random.RandomState):
 
     """
     Tests the impact on performance functionality when decision nodes are present
@@ -1635,7 +1647,7 @@ def test_mixed_variables_inverse(man_components: Tuple[List[Behaviour],List[Perf
             'tt_vector' : [4.84,3.2,2.2],
         }
 
-    man = decision_man_inverse(design_parameters,man_components,deterministic_specs,test_dict['tt_factor'],use_surrogates=surrogate)
+    man = decision_man_inverse(design_parameters,man_components,deterministic_specs,random_generator,test_dict['tt_factor'],use_surrogates=surrogate)
 
     # Create surrogate model for estimating threshold performance
     man.init_decisions(num_threads=n_threads)
@@ -1893,7 +1905,7 @@ def test_manual_margins(man_components,deterministic_specs,design_parameters):
 
 
 @pytest.mark.parametrize('n_threads', [1,])
-def test_behaviour(n_threads):
+def test_behaviour(n_threads,random_generator: np.random.RandomState):
 
     def fun(x,value):
         if value == '1':
@@ -1916,7 +1928,7 @@ def test_behaviour(n_threads):
         'x' : {'type' : 'FLOAT', 'limits' : [-100,100]},
         'value' : {'type' : 'ENUM', 'limits' : ['1','2','3']},
     }
-    b.train_surrogate(variable_dict,n_outputs=1,n_samples=100,num_threads=n_threads)
+    b.train_surrogate(variable_dict,n_outputs=1,n_samples=100,num_threads=n_threads,random_rate=random_generator)
 
     # test outputs
     test_values = [[1.0, '1',],[1.0, '2',],[1.0, '3',]]

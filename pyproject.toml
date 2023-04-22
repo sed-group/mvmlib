@@ -6,11 +6,11 @@ build-backend = "flit_core.buildapi"
 name = "mvmlib"
 authors = [{name = "Khalil Al Handawi", email = "khalil.alhandawi@mail.mcgill.ca"}]
 
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dynamic = ['version', 'description']
 
 dependencies = [
-"matplotlib==3.4.3",
+"matplotlib==3.7.0",
 "pyDOE==0.3.8",
 "scikit-fuzzy==0.4.2",
 "smt==1.1.0",

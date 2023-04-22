@@ -1117,7 +1117,8 @@ class Behaviour():
             self._inverted = np.array(i)
 
     def train_surrogate(self,variable_dict: Dict[str, Dict[str,Union[Tuple[int,int], Tuple[float,float], List[str], str]] ],
-                        n_samples: int, bandwidth: List[float] = [0.01], num_threads: int = 1, sm_type: float = 'KRG', *args, **kwargs):
+                        n_samples: int, bandwidth: List[float] = [0.01], num_threads: int = 1, sm_type: float = 'KRG', 
+                        random_state: Union[int,np.random.RandomState] = None, *args, **kwargs):
         """
         trains a Kriging surrogate model of the behaviour model to make computations less expensive
         surrogate model returns an array of shape 
@@ -1138,6 +1139,9 @@ class Behaviour():
             type of surrogate model to train, possible values ['KRG','LS'], by default 'KRG'
         num_threads : int, optional
             number of threads to parallelize sampling the training data by, by default 1
+        random_state : Union[int,np.random.RandomState], optional
+            Random seed or random generator instance used to generate training samples, 
+            If None is provided a random seed is used, by default None
         """
         for key,value in variable_dict.items():
             assert value['type'] in ['FLOAT','INT','ENUM','fixed'], 'Unexpected type (%s) for variable (%s) provided \
@@ -1188,7 +1192,8 @@ class Behaviour():
         self.xtypes = xtypes
         self.xlimits = xlimits
         sampling = MixedIntegerSamplingMethod(xtypes=self.xtypes, xlimits=self.xlimits,
-                                                sampling_method_class=LHS, criterion="ese")
+                                                sampling_method_class=LHS, criterion="ese",
+                                                random_state=random_state)
 
         input_samples = sampling(n_samples)
 
@@ -2518,7 +2523,8 @@ class MarginNetwork():
         self.reset(n=1)
 
     def train_performance_surrogate(self, n_samples: int = 100, sampling_freq: int = 1, bandwidth: List[float] = [1e-2], 
-                                    sm_type: str = 'KRG', num_threads: int = 1, ext_samples: Tuple[np.ndarray, np.ndarray] = None):
+                                    sm_type: str = 'KRG', num_threads: int = 1, ext_samples: Tuple[np.ndarray, np.ndarray] = None,
+                                    random_state: Union[int,np.random.RandomState] = None):
         """
         Constructs a surrogate model y(x), where x are the excess values and 
         y are the performance parameters that can be used to calculate threshold 
@@ -2542,12 +2548,15 @@ class MarginNetwork():
             Tuple must have length 2, ext_samples[0] must have shape (N_samples,len(margin_nodes)),
             ext_samples[1] must have shape (N_samples,len(performances)),
             by default None
+        random_state : Union[int,np.random.RandomState], optional
+            Random seed or random generator instance used to generate training samples, 
+            If None is provided a random seed is used, by default None
         """
         if ext_samples is None:
             # generate training data for response surface using an LHS grid of design parameter and input
             # specification space
 
-            input_samples = self._sample_inputs(n_samples)
+            input_samples = self._sample_inputs(n_samples,random_state)
 
             # Parallel computation if num_threads > 1
             man_objs = []
@@ -3264,7 +3273,7 @@ class MarginNetwork():
             for behaviour in self.behaviours:
                 behaviour.load(filename=path)
 
-    def _sample_inputs(self,n_samples: int) -> np.ndarray:
+    def _sample_inputs(self,n_samples: int, random_state: Union[int,np.random.RandomState] = None) -> np.ndarray:
         """
         samples the design space of the MAN
 
@@ -3278,6 +3287,9 @@ class MarginNetwork():
         np.ndarray
             An array of samples with shape (n_samples,n_variables), 
             where n_variables is the total number of design variables
+        random_state : Union[int,np.random.RandomState], optional
+            Random seed or random generator instance used to generate training samples, 
+            If None is provided a random seed is used, by default None
         """
         xtypes = []
         xlimits = []
@@ -3292,7 +3304,8 @@ class MarginNetwork():
             xlimits += [limits]
 
         sampling = MixedIntegerSamplingMethod(xtypes=xtypes, xlimits=xlimits,
-                                                sampling_method_class=LHS, criterion="ese")
+                                                sampling_method_class=LHS, criterion="ese",
+                                                random_state=random_state)
 
         input_samples = sampling(n_samples)
 
@@ -3485,7 +3498,7 @@ def _parallel_sample_man(input_i: np.ndarray, mans: List[MarginNetwork],
 
     return tt_samples, spec, perf_samples
 
-def _sample_behaviour(*args, variable_dict=None, **kwargs) -> List[Union[int,float]]:
+def _sample_behaviour(*args, variable_dict = None, **kwargs) -> List[Union[int,float]]:
     """
     samples the decision universe
     *args are expected to vary

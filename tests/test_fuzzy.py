@@ -1,6 +1,10 @@
 import pytest
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+
+random.seed(0)
+np.random.seed(0)
 
 from mvm import TriangularFunc, FuzzySet, FuzzyRule, FuzzySystem
 
