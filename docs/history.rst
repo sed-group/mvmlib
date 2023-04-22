@@ -5,6 +5,17 @@
 Changelog
 *********
 
+.. _release-0.5.9:
+
+0.5.9
+=====
+
+:Date: April 22, 2023
+
+Fixes
+-----
+* Fix compatibility with python versions `3.11`, `3.11`, `3.11`, and `3.11`
+
 .. _release-0.5.8:
 
 0.5.8
