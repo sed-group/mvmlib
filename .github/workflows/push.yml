@@ -44,12 +44,11 @@ jobs:
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
-        pip install flit
-        flit build
-        flit install --deps=develop --symlink
+        pipenv run flit build
+        pipenv run flit install --deps=develop --symlink
 
     - name: Run unit tests
-      run: python -m pytest --import-mode=append tests/
+      run: pipenv run pytest
 
   docs:
     name: documentation
@@ -93,13 +92,12 @@ jobs:
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
-        pip install flit
-        flit build
-        flit install --deps=develop --symlink
+        pipenv run flit build
+        pipenv run flit install --deps=develop --symlink
 
     - name: Build documentation
       run: |
-        sphinx-build ${{env.documentation-source-directory}} ${{env.documentation-build-directory}}
+        pipenv run sphinx-build ${{env.documentation-source-directory}} ${{env.documentation-build-directory}}
 
     - name: Cache built documentation
       uses: actions/cache@v2
