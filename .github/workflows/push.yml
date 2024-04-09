@@ -44,6 +44,7 @@ jobs:
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
+        pip install flit
         flit build
         flit install --deps=develop --symlink
 
@@ -92,6 +93,7 @@ jobs:
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
+        pip install flit
         flit build
         flit install --deps=develop --symlink
 
