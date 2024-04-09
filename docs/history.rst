@@ -5,6 +5,19 @@
 Changelog
 *********
 
+.. _release-0.5.10:
+
+0.5.10
+=====
+
+:Date: April 09, 2024
+
+Features
+--------
+* Added a `save` and `load` method to class `DOELib.Design`
+* Added a `random_seed` optional argument to `DOELib.Design`
+* Added a `get_design` method to load an instance `DOELib.Design` intialized to the provided data
+
 .. _release-0.5.9:
 
 0.5.9
@@ -14,7 +27,7 @@ Changelog
 
 Fixes
 -----
-* Fix compatibility with python versions `3.11`, `3.11`, `3.11`, and `3.11`
+* Fix compatibility with python versions `3.8`, `3.9`, `3.10`, and `3.11`
 
 .. _release-0.5.8:
 

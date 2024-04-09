@@ -2728,7 +2728,7 @@ class MarginNetwork():
         cbar.set_array(z)
 
         boundaries = np.linspace(np.min(perf_estimate[:, p_index]), np.max(perf_estimate[:, p_index]), 51)
-        cbar_h = fig.colorbar(cbar, boundaries=boundaries)
+        cbar_h = fig.colorbar(cbar, ax=ax, boundaries=boundaries)
         cbar_h.set_label(label_p, rotation=90, labelpad=3)
 
         if file is not None:

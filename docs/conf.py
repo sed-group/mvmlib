@@ -21,7 +21,7 @@ copyright = '2021, Khalil Al Handawi'
 author = 'Khalil Al Handawi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.5.9'
+release = '0.5.10'
 
 # -- General configuration ---------------------------------------------------
 
@@ -32,6 +32,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx_copybutton',
     'nbsphinx',
     'sphinx.ext.githubpages',
     'sphinxcontrib.bibtex',

@@ -5,6 +5,8 @@ from multiprocess import Pool
 from itertools import repeat
 from contextlib import contextmanager
 import sys
+import inspect
+import numpy as np
 
 from typing import List, Any, Callable, Dict, Union, Tuple
 
@@ -16,6 +18,12 @@ def check_folder(folder='render/'):
     ----------
     folder : str, optional
         name of directory to check, by default 'render/'
+
+    Returns
+    -------
+    bool
+        whether the folder already exists or not
+    
     """
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -101,6 +109,58 @@ def parallel_sampling(func:Callable,
 
 def clamp(n, smallest, largest): return max(smallest, min(n, largest))
 
+def serialize(input:Union[list,np.ndarray,dict,type]):
+    """
+    Converts a dict or list with non-serializable objects to strings
+
+    Parameters
+    ----------
+    input : dict, list
+        input to serialize
+
+    Returns
+    -------
+    dict, list
+        string formatted
+    """
+    if isinstance(input, dict):
+        return {serialize(key): serialize(value)
+                for key, value in input.items()}
+    elif isinstance(input, (list,tuple,np.ndarray)):
+        return [serialize(element) for element in input]
+    elif isinstance(input,np.integer):
+        return int(input)
+    elif isinstance(input,(np.float16, np.float32, np.float64)):
+        return float(input)
+    elif inspect.isclass(input):
+        return input.__name__
+    else:
+        return input
+    
+def deserialize(input:Union[list,np.ndarray,dict,type]):
+    """
+    Converts a dict or list with non-serializable objects to strings
+
+    Parameters
+    ----------
+    input : dict, list
+        input to serialize
+
+    Returns
+    -------
+    dict, list
+        string formatted
+    """
+    if isinstance(input, dict):
+        return {deserialize(key): deserialize(value)
+                for key, value in input.items()}
+    elif isinstance(input, (list,tuple,np.ndarray)):
+        return [deserialize(element) for element in input]
+    elif isinstance(input, str):
+        return input
+    else:
+        return input
+    
 @contextmanager
 def suppress_stdout():
     with open(os.devnull, "w") as devnull:

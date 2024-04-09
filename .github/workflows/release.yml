@@ -29,28 +29,36 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
 
     - name: setup pandoc environment
       uses: r-lib/actions/setup-pandoc@v1
       with:
         pandoc-version: '2.3' # The pandoc version to download (if necessary) and use.
 
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
     - name: install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements_dev.txt
+        pipenv install --dev
         echo "# Test" | pandoc -t html
 
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
-        flit build
-        flit install --deps=develop --symlink
+        pipenv run flit build
+        pipenv run flit install --deps=develop --symlink
 
     - name: Build documentation
       run: |
-        sphinx-build ${{env.documentation-source-directory}} ${{env.documentation-build-directory}}
+        pipenv run sphinx-build ${{env.documentation-source-directory}} ${{env.documentation-build-directory}}
 
     - name: Cache built documentation
       uses: actions/cache@v2
@@ -78,23 +86,29 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
 
     - name: install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements_dev.txt
-        pip install -r requirements.txt
-        pip install -e .
-
+        pipenv install --dev
+        
     - name: Build flit package and install dependencies
       run: |
         # install package using flit locally to run documentation notebooks
-        flit build
-        flit install --deps=develop --symlink
+        pipenv run flit build
+        pipenv run flit install --deps=develop --symlink
 
     - name: Run unit tests
-      run: python -m pytest --import-mode=append tests/
+      run: pipenv run pytest
 
   deploy_docs:
     name: publish_docs
@@ -138,17 +152,24 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{env.deploy-python-version}}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
 
     - name: install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements_dev.txt
-        pip install -r requirements.txt
-
+        pipenv install --dev
+        
     - name: Build and publish to TestPyPI
       run: |
-        flit publish
+        pipenv run flit publish
       env:
         FLIT_INDEX_URL: https://test.pypi.org/legacy/
         FLIT_USERNAME: __token__
@@ -168,17 +189,24 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{env.deploy-python-version}}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
 
     - name: install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements_dev.txt
-        pip install -r requirements.txt
+        pipenv install --dev
 
     - name: Build and publish to TestPyPI
       run: |
-        flit publish
+        pipenv run flit publish
       env:
         FLIT_INDEX_URL: https://upload.pypi.org/legacy/
         FLIT_USERNAME: __token__
