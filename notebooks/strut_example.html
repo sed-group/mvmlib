@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identification of design margins in the design of a strut &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Using mvmlib to define univariate and multivariate probability density functions" href="PDF_examples.html" />
+    <link rel="prev" title="Defining fuzzy logic system for evaluating TRS performance" href="TRS_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Cookbook and Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="TRS_example.html">Defining fuzzy logic system for evaluating TRS performance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Identification of design margins in the design of a strut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PDF_examples.html">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Cookbook and Examples</a></li>
+      <li class="breadcrumb-item active">Identification of design margins in the design of a strut</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/strut_example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Identification-of-design-margins-in-the-design-of-a-strut">
+<h1>Identification of design margins in the design of a strut<a class="headerlink" href="#Identification-of-design-margins-in-the-design-of-a-strut" title="Link to this heading"></a></h1>
+<section id="Defining-the-components-of-the-margin-analysis-network">
+<h2>Defining the components of the margin analysis network<a class="headerlink" href="#Defining-the-components-of-the-margin-analysis-network" title="Link to this heading"></a></h2>
+<p>The components of the margin analysis network are:</p>
+<ul class="simple">
+<li><p>Input parameters</p>
+<ul>
+<li><p>Design parameters</p></li>
+<li><p>Fixed parameters</p></li>
+<li><p>Input specifications</p></li>
+</ul>
+</li>
+<li><p>Intermediate parameters</p></li>
+<li><p>Decision nodes</p></li>
+<li><p>Output parameters</p>
+<ul>
+<li><p>Performance parameters</p></li>
+<li><p>Target thresholds</p></li>
+<li><p>Decided values</p></li>
+</ul>
+</li>
+</ul>
+<section id="Design-parameters">
+<h3>Design parameters<a class="headerlink" href="#Design-parameters" title="Link to this heading"></a></h3>
+<figure><center><p><p><img alt="c91240fa6c7a46f5b813b939ff6df692" class="no-scaled-link" src="../_images/strut_overview.png" style="width: 950pt;" /></p>
+<figcaption><p>Fig.1 Schematic of strut design example</p>
+</figcaption></figure><p>This example shows how to evaluate the design margins of a strut which is a part of the turbine rear frame of an aeroengine. In this example, we consider three design parameters of the strut the lean angle <span class="math notranslate nohighlight">\(\theta\)</span>, the vane width <span class="math notranslate nohighlight">\(w\)</span>, and the vane height <span class="math notranslate nohighlight">\(h\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">DesignParam</span>
+
+<span class="c1"># define design parameters</span>
+<span class="n">d1</span> <span class="o">=</span> <span class="n">DesignParam</span><span class="p">(</span><span class="mf">100.0</span><span class="p">,</span> <span class="s1">&#39;D1&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">(</span><span class="mf">70.0</span><span class="p">,</span> <span class="mf">130.0</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;vane length&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+<span class="n">d2</span> <span class="o">=</span> <span class="n">DesignParam</span><span class="p">(</span><span class="mf">15.0</span><span class="p">,</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;vane height&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;h&#39;</span><span class="p">)</span>
+<span class="n">d3</span> <span class="o">=</span> <span class="n">DesignParam</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="s1">&#39;D3&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">),</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;lean angle&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;theta&#39;</span><span class="p">)</span>
+<span class="n">design_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">d1</span><span class="p">,</span><span class="n">d2</span><span class="p">,</span><span class="n">d3</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Fixed-parameters">
+<h3>Fixed parameters<a class="headerlink" href="#Fixed-parameters" title="Link to this heading"></a></h3>
+<p>We also specify some constants for this example, such as elastic modulus <span class="math notranslate nohighlight">\(E\)</span>, coefficient of thermal expansion <span class="math notranslate nohighlight">\(\alpha\)</span>, hub and shroud radii, <span class="math notranslate nohighlight">\(r_1\)</span> and <span class="math notranslate nohighlight">\(r_2\)</span>, respectively, and ambient temperature <span class="math notranslate nohighlight">\(T_\mathrm{sink}\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">FixedParam</span>
+
+<span class="c1"># define fixed parameters</span>
+<span class="n">i1</span> <span class="o">=</span> <span class="n">FixedParam</span><span class="p">(</span><span class="mf">7.17E-06</span><span class="p">,</span> <span class="s1">&#39;I1&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Coefficient of thermal expansion&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;alpha&#39;</span><span class="p">)</span>
+<span class="n">i2</span> <span class="o">=</span> <span class="n">FixedParam</span><span class="p">(</span><span class="mf">156.3E3</span><span class="p">,</span> <span class="s1">&#39;I2&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Youngs modulus&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;E&#39;</span><span class="p">)</span>
+<span class="n">i3</span> <span class="o">=</span> <span class="n">FixedParam</span><span class="p">(</span><span class="mf">346.5</span><span class="p">,</span> <span class="s1">&#39;I3&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Radius of the hub&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;r1&#39;</span><span class="p">)</span>
+<span class="n">i4</span> <span class="o">=</span> <span class="n">FixedParam</span><span class="p">(</span><span class="mf">536.5</span><span class="p">,</span> <span class="s1">&#39;I4&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Radius of the shroud&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;r2&#39;</span><span class="p">)</span>
+<span class="n">i5</span> <span class="o">=</span> <span class="n">FixedParam</span><span class="p">(</span><span class="mf">25.0</span><span class="p">,</span> <span class="s1">&#39;I6&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;ambient temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T_sink&#39;</span><span class="p">)</span>
+
+<span class="n">fixed_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">,</span> <span class="n">i3</span><span class="p">,</span> <span class="n">i4</span><span class="p">,</span> <span class="n">i5</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Input-specifications">
+<h3>Input specifications<a class="headerlink" href="#Input-specifications" title="Link to this heading"></a></h3>
+<p>The strut experiences a compressive force <span class="math notranslate nohighlight">\(F\)</span> and bending moment <span class="math notranslate nohighlight">\(M\)</span> as a result of non-uniform expansion of the turbine rear frame during operation. This is attributed to two temperatures <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> that occur at the shroud and hub surfaces, respectively as shown below:</p>
+<figure><center><p><p><img alt="1417763fa06e42dab32386b5040e35e1" class="no-scaled-link" src="../_images/simplified_strut_model.png" style="width: 250pt;" /></p>
+<figcaption><p>Fig.2 Temperature loads</p>
+</figcaption></figure><p>The temperatures <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span> are defined as input specifications. The argument <code class="docutils literal notranslate"><span class="pre">inc</span></code> specifies the expected direction of change of these temperatures during operation and will be used later on to compute the ability of a design margin to absorb change of said temperatures</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(T_1\)</span> is expected to decrease by 1% of the nominal value</p></li>
+<li><p><span class="math notranslate nohighlight">\(T_2\)</span> is expected to increase by 1% of the nominal value</p></li>
+</ul>
+<p>If the absolute change is to be specified, then change the argument <code class="docutils literal notranslate"><span class="pre">inc_type</span></code> to <code class="docutils literal notranslate"><span class="pre">'abs'</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">InputSpec</span>
+
+<span class="c1"># define input specifications</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="mi">450</span><span class="p">,</span> <span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">[</span><span class="mi">325</span><span class="p">,</span> <span class="mi">550</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;nacelle temperature&#39;</span><span class="p">,</span>
+               <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="n">inc</span><span class="o">=-</span><span class="mf">1e-0</span><span class="p">,</span> <span class="n">inc_type</span><span class="o">=</span><span class="s1">&#39;rel&#39;</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="mi">425</span><span class="p">,</span> <span class="s1">&#39;S2&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">[</span><span class="mi">325</span><span class="p">,</span> <span class="mi">550</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;gas surface temperature&#39;</span><span class="p">,</span>
+               <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span> <span class="n">inc</span><span class="o">=+</span><span class="mf">1e-0</span><span class="p">,</span> <span class="n">inc_type</span><span class="o">=</span><span class="s1">&#39;rel&#39;</span><span class="p">)</span>
+<span class="n">input_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Performance-parameters">
+<h3>Performance parameters<a class="headerlink" href="#Performance-parameters" title="Link to this heading"></a></h3>
+<p>we then calculate weight and cost as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}W = \rho whL\\
+\mathrm{cost} = c\rho whL,\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(c\)</span> is the raw material cost per unit weight. and <span class="math notranslate nohighlight">\(L\)</span> is the length of the strut given by <span class="math notranslate nohighlight">\(L = -r_1\cos{\theta} + \sqrt{{r_2}^2 - {r_1}^2\sin^2{\theta}}\)</span></p>
+<p><span class="math notranslate nohighlight">\(W\)</span> and <span class="math notranslate nohighlight">\(\mathrm{cost}\)</span> are <em>performance parameters</em>. Their calculation is given by a <em>behaviour</em> model <code class="docutils literal notranslate"><span class="pre">b1</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Behaviour</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># this is the weight and cost model</span>
+<span class="k">class</span> <span class="nc">B1</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">cost_coeff</span><span class="p">):</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r2</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span> <span class="o">*</span> <span class="n">L</span>
+        <span class="n">cost</span> <span class="o">=</span> <span class="n">weight</span> <span class="o">*</span> <span class="n">cost_coeff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">performance</span> <span class="o">=</span> <span class="p">[</span><span class="n">weight</span><span class="p">,</span> <span class="n">cost</span><span class="p">]</span>
+
+<span class="n">b1</span> <span class="o">=</span> <span class="n">B1</span><span class="p">(</span><span class="n">n_i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_dv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_tt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;B1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We specify whether increasing this parameter is beneficial or detrimental to the design’s performance using the <code class="docutils literal notranslate"><span class="pre">direction</span></code> argument</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Performance</span>
+<span class="c1"># Define performances</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="n">Performance</span><span class="p">(</span><span class="s1">&#39;P1&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;less_is_better&#39;</span><span class="p">)</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">Performance</span><span class="p">(</span><span class="s1">&#39;P2&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;less_is_better&#39;</span><span class="p">)</span>
+<span class="n">performances</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Target-thresholds">
+<h3>Target thresholds<a class="headerlink" href="#Target-thresholds" title="Link to this heading"></a></h3>
+<p>The strut must support the forces shown perviously on Figure 2:</p>
+<ul class="simple">
+<li><p>A compressive stress <span class="math notranslate nohighlight">\(\sigma_a\)</span> due to the force <span class="math notranslate nohighlight">\(F\)</span></p></li>
+<li><p>A bending stress <span class="math notranslate nohighlight">\(\sigma_m\)</span> due to the bending moment <span class="math notranslate nohighlight">\(M\)</span></p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[\begin{split}\sigma_a = \dfrac{E\alpha}{L}\left(T_2r_2 - T_1r_1 - T_\text{sink}(r_2-r_1)\right)\cos{\theta}\\
+\sigma_m =\dfrac{3}{2}\dfrac{Eh\alpha}{L^2}\left(T_2r_2 - T_1r_1 - T_\text{sink}(r_2-r_1)\right)\sin{\theta}\end{split}\]</div>
+<p>The maximum stress value becomes the <em>target threshold</em>.</p>
+<div class="math notranslate nohighlight">
+\[\sigma_\mathrm{max} = \max{\left(\sigma_a,\sigma_m\right)}\]</div>
+<p>This is defined by <em>behaviour</em> model <code class="docutils literal notranslate"><span class="pre">b2</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># this is the stress model</span>
+<span class="k">class</span> <span class="nc">B2</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">T_sink</span><span class="p">):</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="o">-</span><span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">r2</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">sigma_a</span> <span class="o">=</span> <span class="p">(</span><span class="n">E</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">T2</span> <span class="o">*</span> <span class="n">r2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">T1</span> <span class="o">*</span> <span class="n">r1</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">T_sink</span> <span class="o">*</span> <span class="p">(</span><span class="n">r2</span> <span class="o">-</span> <span class="n">r1</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">))</span> <span class="o">/</span> <span class="n">L</span>
+        <span class="n">sigma_m</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">E</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">L</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">alpha</span> <span class="o">*</span> <span class="p">((</span><span class="n">T2</span> <span class="o">*</span> <span class="n">r2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">T1</span> <span class="o">*</span> <span class="n">r1</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">T_sink</span> <span class="o">*</span> <span class="p">(</span><span class="n">r2</span> <span class="o">-</span> <span class="n">r1</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">sigma_a</span><span class="p">,</span> <span class="n">sigma_m</span><span class="p">])</span>
+
+<span class="n">b2</span> <span class="o">=</span> <span class="n">B2</span><span class="p">(</span><span class="n">n_i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_p</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_dv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_tt</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;B2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Decided-values-(from-Decision-nodes)">
+<h3>Decided values (from Decision nodes)<a class="headerlink" href="#Decided-values-(from-Decision-nodes)" title="Link to this heading"></a></h3>
+<p>After calculating the target thresholds (what the design needs to do) we have to make decisions regarding certain ‘off-the-shelf’ components. The decided value in this case is given by the yield stress of the selected material. We define a decision node using the <code class="docutils literal notranslate"><span class="pre">Design</span></code> class and a corresponding <code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> model to translate the selected material to a decided value. The material model also supplies two additional intermediate parameters that are required by the cost model in <code class="docutils literal notranslate"><span class="pre">b1</span></code>. They
+are the density <span class="math notranslate nohighlight">\(\rho\)</span> and the cost density <span class="math notranslate nohighlight">\(c\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Decision</span>
+
+<span class="k">class</span> <span class="nc">B3</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">material</span><span class="p">):</span>
+        <span class="n">material_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;dummy&#39;</span>   <span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;sigma_y&#39;</span> <span class="p">:</span> <span class="mi">92</span><span class="p">,</span> <span class="c1"># MPa</span>
+                <span class="s1">&#39;rho&#39;</span> <span class="p">:</span> <span class="mf">11.95e-06</span><span class="p">,</span> <span class="c1"># kg/mm3</span>
+                <span class="s1">&#39;cost&#39;</span> <span class="p">:</span> <span class="mf">0.1</span> <span class="c1"># USD/kg</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;Steel&#39;</span>   <span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;sigma_y&#39;</span> <span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="c1"># MPa</span>
+                <span class="s1">&#39;rho&#39;</span> <span class="p">:</span> <span class="mf">10.34e-06</span><span class="p">,</span> <span class="c1"># kg/mm3</span>
+                <span class="s1">&#39;cost&#39;</span> <span class="p">:</span> <span class="mf">0.09478261</span><span class="p">,</span> <span class="c1"># USD/kg</span>
+                <span class="p">},</span>
+            <span class="s1">&#39;Inconel&#39;</span>  <span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;sigma_y&#39;</span> <span class="p">:</span> <span class="mi">460</span><span class="p">,</span>  <span class="c1"># MPa</span>
+                <span class="s1">&#39;rho&#39;</span> <span class="p">:</span> <span class="mf">8.19e-06</span><span class="p">,</span>  <span class="c1"># kg/mm3</span>
+                <span class="s1">&#39;cost&#39;</span> <span class="p">:</span> <span class="mf">0.46</span><span class="p">,</span>  <span class="c1"># USD/kg</span>
+                <span class="p">},</span>
+            <span class="s1">&#39;Titanium&#39;</span>  <span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;sigma_y&#39;</span> <span class="p">:</span> <span class="mi">828</span><span class="p">,</span> <span class="c1"># MPa</span>
+                <span class="s1">&#39;rho&#39;</span> <span class="p">:</span> <span class="mf">4.43e-06</span><span class="p">,</span> <span class="c1"># kg/mm3</span>
+                <span class="s1">&#39;cost&#39;</span> <span class="p">:</span> <span class="mf">1.10</span> <span class="c1"># USD/kg</span>
+                <span class="p">},</span>
+        <span class="p">}</span>
+        <span class="n">chosen_mat</span> <span class="o">=</span> <span class="n">material_dict</span><span class="p">[</span><span class="n">material</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">intermediate</span> <span class="o">=</span> <span class="p">[</span><span class="n">chosen_mat</span><span class="p">[</span><span class="s1">&#39;rho&#39;</span><span class="p">],</span> <span class="n">chosen_mat</span><span class="p">[</span><span class="s1">&#39;cost&#39;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decided_value</span> <span class="o">=</span> <span class="n">chosen_mat</span><span class="p">[</span><span class="s1">&#39;sigma_y&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decided_value</span>
+
+<span class="n">b3</span> <span class="o">=</span> <span class="n">B3</span><span class="p">(</span><span class="n">n_i</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_p</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_dv</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_tt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;B3&#39;</span><span class="p">)</span>
+
+<span class="c1"># Define decision nodes and a model to convert to decided values</span>
+<span class="n">decision_1</span> <span class="o">=</span> <span class="n">Decision</span><span class="p">(</span><span class="n">universe</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Steel&#39;</span><span class="p">,</span> <span class="s1">&#39;Inconel&#39;</span><span class="p">,</span> <span class="s1">&#39;Titanium&#39;</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;ENUM&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s1">&#39;decision_1&#39;</span><span class="p">,</span>
+                      <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;must_not_exceed&#39;</span><span class="p">,</span> <span class="n">decided_value_model</span><span class="o">=</span><span class="n">b3</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The type of material&#39;</span><span class="p">)</span>
+
+<span class="n">decisions</span> <span class="o">=</span> <span class="p">[</span><span class="n">decision_1</span><span class="p">,</span> <span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>We concatenate all behaviour models into a list</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">behaviours</span> <span class="o">=</span> <span class="p">[</span><span class="n">b1</span><span class="p">,</span><span class="n">b2</span><span class="p">,</span><span class="n">b3</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Excess-margins">
+<h3>Excess margins<a class="headerlink" href="#Excess-margins" title="Link to this heading"></a></h3>
+<p>The design must support the following loads</p>
+<ul class="simple">
+<li><p>A maximum stress <strong>less than</strong> the yield stress <span class="math notranslate nohighlight">\(\sigma_y\)</span></p></li>
+</ul>
+<p>We have one design margin given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}e_1 = \sigma_y - \sigma_\mathrm{max}\\\end{split}\]</div>
+<p>It is of the <code class="docutils literal notranslate"><span class="pre">must_not_exceed</span></code> type</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">MarginNode</span>
+
+<span class="c1"># Define margin nodes</span>
+<span class="n">e1</span> <span class="o">=</span> <span class="n">MarginNode</span><span class="p">(</span><span class="s1">&#39;E1&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;must_not_exceed&#39;</span><span class="p">)</span>
+<span class="n">margin_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">e1</span><span class="p">,]</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Calculation-of-the-value-of-excess-margins-in-the-strut">
+<h2>Calculation of the value of excess margins in the strut<a class="headerlink" href="#Calculation-of-the-value-of-excess-margins-in-the-strut" title="Link to this heading"></a></h2>
+<section id="Constructing-the-margin-analysis-network">
+<h3>Constructing the margin analysis network<a class="headerlink" href="#Constructing-the-margin-analysis-network" title="Link to this heading"></a></h3>
+<p>We combine all the perviously defined parameters and behaviour models inside a <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> object. The <code class="docutils literal notranslate"><span class="pre">forward</span></code> method represents a single calculation pass of the margin analysis network</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">randomize</span></code> method is optional and is used to randomly seed any probabilistic input specifications or behaviour models (see example in next section). The <code class="docutils literal notranslate"><span class="pre">MAN</span></code> object below mimics the MAN shown in the figure below:</p>
+<figure><center><p><p><img alt="79b6f16871474234a015933724a2aa35" class="no-scaled-link" src="../_images/MAN.png" style="width: 950pt;" /></p>
+<figcaption><p>Fig.3 Margin analysis network of the strut example</p>
+</figcaption></figure><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">MarginNetwork</span>
+
+<span class="c1"># Define the MAN</span>
+<span class="k">class</span> <span class="nc">MAN</span><span class="p">(</span><span class="n">MarginNetwork</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">randomize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">recalculate_decisions</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">allocate_margin</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;min_excess&#39;</span><span class="p">,],</span> <span class="n">outputs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;dv&#39;</span><span class="p">,]):</span>
+        <span class="c1"># retrieve MAN components</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># w</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># h</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># theta</span>
+
+        <span class="n">T1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># T1 (could be stochastic)</span>
+        <span class="n">T2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># T2 (could be stochastic)</span>
+
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_params</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># alpha</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_params</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># E</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># r1</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># r2</span>
+        <span class="n">T_sink</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fixed_params</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>  <span class="c1"># T_sink</span>
+
+        <span class="n">b1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviours</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># calculates weight and cost</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviours</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># calculates maximum of axial and bending stresses</span>
+        <span class="n">b3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviours</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># calculates material properties</span>
+
+        <span class="n">decision_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decisions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># select a material based on maximum bending or axial stress</span>
+
+        <span class="n">e1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin_nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># margin against axial or bending failure (sigma_max,sigma_y)</span>
+
+        <span class="n">p1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">performances</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># weight</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">performances</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># cost</span>
+
+        <span class="c1"># Execute behaviour models</span>
+
+        <span class="c1"># T1, T2, h, theta, alpha, E, r1, r2, T_sink</span>
+        <span class="n">b2</span><span class="p">(</span><span class="n">T1</span><span class="p">,</span> <span class="n">T2</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">T_sink</span><span class="p">)</span>
+        <span class="n">sigma_max</span> <span class="o">=</span> <span class="n">b2</span><span class="o">.</span><span class="n">threshold</span> <span class="c1"># the applied load as the target threshold</span>
+
+        <span class="c1"># Execute decision node and translation model</span>
+        <span class="n">decision_1</span><span class="p">(</span><span class="n">sigma_max</span><span class="p">,</span> <span class="n">recalculate_decisions</span><span class="p">,</span> <span class="n">allocate_margin</span><span class="p">,</span> <span class="n">strategy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">num_threads</span><span class="p">,</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">sigma_prime</span> <span class="o">=</span> <span class="n">decision_1</span><span class="o">.</span><span class="n">output_value</span> <span class="c1"># this either the target threshold (sigma_max) or the decided value (sigma_y)</span>
+        <span class="n">sigma_y</span> <span class="o">=</span> <span class="n">decision_1</span><span class="o">.</span><span class="n">decided_value</span> <span class="c1"># the yield stress of the chosen material</span>
+
+        <span class="c1"># invert decided value: to get rho, and cost_coeff</span>
+        <span class="n">b3</span><span class="o">.</span><span class="n">inv_call</span><span class="p">(</span><span class="n">sigma_prime</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">b3</span><span class="o">.</span><span class="n">intermediate</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cost_coeff</span> <span class="o">=</span> <span class="n">b3</span><span class="o">.</span><span class="n">intermediate</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Compute excesses</span>
+        <span class="n">e1</span><span class="p">(</span><span class="n">sigma_max</span><span class="p">,</span> <span class="n">sigma_y</span><span class="p">)</span>
+
+        <span class="c1"># Compute performances</span>
+        <span class="c1"># rho, w, h, theta, r1, r2, cost_coeff</span>
+        <span class="n">b1</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">cost_coeff</span><span class="p">)</span>
+        <span class="n">p1</span><span class="p">(</span><span class="n">b1</span><span class="o">.</span><span class="n">performance</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">p2</span><span class="p">(</span><span class="n">b1</span><span class="o">.</span><span class="n">performance</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="n">man</span> <span class="o">=</span> <span class="n">MAN</span><span class="p">(</span><span class="n">design_params</span><span class="p">,</span> <span class="n">input_specs</span><span class="p">,</span> <span class="n">fixed_params</span><span class="p">,</span>
+          <span class="n">behaviours</span><span class="p">,</span> <span class="n">decisions</span><span class="p">,</span> <span class="n">margin_nodes</span><span class="p">,</span> <span class="n">performances</span><span class="p">,</span> <span class="s1">&#39;MAN_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Calculating-the-impact-of-excess-margin-on-performance">
+<h3>Calculating the impact of excess margin on performance<a class="headerlink" href="#Calculating-the-impact-of-excess-margin-on-performance" title="Link to this heading"></a></h3>
+<p>To calculate the level of overdesign w.r.t margin node <span class="math notranslate nohighlight">\(m\)</span> and performance parameter <span class="math notranslate nohighlight">\(j\)</span> given by</p>
+<div class="math notranslate nohighlight">
+\[\text{impact}_{mj} = \dfrac{p_j - p^\text{threshold}_{mj}}{p^\text{threshold}_{mj}}\]</div>
+<p>we need to calculate the threshold performance <span class="math notranslate nohighlight">\(p^\text{threshold}_{mj}\)</span>, i.e., the weight of a hypothetical design where margin node <span class="math notranslate nohighlight">\(e_m = 0\)</span>, To do so, we construct a surrogate model associated with each behaviour model that is connected to a decision node to allow interpolation of this hypothetical design. In this example it is <code class="docutils literal notranslate"><span class="pre">b3</span></code> associated with <code class="docutils literal notranslate"><span class="pre">decision_1</span></code>.</p>
+<p>This allows the MAN’s performance parameters <span class="math notranslate nohighlight">\(\mathbf{p}\)</span> to be expressed as functions in terms of the margin values <span class="math notranslate nohighlight">\(\mathbf{e}\)</span> and input specifications <span class="math notranslate nohighlight">\(\mathbf{s}\)</span></p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathbf{p}} = f(\mathbf{e},\mathbf{s})\]</div>
+<p>we substitute <span class="math notranslate nohighlight">\(e_m = 0\)</span> while holding all the other components at their nominal values.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># train material surrogate</span>
+<span class="n">variable_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;material&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span> <span class="p">:</span> <span class="s1">&#39;ENUM&#39;</span><span class="p">,</span> <span class="s1">&#39;limits&#39;</span> <span class="p">:</span> <span class="n">decision_1</span><span class="o">.</span><span class="n">universe</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="n">b3</span><span class="o">.</span><span class="n">train_surrogate</span><span class="p">(</span><span class="n">variable_dict</span><span class="p">,</span><span class="n">n_samples</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span><span class="n">sm_type</span><span class="o">=</span><span class="s1">&#39;KRG&#39;</span><span class="p">)</span>
+<span class="n">b3</span><span class="o">.</span><span class="n">train_inverse</span><span class="p">(</span><span class="n">sm_type</span><span class="o">=</span><span class="s1">&#39;LS&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+___________________________________________________________________________
+
+                                    LS
+___________________________________________________________________________
+
+ Problem size
+
+      # training points.        : 50
+
+___________________________________________________________________________
+
+ Training
+
+   Training ...
+   Training - done. Time (sec):  0.0009418
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/khalil/.local/share/virtualenvs/mvmlib-9r_YoSyI/lib/python3.10/site-packages/smt/surrogate_models/krg_based.py:211: UserWarning: Warning: multiple x input features have the same value (at least same row twice).
+  warnings.warn(&#34;Warning: multiple x input features have the same value (at least same row twice).&#34;)
+</pre></div></div>
+</div>
+<p>We now calculate the impact using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> using the Kriging surrogate model</p>
+<div class="math notranslate nohighlight">
+\[\text{impact}_{mj} = \dfrac{p_j - \hat{p}^\text{threshold}_{mj}}{\hat{p}^\text{threshold}_{mj}}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">man</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="n">man</span><span class="o">.</span><span class="n">init_decisions</span><span class="p">()</span>
+<span class="n">man</span><span class="o">.</span><span class="n">allocate_margins</span><span class="p">()</span>
+<span class="n">man</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+
+<span class="n">man</span><span class="o">.</span><span class="n">compute_impact</span><span class="p">()</span>
+<span class="n">man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[-0.08317867,  0.26427108]])
+</pre></div></div>
+</div>
+<ul class="simple">
+<li><p>The margin node (against yielding) has a positive impact on cost (i.e., its elimination will increase raw material cost).</p></li>
+<li><p>However, the margin node (against yielding) has a negative on weight (i.e., its elimination will reduce weight).</p></li>
+</ul>
+</section>
+<section id="Calculation-of-change-absorption-capability">
+<h3>Calculation of change absorption capability<a class="headerlink" href="#Calculation-of-change-absorption-capability" title="Link to this heading"></a></h3>
+<p>We now calculate the ability of the design to absorb deviation in the input specifications from their nominal values. We incrementally increase or decrease each specification <span class="math notranslate nohighlight">\(s_i\)</span> until one of the margin nodes is equal to 0. The value of the specification at this point is called <span class="math notranslate nohighlight">\(s^\text{max}_i\)</span>. The maximum allowable deterioration in the input specification is give by</p>
+<div class="math notranslate nohighlight">
+\[\text{deterioration}_i = \dfrac{s^\text{max}_i - s_i}{s_i}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">man</span><span class="o">.</span><span class="n">compute_absorption</span><span class="p">()</span>
+<span class="n">man</span><span class="o">.</span><span class="n">spec_vector</span> <span class="o">-</span> <span class="n">man</span><span class="o">.</span><span class="n">deterioration_vector</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">man</span><span class="o">.</span><span class="n">spec_vector</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([414.  , 403.75])
+</pre></div></div>
+</div>
+<p>The value of the target thresholds when <span class="math notranslate nohighlight">\(s^\text{max}_i\)</span> is reached is <span class="math notranslate nohighlight">\(\mathbf{t}^\text{new}\)</span>. The value of the target thresholds at the nominal specifications <span class="math notranslate nohighlight">\(s_i\)</span> is <span class="math notranslate nohighlight">\(\mathbf{t}^\text{nominal}\)</span>. The change absorption per unit deterioration is given by</p>
+<div class="math notranslate nohighlight">
+\[\text{absorption}_{mi} = \dfrac{t^\text{new}_{mi} - t^\text{nominal}_{mi}}{t^\text{nominal}_{mi}\times\text{deterioration}_i}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[2.31557453, 3.38611472]])
+</pre></div></div>
+</div>
+</section>
+<section id="Aggregation-of-impact-and-absorption">
+<h3>Aggregation of impact and absorption<a class="headerlink" href="#Aggregation-of-impact-and-absorption" title="Link to this heading"></a></h3>
+<p>We average the absorption and impact across all input specifications and performance parameters for each margin node (assuming equal weighting)</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}{a}_m = \dfrac{1}{n_\text{specs}}\sum_{i=0}^{n_\text{specs}} \text{absorption}_{mi} \\
+{i}_m = \dfrac{1}{n_\text{perf}}\sum_{j=0}^{n_\text{perf}} \text{impact}_{mj} \\\end{split}\]</div>
+<p>as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_absorption_node_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">mean_impact_node_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mean_absorption_node_1</span><span class="p">,</span><span class="n">mean_impact_node_1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.850844625951363 0.09054620735655292
+</pre></div></div>
+</div>
+<p>Alternatively, we can aggregate across margin nodes instead</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}{a}_i = \dfrac{1}{n_\text{nodes}}\sum_{m=0}^{n_\text{nodes}} \text{absorption}_{mi} \\
+{i}_j = \dfrac{1}{n_\text{nodes}}\sum_{m=0}^{n_\text{nodes}} \text{impact}_{mj} \\\end{split}\]</div>
+<p>as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_absorption_spec_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">mean_absorption_spec_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">mean_impact_perf_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">mean_impact_perf_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mean_absorption_spec_1</span><span class="p">,</span><span class="n">mean_impact_perf_1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mean_absorption_spec_2</span><span class="p">,</span><span class="n">mean_impact_perf_2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.3155745312790024 -0.0831786667397811
+3.3861147206237234 0.2642710814528869
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Effect-of-uncertainty-in-the-nominal-values-of-the-input-specifications-T_1-and-T_2">
+<h2>Effect of uncertainty in the nominal values of the input specifications <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span><a class="headerlink" href="#Effect-of-uncertainty-in-the-nominal-values-of-the-input-specifications-T_1-and-T_2" title="Link to this heading"></a></h2>
+<p>This caused by unequal temperatures <span class="math notranslate nohighlight">\(T_1\)</span>, and <span class="math notranslate nohighlight">\(T_2\)</span>. Their exact values are not known and are expected to vary. We model this uncertainty using a joint probability density function:</p>
+<div class="math notranslate nohighlight">
+\[T_1,T_2 \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma})\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> and <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> are the means and covariances, respectively of multivariate normal distribution. For more examples of different probability density functions supported by the library, see the examples <a class="reference external" href="https://sed-group.github.io/mvmlib/notebooks/PDF_examples.html">here</a></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">GaussianFunc</span><span class="p">,</span> <span class="n">UniformFunc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># T1,T2 distribution (Gaussian)</span>
+<span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">450</span><span class="p">,</span> <span class="mi">425</span><span class="p">])</span>
+<span class="n">Sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mf">12.5</span><span class="p">],</span>
+    <span class="p">[</span><span class="mf">37.5</span><span class="p">,</span> <span class="mi">50</span><span class="p">],</span>
+<span class="p">])</span>
+<span class="n">Requirement</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">Sigma</span><span class="p">,</span> <span class="s1">&#39;temp&#39;</span><span class="p">)</span>
+
+<span class="n">Requirement</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">Requirement</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Thermal loads $T_1,T_2 </span><span class="se">\</span>
+<span class="s1">    \sim \mathcal</span><span class="si">{N}</span><span class="s1">(\mu,\Sigma)$&#39;</span><span class="p">)</span>
+<span class="n">Requirement</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_38_0.png" src="../_images/notebooks_strut_example_38_0.png" />
+</div>
+</div>
+<p>We define the random input specifications as follows by supplying the arguments <code class="docutils literal notranslate"><span class="pre">cov_index</span></code> and <code class="docutils literal notranslate"><span class="pre">distribution</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">InputSpec</span>
+
+<span class="c1"># define input specifications</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">[</span><span class="mi">325</span><span class="p">,</span> <span class="mi">550</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+               <span class="n">description</span><span class="o">=</span><span class="s1">&#39;nacelle temperature&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">,</span>
+               <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="n">inc</span><span class="o">=-</span><span class="mf">1e-0</span><span class="p">,</span> <span class="n">inc_type</span><span class="o">=</span><span class="s1">&#39;rel&#39;</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;S2&#39;</span><span class="p">,</span> <span class="n">universe</span><span class="o">=</span><span class="p">[</span><span class="mi">325</span><span class="p">,</span> <span class="mi">550</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+               <span class="n">description</span><span class="o">=</span><span class="s1">&#39;gas surface temperature&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">,</span>
+               <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span> <span class="n">inc</span><span class="o">=+</span><span class="mf">1e-0</span><span class="p">,</span> <span class="n">inc_type</span><span class="o">=</span><span class="s1">&#39;rel&#39;</span><span class="p">)</span>
+<span class="n">input_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<p>Instead of redifining the MAN from scratch, we can subclass the original deterministic <code class="docutils literal notranslate"><span class="pre">MAN</span></code> and extend it by defining the <code class="docutils literal notranslate"><span class="pre">randomize</span></code> method to allow the MAN to draw random samples on input specs <span class="math notranslate nohighlight">\(T_1\)</span> and <span class="math notranslate nohighlight">\(T_2\)</span>. The new stochastic version of the previous MAN is defined by <code class="docutils literal notranslate"><span class="pre">StoMAN</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the stochastic MAN</span>
+<span class="k">class</span> <span class="nc">StoMAN</span><span class="p">(</span><span class="n">MAN</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">randomize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">s1</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="n">s2</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+<span class="n">sto_man</span> <span class="o">=</span> <span class="n">StoMAN</span><span class="p">(</span><span class="n">design_params</span><span class="p">,</span><span class="n">input_specs</span><span class="p">,</span><span class="n">fixed_params</span><span class="p">,</span>
+    <span class="n">behaviours</span><span class="p">,</span><span class="n">decisions</span><span class="p">,</span><span class="n">margin_nodes</span><span class="p">,</span><span class="n">performances</span><span class="p">,</span><span class="s1">&#39;MAN_2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We use a Monte-Carlo simulation to obtain the distribution of impact and absorption in the design</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># Perform Monte-Carlo simulation</span>
+<span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress: </span><span class="si">%d%%</span><span class="s2">   </span><span class="se">\r</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">((</span><span class="n">n</span><span class="o">/</span><span class="n">n_epochs</span><span class="p">)</span><span class="o">*</span> <span class="mi">100</span><span class="p">))</span> <span class="c1"># display progress</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">randomize</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">init_decisions</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">allocate_margins</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">compute_impact</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">compute_absorption</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 12%
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 99%
+</pre></div></div>
+</div>
+<p>We view the distribution of excess</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># View distribution of excess</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">margin_nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">excess</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_46_0.png" src="../_images/notebooks_strut_example_46_0.png" />
+</div>
+</div>
+<p>we view the distribution of impact on performance</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># View distribution of Impact on Performance</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_48_0.png" src="../_images/notebooks_strut_example_48_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_48_1.png" src="../_images/notebooks_strut_example_48_1.png" />
+</div>
+</div>
+<p>We view the distribution of change absorption capability of margin node 1</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sto_man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_50_0.png" src="../_images/notebooks_strut_example_50_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_50_1.png" src="../_images/notebooks_strut_example_50_1.png" />
+</div>
+</div>
+<p>Finally, we view the margin value plot</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># display the margin value plot</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">compute_mvp</span><span class="p">(</span><span class="s1">&#39;scatter&#39;</span><span class="p">)</span>
+<span class="n">sto_man</span><span class="o">.</span><span class="n">compute_mvp</span><span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_52_0.png" src="../_images/notebooks_strut_example_52_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_52_1.png" src="../_images/notebooks_strut_example_52_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.011306362998459859
+</pre></div></div>
+</div>
+</section>
+<section id="The-effect-of-design-parameters-on-change-absorption-and-impact-on-performance">
+<h2>The effect of design parameters on change absorption and impact on performance<a class="headerlink" href="#The-effect-of-design-parameters-on-change-absorption-and-impact-on-performance" title="Link to this heading"></a></h2>
+<p>Let us look at an alternative design given by different values of <span class="math notranslate nohighlight">\(w\)</span>, <span class="math notranslate nohighlight">\(h\)</span>, and <span class="math notranslate nohighlight">\(\theta\)</span></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Design</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># Effect of alternative designs</span>
+<span class="n">n_designs</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">universe_d</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">universe_d</span><span class="p">)[:,</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">design_doe</span> <span class="o">=</span> <span class="n">Design</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">n_designs</span><span class="p">,</span> <span class="s1">&#39;LHS&#39;</span><span class="p">)</span>
+
+<span class="c1"># create empty figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Impact on performance&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Change absoption capability&#39;</span><span class="p">)</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">margin_nodes</span><span class="p">)))</span>
+<span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">margin_nodes</span><span class="p">)))</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">man</span><span class="o">.</span><span class="n">design_params</span><span class="p">)))</span>
+
+<span class="k">for</span> <span class="n">d</span><span class="p">,</span><span class="n">design</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">design_doe</span><span class="o">.</span><span class="n">unscale</span><span class="p">()):</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">nominal_design_vector</span> <span class="o">=</span> <span class="n">design</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="n">sto_man</span><span class="o">.</span><span class="n">reset_outputs</span><span class="p">()</span>
+
+    <span class="c1"># Perform Monte-Carlo simulation</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress: </span><span class="si">%d%%</span><span class="s2">   </span><span class="se">\r</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">((</span><span class="n">d</span> <span class="o">*</span> <span class="n">n_epochs</span> <span class="o">+</span> <span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n_designs</span> <span class="o">*</span> <span class="n">n_epochs</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">randomize</span><span class="p">()</span>
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">init_decisions</span><span class="p">()</span>
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">allocate_margins</span><span class="p">()</span>
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">compute_impact</span><span class="p">()</span>
+        <span class="n">sto_man</span><span class="o">.</span><span class="n">compute_absorption</span><span class="p">()</span>
+
+    <span class="c1"># Extract x and y</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sto_man</span><span class="o">.</span><span class="n">impact_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="c1"># average along performance parameters (assumes equal weighting)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">sto_man</span><span class="o">.</span><span class="n">absorption_matrix</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="c1"># average along input specs (assumes equal weighting)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y</span><span class="p">)):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">X</span><span class="p">,</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Y</span><span class="p">,</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">D</span><span class="p">,</span><span class="n">design</span><span class="p">))</span>
+
+    <span class="c1"># plot the results</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 99%
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_54_1.png" src="../_images/notebooks_strut_example_54_1.png" />
+</div>
+</div>
+<p>Now we calculate the distance to the neutral line to rank different designs</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">nearest</span>
+
+<span class="c1"># Calculate distance metric</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">X</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span><span class="n">Y</span><span class="o">.</span><span class="n">min</span><span class="p">()])</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">X</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span><span class="n">Y</span><span class="o">.</span><span class="n">max</span><span class="p">()])</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="n">p1</span> <span class="o">-</span> <span class="mf">0.1</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">p2</span> <span class="o">-</span> <span class="n">p1</span><span class="p">)</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">p2</span> <span class="o">+</span> <span class="mf">0.1</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">p2</span> <span class="o">-</span> <span class="n">p1</span><span class="p">)</span>
+
+<span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)):</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">node</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="n">node</span><span class="p">]])</span>
+        <span class="n">pn</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">nearest</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">+=</span> <span class="n">d</span>
+
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span><span class="n">dist</span><span class="p">)</span>
+
+<span class="c1"># create empty figure</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Overall distance from the neutral line&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Frequency&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span><span class="n">bins</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">distances</span><span class="p">))</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">best_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+<span class="n">best_design</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="n">best_i</span><span class="p">,:]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;---------------------------------&#39;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;The best design:</span><span class="se">\n</span><span class="s1">&#39;</span>
+<span class="k">for</span> <span class="n">value</span><span class="p">,</span><span class="n">d_object</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">best_design</span><span class="p">,</span><span class="n">sto_man</span><span class="o">.</span><span class="n">design_params</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">+=</span> <span class="n">d_object</span><span class="o">.</span><span class="n">symbol</span> <span class="o">+</span> <span class="s1">&#39; = &#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">%.3f</span><span class="s1">&#39;</span><span class="o">%</span><span class="k">value</span> + &#39;\n&#39;
+
+<span class="n">result</span> <span class="o">+=</span> <span class="s1">&#39;---------------------------------&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_56_0.png" src="../_images/notebooks_strut_example_56_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+---------------------------------
+The best design:
+w = 85.258
+h = 15.242
+theta = 3.865
+---------------------------------
+</pre></div></div>
+</div>
+<p>Let us visualize the distance calculation for three different designs</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span><span class="c1"># display distances only for three designs</span>
+<span class="n">X_plot</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,:]</span>
+<span class="n">Y_plot</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,:]</span>
+
+<span class="c1"># create empty figure</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;#FF0000&#39;</span><span class="p">,</span><span class="s1">&#39;#27BE1E&#39;</span><span class="p">,</span><span class="s1">&#39;#0000FF&#39;</span><span class="p">]</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Impact on performance&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Change absoption capability&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">p1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">p2</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">p1</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">p2</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">transform</span><span class="o">=</span><span class="n">ax</span><span class="o">.</span><span class="n">transAxes</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,(</span><span class="mi">10</span><span class="p">,</span><span class="mi">5</span><span class="p">)))</span>
+
+<span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">X_plot</span><span class="p">,</span><span class="n">Y_plot</span><span class="p">)):</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">c</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">node</span><span class="p">],</span><span class="n">y</span><span class="p">[</span><span class="n">node</span><span class="p">]])</span>
+        <span class="n">pn</span><span class="p">,</span><span class="n">d</span> <span class="o">=</span> <span class="n">nearest</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="p">,</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">+=</span> <span class="n">d</span>
+
+        <span class="n">x_d</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">pn</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="n">y_d</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">pn</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_d</span><span class="p">,</span><span class="n">y_d</span><span class="p">,</span><span class="n">marker</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">,</span><span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span><span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span><span class="n">dist</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_strut_example_58_0.png" src="../_images/notebooks_strut_example_58_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="TRS_example.html" class="btn btn-neutral float-left" title="Defining fuzzy logic system for evaluating TRS performance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="PDF_examples.html" class="btn btn-neutral float-right" title="Using mvmlib to define univariate and multivariate probability density functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

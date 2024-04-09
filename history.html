@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="The mvmlib API reference" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Cookbook and Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-10">0.5.10</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#features">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-9">0.5.9</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#fixes">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-8">0.5.8</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id4">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-7">0.5.7</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id6">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id7">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#incompatible-changes">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-6">0.5.6</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id9">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id10">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id11">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-5">0.5.5</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id13">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id14">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-4">0.5.4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id16">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-3">0.5.3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id18">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-2">0.5.2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id20">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-1">0.5.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id22">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-5-0">0.5.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id24">Incompatible changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id25">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id26">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-8">0.4.8</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id28">Incompatible changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id29">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-7">0.4.7</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id31">Incompatible changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id32">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-6">0.4.6</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id34">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id35">Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id36">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-5">0.4.5</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id38">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id39">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-4">0.4.4</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id41">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id42">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-3">0.4.3</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id44">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id45">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-2">0.4.2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id48">Features</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-1">0.4.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id50">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-4-0">0.4.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id52">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id53">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-3-0">0.3.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id55">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id56">Incompatible changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id57">Fixes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-2-1">0.2.1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id59">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id60">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-2-0">0.2.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id62">Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id63">Incompatible changes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-0-1-0">0.1.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id65">Features</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Changelog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/history.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="toctree-wrapper compound">
+</div>
+<section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading"></a></h1>
+<section id="release-0-5-10">
+<span id="id1"></span><h2>0.5.10<a class="headerlink" href="#release-0-5-10" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 09, 2024</p>
+</dd>
+</dl>
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Added a <cite>save</cite> and <cite>load</cite> method to class <cite>DOELib.Design</cite></p></li>
+<li><p>Added a <cite>random_seed</cite> optional argument to <cite>DOELib.Design</cite></p></li>
+<li><p>Added a <cite>get_design</cite> method to load an instance <cite>DOELib.Design</cite> intialized to the provided data</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-9">
+<span id="id2"></span><h2>0.5.9<a class="headerlink" href="#release-0-5-9" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 22, 2023</p>
+</dd>
+</dl>
+<section id="fixes">
+<h3>Fixes<a class="headerlink" href="#fixes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix compatibility with python versions <cite>3.8</cite>, <cite>3.9</cite>, <cite>3.10</cite>, and <cite>3.11</cite></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-8">
+<span id="id3"></span><h2>0.5.8<a class="headerlink" href="#release-0-5-8" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 18, 2023</p>
+</dd>
+</dl>
+<section id="id4">
+<h3>Fixes<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix the <code class="docutils literal notranslate"><span class="pre">compute_volume</span></code> method to avoid float object TypeError on call to <code class="docutils literal notranslate"><span class="pre">math.factorial</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-7">
+<span id="id5"></span><h2>0.5.7<a class="headerlink" href="#release-0-5-7" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 04, 2023</p>
+</dd>
+</dl>
+<section id="id6">
+<h3>Features<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code> method of  <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> now has an optional <code class="docutils literal notranslate"><span class="pre">method</span></code> argument for specifying different root finding algorithms</p></li>
+<li><p>Margins can now be allocated using different margin allocation strategies for each margin node using the <code class="docutils literal notranslate"><span class="pre">allocate_margins</span></code> method</p></li>
+<li><p>Added technical documentation explaining the theory of the Margin Value Method</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3>Fixes<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed the update of <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> histograms <code class="docutils literal notranslate"><span class="pre">self.value_dist</span> <span class="pre">=</span> <span class="pre">self.values</span></code> on every <code class="docutils literal notranslate"><span class="pre">__call__</span></code> of scalar parameters to improve performance</p></li>
+</ul>
+</section>
+<section id="incompatible-changes">
+<h3>Incompatible changes<a class="headerlink" href="#incompatible-changes" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">forward()</span></code> method of <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> now requires the argument <code class="docutils literal notranslate"><span class="pre">strategy</span></code> to be a list of strategies one for each <code class="docutils literal notranslate"><span class="pre">Decision</span></code> instance</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-6">
+<span id="id8"></span><h2>0.5.6<a class="headerlink" href="#release-0-5-6" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>June 29, 2022</p>
+</dd>
+</dl>
+<section id="id9">
+<h3>Features<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">allocate_margins()</span></code> allows the user to specify a margin allocation strategy such as <code class="docutils literal notranslate"><span class="pre">min_excess</span></code> or <code class="docutils literal notranslate"><span class="pre">manual</span></code></p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Decision</span></code> class now stores <code class="docutils literal notranslate"><span class="pre">selection_values</span></code> in order to allow the use to probe the frequency of each decision made</p></li>
+</ul>
+</section>
+<section id="id10">
+<h3>Fixes<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fixed case when errors occur in <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> objects due to <code class="docutils literal notranslate"><span class="pre">value_dist</span></code> property, when attempting to generate histogram from samples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">random()</span></code> method of  <code class="docutils literal notranslate"><span class="pre">Specification</span></code> now calls the <code class="docutils literal notranslate"><span class="pre">random()</span></code> method of <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> implicitly</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> instances now store <code class="docutils literal notranslate"><span class="pre">Specification</span></code> instances when using the <code class="docutils literal notranslate"><span class="pre">save</span></code> and <code class="docutils literal notranslate"><span class="pre">load</span></code> methods</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> instances now store <code class="docutils literal notranslate"><span class="pre">deterioration_vector``and</span> <span class="pre">``utilization_matrix</span></code></p></li>
+<li><p>Fixed the <code class="docutils literal notranslate"><span class="pre">train_surrogate</span></code>, <code class="docutils literal notranslate"><span class="pre">train_inverse</span></code>, and <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate</span></code> methods to cap data at 100 * dim for <code class="docutils literal notranslate"><span class="pre">KRG</span></code> models</p></li>
+</ul>
+</section>
+<section id="id11">
+<h3>Incompatible changes<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">forward()</span></code> method of <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> now requires two optional arguments <code class="docutils literal notranslate"><span class="pre">allocate_margin</span></code>, and <code class="docutils literal notranslate"><span class="pre">strategy</span></code> for all <code class="docutils literal notranslate"><span class="pre">Decision</span></code> instances</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__call__()</span></code> method of <code class="docutils literal notranslate"><span class="pre">Decision</span></code> now requires two arguments <code class="docutils literal notranslate"><span class="pre">allocate_margin</span></code>, and <code class="docutils literal notranslate"><span class="pre">strategy</span></code></p></li>
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">allocate_margins()</span></code> must now be called before every <code class="docutils literal notranslate"><span class="pre">forward()</span></code> call of a <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> instance</p></li>
+<li><p>It is recommended to use <code class="docutils literal notranslate"><span class="pre">self.input_spec</span></code> instead of those defined globally outside <code class="docutils literal notranslate"><span class="pre">forward()</span></code> and <code class="docutils literal notranslate"><span class="pre">randomize()</span></code> implementations</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-5">
+<span id="id12"></span><h2>0.5.5<a class="headerlink" href="#release-0-5-5" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 15, 2022</p>
+</dd>
+</dl>
+<section id="id13">
+<h3>Fixes<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> objects now support the <code class="docutils literal notranslate"><span class="pre">train_inverse</span></code> method (works only if the <code class="docutils literal notranslate"><span class="pre">train_surrogate</span></code> method has completed successfully) for training a surrogate model that inverts decided variables to any variable of choice (given by the <code class="docutils literal notranslate"><span class="pre">key</span></code> argument) and intermediate parameters (given by the <code class="docutils literal notranslate"><span class="pre">intermediate</span></code> attribute)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> objects now support the <code class="docutils literal notranslate"><span class="pre">inv_call</span></code> which can be user defined (must define the <code class="docutils literal notranslate"><span class="pre">intermediate</span></code> and <code class="docutils literal notranslate"><span class="pre">inverted</span></code> attributes) or from the <code class="docutils literal notranslate"><span class="pre">train_inverse</span></code> method</p></li>
+<li><p>if <code class="docutils literal notranslate"><span class="pre">use_estimate</span></code> is False, the <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> must have equal number of decision and margin nodes associated with each other (1:1 ratio)</p></li>
+<li><p>The user-implemented <code class="docutils literal notranslate"><span class="pre">forward</span></code> method of the <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> object must include the <code class="docutils literal notranslate"><span class="pre">outputs</span></code> optional argument if using <code class="docutils literal notranslate"><span class="pre">inv_call</span></code> anywhere in the method</p></li>
+<li><p>Added error handling for <code class="docutils literal notranslate"><span class="pre">train_surrogate</span></code> function by rejecting NaN values during sampling of the blackbox</p></li>
+</ul>
+</section>
+<section id="id14">
+<h3>Incompatible changes<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">use_estimate</span></code> argument of <code class="docutils literal notranslate"><span class="pre">compute_impact</span></code> method now relates to whether a surrogate is used or not for impact calculation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_surrogate</span></code> argument of <code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> class now needs the arguments <code class="docutils literal notranslate"><span class="pre">n_i</span></code>, <code class="docutils literal notranslate"><span class="pre">n_p</span></code>, <code class="docutils literal notranslate"><span class="pre">n_dv</span></code>, and <code class="docutils literal notranslate"><span class="pre">n_tt</span></code> for each of the output parameters</p></li>
+<li><p>output of a decision node is given by the attribute <code class="docutils literal notranslate"><span class="pre">output_value</span></code> instead of <code class="docutils literal notranslate"><span class="pre">decided_value</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-4">
+<span id="id15"></span><h2>0.5.4<a class="headerlink" href="#release-0-5-4" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>April 10, 2022</p>
+</dd>
+</dl>
+<section id="id16">
+<h3>Fixes<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Removed example scripts since they are more for research than for utility</p></li>
+<li><p>Modified impact on performance calculation <code class="docutils literal notranslate"><span class="pre">compute_impact</span></code> to cap performance parameters by their maximum and minimum values</p></li>
+<li><p>Fixed impact on performance calculation <code class="docutils literal notranslate"><span class="pre">compute_impact</span></code> to utilized target thresholds and decided values instead of excess values from surrogate</p></li>
+<li><p>Added visualization tests</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-3">
+<span id="id17"></span><h2>0.5.3<a class="headerlink" href="#release-0-5-3" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 29, 2022</p>
+</dd>
+</dl>
+<section id="id18">
+<h3>Fixes<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>removed dependency on <code class="docutils literal notranslate"><span class="pre">py</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-2">
+<span id="id19"></span><h2>0.5.2<a class="headerlink" href="#release-0-5-2" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 29, 2022</p>
+</dd>
+</dl>
+<section id="id20">
+<h3>Features<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>First public release of <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-1">
+<span id="id21"></span><h2>0.5.1<a class="headerlink" href="#release-0-5-1" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 27, 2022</p>
+</dd>
+</dl>
+<section id="id22">
+<h3>Incompatible changes<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Rename the library to <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> and the main module to <code class="docutils literal notranslate"><span class="pre">mvm</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-5-0">
+<span id="id23"></span><h2>0.5.0<a class="headerlink" href="#release-0-5-0" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>March 14, 2022</p>
+</dd>
+</dl>
+<section id="id24">
+<h3>Incompatible changes<a class="headerlink" href="#id24" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">init_decisions()</span></code> must be called before the first <code class="docutils literal notranslate"><span class="pre">forward()</span></code> and after every <code class="docutils literal notranslate"><span class="pre">randomize()</span></code> or changing the input specifications to store the universe of decided values</p></li>
+<li><p>if the argument <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> of <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate()</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code>, or <code class="docutils literal notranslate"><span class="pre">compute_decisions()</span></code> is greater then 1 then Jupyter notebook cannot be used with ur script</p></li>
+<li><p>The argument <code class="docutils literal notranslate"><span class="pre">value</span></code> of <code class="docutils literal notranslate"><span class="pre">InputSpec</span></code> initializer must be a float or an integer only. A <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> object must be passed to the optional argument <code class="docutils literal notranslate"><span class="pre">distribution</span></code></p></li>
+</ul>
+</section>
+<section id="id25">
+<h3>Features<a class="headerlink" href="#id25" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Decision</span></code> class can now support multiple decided values using the <code class="docutils literal notranslate"><span class="pre">n_nodes</span></code> optional argument. User must supple equal length of target thresholds</p></li>
+<li><p>Can pass additional arguments as <code class="docutils literal notranslate"><span class="pre">kwargs</span></code> to behaviour model for <code class="docutils literal notranslate"><span class="pre">Decision</span></code> class during the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method</p></li>
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate()</span></code> of the class <code class="docutils literal notranslate"><span class="pre">MarginNetwork``now</span> <span class="pre">supports</span> <span class="pre">different</span> <span class="pre">surrogate</span> <span class="pre">models</span> <span class="pre">specified</span> <span class="pre">using</span> <span class="pre">the</span> <span class="pre">``sm_type</span></code> argument</p></li>
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate()</span></code> of the class <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> now supports parallel processing specified using the <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> argument</p></li>
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code> of the class <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> now supports parallel processing of the decision universe (which changes every time the input specifications <code class="docutils literal notranslate"><span class="pre">self.spec_vector</span></code> are iterated during absorption computation) specified using the <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> argument</p></li>
+<li><p>The method <code class="docutils literal notranslate"><span class="pre">compute_decisions()</span></code> of the class <code class="docutils literal notranslate"><span class="pre">Decision</span></code> now supports parallel processing specified using the <code class="docutils literal notranslate"><span class="pre">num_threads</span></code> argument</p></li>
+</ul>
+</section>
+<section id="id26">
+<h3>Fixes<a class="headerlink" href="#id26" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>More efficient <code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code> method by lumping threshold limit and specification limit calculations</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate()</span></code> method to properly handle ordinal type variables such as <code class="docutils literal notranslate"><span class="pre">INT</span></code></p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code> method to properly handle input specifications that have negative nominal values</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">compute_absorption()</span></code> method to change nan values to zero</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">__deepcopy__</span></code> directives to all classes</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-8">
+<span id="id27"></span><h2>0.4.8<a class="headerlink" href="#release-0-4-8" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>February 20, 2022</p>
+</dd>
+</dl>
+<section id="id28">
+<h3>Incompatible changes<a class="headerlink" href="#id28" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Added mandatory argument <code class="docutils literal notranslate"><span class="pre">variable_type</span></code> to <code class="docutils literal notranslate"><span class="pre">InputSpec</span></code> and <code class="docutils literal notranslate"><span class="pre">DesignParam</span></code> classes during initialization</p></li>
+</ul>
+</section>
+<section id="id29">
+<h3>Features<a class="headerlink" href="#id29" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add the <code class="docutils literal notranslate"><span class="pre">Decision</span></code> class for defining decision nodes and off-the-shelf components</p></li>
+<li><p>Add the integer and continuous type variables for <code class="docutils literal notranslate"><span class="pre">InputSpec</span></code> and <code class="docutils literal notranslate"><span class="pre">DesignParam</span></code> classes</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-7">
+<span id="id30"></span><h2>0.4.7<a class="headerlink" href="#release-0-4-7" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>February 17, 2022</p>
+</dd>
+</dl>
+<section id="id31">
+<h3>Incompatible changes<a class="headerlink" href="#id31" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">AbsorptionMatrix</span></code> class is removed, instead call <code class="docutils literal notranslate"><span class="pre">MarginNetwork.absoprtion_matrix.value</span></code> to retrieve absorption values</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ImpactMatrix</span></code> class is removed, instead call <code class="docutils literal notranslate"><span class="pre">MarginNetwork.impact_matrix.value</span></code> to retrieve impact values</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">AbsorptionMatrix.deteriorations</span></code> attribute is removed, instead call <code class="docutils literal notranslate"><span class="pre">MarginNetwork.deterioration_vector.value</span></code> to retrieve deterioration values</p></li>
+<li><p>All random sampling functions use the <code class="docutils literal notranslate"><span class="pre">.random()</span></code> method to draw samples. Cannot use the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> operator anymore</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> method <code class="docutils literal notranslate"><span class="pre">reset_outputs()</span></code> not takes a single optional argument to reset by <code class="docutils literal notranslate"><span class="pre">N</span></code> samples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dist</span></code> method <code class="docutils literal notranslate"><span class="pre">reset_outputs()</span></code> not takes a single optional argument to reset by <code class="docutils literal notranslate"><span class="pre">N</span></code> samples</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Distribution</span></code> object method <code class="docutils literal notranslate"><span class="pre">.random()</span></code> (previously <code class="docutils literal notranslate"><span class="pre">__call__</span></code>) now returns a 1D <code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code> for one dimensional pdfs</p></li>
+<li><p>Rename methods to comply with PEP 582 standard <code class="docutils literal notranslate"><span class="pre">compute_mvp</span></code>, <code class="docutils literal notranslate"><span class="pre">get_array</span></code>, <code class="docutils literal notranslate"><span class="pre">set_func</span></code></p></li>
+<li><p>Rename classes to comply with PEP 582 standard <code class="docutils literal notranslate"><span class="pre">GuassianFunc</span></code>, <code class="docutils literal notranslate"><span class="pre">UniformFunc</span></code>, <code class="docutils literal notranslate"><span class="pre">TriangularFunc</span></code>, <code class="docutils literal notranslate"><span class="pre">FuzzySet</span></code>, <code class="docutils literal notranslate"><span class="pre">FuzzyFunc</span></code>, <code class="docutils literal notranslate"><span class="pre">FuzzySystem</span></code>, <code class="docutils literal notranslate"><span class="pre">FuzzyRule</span></code></p></li>
+</ul>
+</section>
+<section id="id32">
+<h3>Features<a class="headerlink" href="#id32" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Separate absorption, deterioration, and impact matrics into separate <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> attributes</p></li>
+<li><p>Use a Factory design parameter for defining matrix and vector caches used during stochastic simulation of <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-6">
+<span id="id33"></span><h2>0.4.6<a class="headerlink" href="#release-0-4-6" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>January 14, 2022</p>
+</dd>
+</dl>
+<section id="id34">
+<h3>Features<a class="headerlink" href="#id34" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add utilization calculation as part of the <code class="docutils literal notranslate"><span class="pre">compute_absorption</span></code> method</p></li>
+<li><p>Add utilization storage to <code class="docutils literal notranslate"><span class="pre">AbsorptionMatrix</span></code> class</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">compute_MVP</span></code> method to <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> class to show margin value map</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">nearest</span></code> method to <code class="docutils literal notranslate"><span class="pre">dmLib</span></code> to allow calculation of the distance metric for the MVP</p></li>
+</ul>
+</section>
+<section id="id35">
+<h3>Fixes<a class="headerlink" href="#id35" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Adapt <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate</span></code>, <code class="docutils literal notranslate"><span class="pre">view_perf</span></code>, and <code class="docutils literal notranslate"><span class="pre">compute_impact</span></code> to include scaling functionality when training Kriging model</p></li>
+<li><p>Add input specifications samples as input to performance surrogate in <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate</span></code> to accommodate variability input specifications</p></li>
+</ul>
+</section>
+<section id="id36">
+<h3>Incompatible changes<a class="headerlink" href="#id36" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">InputSpec</span></code> now requires the argument <code class="docutils literal notranslate"><span class="pre">universe</span></code> upon initialization</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-5">
+<span id="id37"></span><h2>0.4.5<a class="headerlink" href="#release-0-4-5" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>January 06, 2022</p>
+</dd>
+</dl>
+<section id="id38">
+<h3>Features<a class="headerlink" href="#id38" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add distribution type <code class="docutils literal notranslate"><span class="pre">uniformFunc</span></code> for multivariate uniform distributions</p></li>
+</ul>
+</section>
+<section id="id39">
+<h3>Fixes<a class="headerlink" href="#id39" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">MarginNode.value</span></code> property to retrieve the last available sample after calling the <code class="docutils literal notranslate"><span class="pre">reset(N)</span></code> method</p></li>
+<li><p>Fix <code class="docutils literal notranslate"><span class="pre">value_dist</span></code> property of <code class="docutils literal notranslate"><span class="pre">Performance</span></code> and <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> classes to construct histogram of samples and then initialize a <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> class from them</p></li>
+<li><p>Force absorption computing to ignore 0 deteriorations by outputting a <code class="docutils literal notranslate"><span class="pre">np.nan</span></code></p></li>
+<li><p>Make absorption computation sign independent</p></li>
+<li><p>Add relevant tests for absorption and deterioration computation</p></li>
+<li><p>Simplified length calculation procedure in <code class="docutils literal notranslate"><span class="pre">strut_design.py</span></code> example by using analytical expression instead of <code class="docutils literal notranslate"><span class="pre">fsolve</span></code> in <code class="docutils literal notranslate"><span class="pre">B1</span></code> model</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-4">
+<span id="id40"></span><h2>0.4.4<a class="headerlink" href="#release-0-4-4" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>December 20, 2021</p>
+</dd>
+</dl>
+<section id="id41">
+<h3>Features<a class="headerlink" href="#id41" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add ability to selectively choose how to randomize the MAN by redefining the <code class="docutils literal notranslate"><span class="pre">randomize</span></code> method of <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code></p></li>
+<li><p>Selectively choose when to reset the outputs of the MAN using the <code class="docutils literal notranslate"><span class="pre">reset_outputs</span></code> method</p></li>
+<li><p>Can retrieve design parameters, input specs, excess, target thresholds, decided values, and performances using the properties <code class="docutils literal notranslate"><span class="pre">design_vector</span></code>, <code class="docutils literal notranslate"><span class="pre">spec_vector</span></code>, <code class="docutils literal notranslate"><span class="pre">excess_vector</span></code>, <code class="docutils literal notranslate"><span class="pre">dv_vector</span></code>, <code class="docutils literal notranslate"><span class="pre">tt_vector</span></code>, and <code class="docutils literal notranslate"><span class="pre">perf_vector</span></code>, respectively</p></li>
+<li><p>Add output storage class for a Margin Analysis Network (MAN) <code class="docutils literal notranslate"><span class="pre">AbsorptionMatrix</span></code> which stores absorption and deterioration</p></li>
+<li><p>Add method <code class="docutils literal notranslate"><span class="pre">compute_absorption</span></code> to compute an observation of the change absorption capability matrix and deterioration vector</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">view()</span></code>, <code class="docutils literal notranslate"><span class="pre">view_cdf()</span></code>, <code class="docutils literal notranslate"><span class="pre">view_det()</span></code>, <code class="docutils literal notranslate"><span class="pre">view_det_cdf()</span></code> methods to <code class="docutils literal notranslate"><span class="pre">AbsorptionMatrix</span></code> class by inheritance from <code class="docutils literal notranslate"><span class="pre">VisualizeDist</span></code></p></li>
+</ul>
+</section>
+<section id="id42">
+<h3>Incompatible changes<a class="headerlink" href="#id42" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>instances of <code class="docutils literal notranslate"><span class="pre">InputSpec</span></code> should be called using the <code class="docutils literal notranslate"><span class="pre">.value</span></code> property just like <code class="docutils literal notranslate"><span class="pre">DesignParam</span></code> and <code class="docutils literal notranslate"><span class="pre">FixedParam</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_performance_surrogate</span></code> argument <code class="docutils literal notranslate"><span class="pre">ext_samples</span></code> now takes training points of (<code class="docutils literal notranslate"><span class="pre">excess</span></code>, <code class="docutils literal notranslate"><span class="pre">performance</span></code>) instead of (<code class="docutils literal notranslate"><span class="pre">decided_value</span></code>, <code class="docutils literal notranslate"><span class="pre">performance</span></code>)</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-3">
+<span id="id43"></span><h2>0.4.3<a class="headerlink" href="#release-0-4-3" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>December 18, 2021</p>
+</dd>
+</dl>
+<section id="id44">
+<h3>Features<a class="headerlink" href="#id44" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">VisualizeDist</span></code> class to <code class="docutils literal notranslate"><span class="pre">uncertaintyLib.py</span></code> module</p></li>
+<li><p>Add output storage class for a Margin Analysis Network (MAN) <code class="docutils literal notranslate"><span class="pre">Performance</span></code></p></li>
+<li><p>Add output storage class for a Margin Analysis Network (MAN) <code class="docutils literal notranslate"><span class="pre">ImpactMatrix</span></code></p></li>
+<li><p>Add method <code class="docutils literal notranslate"><span class="pre">train_performance_surrogate</span></code> which uses the library <a class="reference external" href="https://smt.readthedocs.io/en/latest/index.html">SMT</a> to estimate threshold performances</p></li>
+<li><p>Add method <code class="docutils literal notranslate"><span class="pre">compute_impact</span></code> to compute an observation of the Impact on Performance matrix</p></li>
+<li><p>Add method <code class="docutils literal notranslate"><span class="pre">view_perf</span></code> to <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> class to visualize 2D projections of performance surrogate models</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">view()</span></code> and <code class="docutils literal notranslate"><span class="pre">view_cdf()</span></code> methods to <code class="docutils literal notranslate"><span class="pre">Performance</span></code> and <code class="docutils literal notranslate"><span class="pre">ImpactMatrix</span></code> classes by inheritance from <code class="docutils literal notranslate"><span class="pre">VisualizeDist</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Design</span></code> class can now take array_like values for argument <code class="docutils literal notranslate"><span class="pre">nsamples</span></code> if using <code class="docutils literal notranslate"><span class="pre">doe_type='full_fact'</span></code></p></li>
+</ul>
+</section>
+<section id="id45">
+<h3>Incompatible changes<a class="headerlink" href="#id45" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>move <code class="docutils literal notranslate"><span class="pre">compute_cdf()</span></code> method from class <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> to module level method in <code class="docutils literal notranslate"><span class="pre">uncertaintyLib.py</span></code> module</p></li>
+<li><p>use property <code class="docutils literal notranslate"><span class="pre">.values</span></code> instead of <code class="docutils literal notranslate"><span class="pre">excess</span></code> to retrieve observations of excess from <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> object</p></li>
+<li><p>Added dependency on <a class="reference external" href="https://smt.readthedocs.io/en/latest/index.html">SMT</a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">view()</span></code> and <code class="docutils literal notranslate"><span class="pre">view_cdf()</span></code> methods now take optional arguments <code class="docutils literal notranslate"><span class="pre">folder</span></code>, <code class="docutils literal notranslate"><span class="pre">file</span></code>, <code class="docutils literal notranslate"><span class="pre">img_format</span></code>, instead of just <code class="docutils literal notranslate"><span class="pre">savefile</span></code></p></li>
+<li><p>Argument <code class="docutils literal notranslate"><span class="pre">type</span></code> of <code class="docutils literal notranslate"><span class="pre">Design</span></code> initialization changed to <code class="docutils literal notranslate"><span class="pre">doe_type</span></code> to avoid overloading python object <code class="docutils literal notranslate"><span class="pre">type</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-2">
+<span id="id47"></span><h2>0.4.2<a class="headerlink" href="#release-0-4-2" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>December 17, 2021</p>
+</dd>
+</dl>
+<section id="id48">
+<h3>Features<a class="headerlink" href="#id48" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add building block for a Margin Analysis Network (MAN) as a class object <code class="docutils literal notranslate"><span class="pre">InputSpec</span></code></p></li>
+<li><p>Add building block for a Margin Analysis Network (MAN) as a class object <code class="docutils literal notranslate"><span class="pre">FixedParam</span></code></p></li>
+<li><p>Add building block for a Margin Analysis Network (MAN) as a class object <code class="docutils literal notranslate"><span class="pre">DesignParam</span></code></p></li>
+<li><p>Add building block for a Margin Analysis Network (MAN) as a class object <code class="docutils literal notranslate"><span class="pre">Behaviour</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method must be redefined by the user</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">MarginNetwork</span></code> class object that must be inherited and redefined by user</p></li>
+<li><p>Add ability to call <code class="docutils literal notranslate"><span class="pre">MarginNetwork.forward()</span></code> in a Monte Carlo setting</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-1">
+<span id="id49"></span><h2>0.4.1<a class="headerlink" href="#release-0-4-1" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>December 15, 2021</p>
+</dd>
+</dl>
+<section id="id50">
+<h3>Incompatible changes<a class="headerlink" href="#id50" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> class object is now called using <code class="docutils literal notranslate"><span class="pre">MarginNode(decided_value,threshold)</span></code>, where <code class="docutils literal notranslate"><span class="pre">decided_value</span></code> and <code class="docutils literal notranslate"><span class="pre">threshold</span></code> are vectors of equal length sampled from their respective functions</p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-4-0">
+<span id="id51"></span><h2>0.4.0<a class="headerlink" href="#release-0-4-0" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>October 26, 2021</p>
+</dd>
+</dl>
+<section id="id52">
+<h3>Features<a class="headerlink" href="#id52" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add building block for a Margin Analysis Network (MAN) as a class object <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code></p></li>
+<li><p>Add ability to call <code class="docutils literal notranslate"><span class="pre">MarginNode()</span></code> using a set of requirement observations and design parameters in a Monte Carlo setting</p></li>
+<li><p>Add ability to view <code class="docutils literal notranslate"><span class="pre">MarginNode</span></code> excess pdf and cdf using <code class="docutils literal notranslate"><span class="pre">MarginNode.view()</span></code> and <code class="docutils literal notranslate"><span class="pre">MarginNode.view_cdf()</span></code> methods</p></li>
+</ul>
+</section>
+<section id="id53">
+<h3>Fixes<a class="headerlink" href="#id53" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Transfer class object labels to plot axes for <code class="docutils literal notranslate"><span class="pre">fuzzySystem.view()</span></code>, <code class="docutils literal notranslate"><span class="pre">Distribution.view()</span></code>, and <code class="docutils literal notranslate"><span class="pre">gaussianFunc.view()</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-3-0">
+<span id="id54"></span><h2>0.3.0<a class="headerlink" href="#release-0-3-0" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>October 23, 2021</p>
+</dd>
+</dl>
+<section id="id55">
+<h3>Features<a class="headerlink" href="#id55" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add support for defining arbitrary probability densities using raw density values <code class="docutils literal notranslate"><span class="pre">Distribution(p)</span></code></p></li>
+<li><p>Add support for random sampling from instance of <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> by calling it</p></li>
+<li><p>Add support for sampling from Gaussian distribution <code class="docutils literal notranslate"><span class="pre">gaussianFunc</span></code> by calling it directly</p></li>
+<li><p>Add support for viewing samples from defined distribution using the <code class="docutils literal notranslate"><span class="pre">.view()</span></code> method for <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> and <code class="docutils literal notranslate"><span class="pre">gaussianFunc</span></code> instances</p></li>
+<li><p>Add support for viewing aggregate function after computing using <code class="docutils literal notranslate"><span class="pre">.view()</span></code> method for <code class="docutils literal notranslate"><span class="pre">fuzzySystem</span></code> after using <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> method</p></li>
+</ul>
+</section>
+<section id="id56">
+<h3>Incompatible changes<a class="headerlink" href="#id56" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Must manually reset <code class="docutils literal notranslate"><span class="pre">fuzzySystem</span></code> instance after <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> to clear aggregate function</p></li>
+</ul>
+</section>
+<section id="id57">
+<h3>Fixes<a class="headerlink" href="#id57" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Fixed problem with <code class="docutils literal notranslate"><span class="pre">fuzzySystem.output_activation`</span></code> not being calculated properly using element-wise operations</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">PDF_examples.py</span></code> script</p></li>
+<li><p>Improve existing tests <code class="docutils literal notranslate"><span class="pre">test_fuzzyInference_N</span></code></p></li>
+<li><p>Add new tests <code class="docutils literal notranslate"><span class="pre">test_gaussian_pdf_rvs</span></code> and <code class="docutils literal notranslate"><span class="pre">test_arbitrary_pdf_rvs</span></code></p></li>
+<li><p>Update documentation <code class="docutils literal notranslate"><span class="pre">conf.py</span></code> to include class docstring from <code class="docutils literal notranslate"><span class="pre">__init__</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-2-1">
+<span id="id58"></span><h2>0.2.1<a class="headerlink" href="#release-0-2-1" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>October 14, 2021</p>
+</dd>
+</dl>
+<section id="id59">
+<h3>Features<a class="headerlink" href="#id59" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add support for calculating probability density of multivariate Gaussian at a given Mahalanobis distance <code class="docutils literal notranslate"><span class="pre">gaussianFunc.compute_density_r</span></code></p></li>
+</ul>
+</section>
+<section id="id60">
+<h3>Incompatible changes<a class="headerlink" href="#id60" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Rename the method <code class="docutils literal notranslate"><span class="pre">gaussianFunc.multivariateGaussian</span></code> to <code class="docutils literal notranslate"><span class="pre">gaussianFunc.compute_density_r</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-2-0">
+<span id="id61"></span><h2>0.2.0<a class="headerlink" href="#release-0-2-0" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>October 14, 2021</p>
+</dd>
+</dl>
+<section id="id62">
+<h3>Features<a class="headerlink" href="#id62" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add support for multi-dimensional arrays or floats for <code class="docutils literal notranslate"><span class="pre">triangularFunc.interp</span></code>, <code class="docutils literal notranslate"><span class="pre">fuzzyRule.apply</span></code>, <code class="docutils literal notranslate"><span class="pre">fuzzySet.interp</span></code>, and <code class="docutils literal notranslate"><span class="pre">fuzzySystem.compute</span></code></p></li>
+<li><p>Update example <code class="docutils literal notranslate"><span class="pre">TRS_example.py</span></code> and documentation example to use these functionalities</p></li>
+<li><p>Add support for directly plotting <code class="docutils literal notranslate"><span class="pre">triangularFunc</span></code> using <code class="docutils literal notranslate"><span class="pre">triangularFunc.view()</span></code></p></li>
+</ul>
+</section>
+<section id="id63">
+<h3>Incompatible changes<a class="headerlink" href="#id63" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Simplify API to directly import <code class="docutils literal notranslate"><span class="pre">triangularFunc</span></code>, <code class="docutils literal notranslate"><span class="pre">fuzzyRule</span></code>, <code class="docutils literal notranslate"><span class="pre">fuzzySet</span></code>, <code class="docutils literal notranslate"><span class="pre">fuzzySystem</span></code>, <code class="docutils literal notranslate"><span class="pre">Design</span></code>, and <code class="docutils literal notranslate"><span class="pre">gaussianFunc</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="release-0-1-0">
+<span id="id64"></span><h2>0.1.0<a class="headerlink" href="#release-0-1-0" title="Link to this heading"></a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>October 9, 2021</p>
+</dd>
+</dl>
+<section id="id65">
+<h3>Features<a class="headerlink" href="#id65" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Introduce  <code class="docutils literal notranslate"><span class="pre">fuzzyLib</span></code>, <code class="docutils literal notranslate"><span class="pre">DOELib</span></code>, and <code class="docutils literal notranslate"><span class="pre">uncertaintyLib</span></code>, and <code class="docutils literal notranslate"><span class="pre">fuzzySystem.compute</span></code></p></li>
+<li><p>Introduce fuzzy inference using <code class="docutils literal notranslate"><span class="pre">dmLib.fuzzyLib.fuzzySystem.fuzzySystem.compute()</span></code> for a <code class="docutils literal notranslate"><span class="pre">dict</span></code> of floats</p></li>
+<li><p>Add example <code class="docutils literal notranslate"><span class="pre">TRS_example.py</span></code> and documentation example to use these functionalities</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="The mvmlib API reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

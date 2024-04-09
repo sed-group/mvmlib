@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The margin value method library &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Background" href="background.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Cookbook and Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The margin value method library</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-margin-value-method-library">
+<h1>The margin value method library<a class="headerlink" href="#the-margin-value-method-library" title="Link to this heading"></a></h1>
+<p>The margin value method (<a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a>) library is an open-source Python package consisting of libraries for defining complex engineering systems using a margin analysis network (MAN). The library provides class objects that represent the various components of the MAN and can be interfaced together to form a network. The library provides a number of computational tools to assess the ability of the system to absorb a change in its inputs (when for example a design requirement changes) by using excess margins.</p>
+<figure class="align-center">
+<a class="reference internal image-reference" href="_images/efm_example.png"><img alt="_images/efm_example.png" src="_images/efm_example.png" style="width: 626.4000000000001px; height: 114.4px;" /></a>
+</figure>
+<p>Currently, <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> is designed for engineers with a python programming background to use since they would need to implement the behaviour models inline. A function-block modeling approach is being developed as a front-end for this library. The library includes a lot of modeling tools that are commonly used in engineering design such as probabilistic and fuzzy logic modeling tools to model uncertainty where it may exist.</p>
+<p>The library also provides an intuitive and efficient way to store computations and results for later use and postprocessing as well as a number of visualization tools.</p>
+</section>
+<section id="license-copyright">
+<h1>License &amp; copyright<a class="headerlink" href="#license-copyright" title="Link to this heading"></a></h1>
+<p>© Khalil Al Handawi</p>
+</section>
+<section id="cite-us">
+<h1>Cite us<a class="headerlink" href="#cite-us" title="Link to this heading"></a></h1>
+<p>To cite <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code>: A. Brahma and D. C. Wynn.
+<a class="reference external" href="https://doi.org/10.1007/s00163-020-00335-8">Margin value method for engineering design improvement</a>.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>@article{Brahma2020,
+   author   = {Brahma, A. and Wynn, D. C.},
+   doi      = {10.1007/s00163-020-00335-8},
+   isbn     = {0123456789},
+   issn     = {14356066},
+   journal  = {Research in Engineering Design},
+   number   = {3},
+   pages    = {353--381},
+   title    = {{Margin value method for engineering design improvement}},
+   url      = {https://doi.org/10.1007/s00163-020-00335-8},
+   volume   = {31},
+   year     = {2020}}
+</pre></div>
+</div>
+</section>
+<section id="references">
+<h1>References<a class="headerlink" href="#references" title="Link to this heading"></a></h1>
+<div class="docutils container" id="id1">
+<div role="list" class="citation-list">
+<div class="citation" id="id2" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>A. Brahma and D. C. Wynn. Margin value method for engineering design improvement. <em>Research in Engineering Design</em>, 31(3):353–381, 2020. URL: <a class="reference external" href="https://doi.org/10.1007/s00163-020-00335-8">https://doi.org/10.1007/s00163-020-00335-8</a>, <a class="reference external" href="https://doi.org/10.1007/s00163-020-00335-8">doi:10.1007/s00163-020-00335-8</a>.</p>
+</div>
+<div class="citation" id="id3" role="doc-biblioentry">
+<span class="label"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></span>
+<p>C. Eckert, O. Isaksson, and C. Earl. Design margins: a hidden issue in industry. <em>Design Science</em>, 5:e9, may 2019. URL: <a class="reference external" href="https://www.cambridge.org/core/product/identifier/S2053470119000076/type/journal_article">https://www.cambridge.org/core/product/identifier/S2053470119000076/type/journal_article</a>, <a class="reference external" href="https://doi.org/10.1017/dsj.2019.7">doi:10.1017/dsj.2019.7</a>.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="documentation-contents">
+<h1>Documentation contents<a class="headerlink" href="#documentation-contents" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Cookbook and Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/TRS_example.html">Defining fuzzy logic system for evaluating TRS performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/strut_example.html">Identification of design margins in the design of a strut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/PDF_examples.html">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">Changelog</a></li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading"></a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="background.html" class="btn btn-neutral float-right" title="Background" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

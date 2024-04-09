@@ -1,0 +1,10 @@
+span.eqno {
+    float: right;
+}
+.rst-content .definitions .admonition-title {
+    background: #1abc9c
+ }
+ 
+ .rst-content .definitions {
+    background: #dbfaf5
+ }

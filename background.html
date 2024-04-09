@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Background &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script src="_static/katex_autorenderer_background.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Glossary" href="glossary.html" />
+    <link rel="prev" title="The margin value method library" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Cookbook and Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Background</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/background.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="background">
+<h1>Background<a class="headerlink" href="#background" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a> developed by <span id="id1"><a class="reference internal" href="index.html#id2" title="A. Brahma and D. C. Wynn. Margin value method for engineering design improvement. Research in Engineering Design, 31(3):353–381, 2020. URL: https://doi.org/10.1007/s00163-020-00335-8, doi:10.1007/s00163-020-00335-8.">Brahma and Wynn</a></span> provides a systematic process for analyzing and evaluating design alternatives at the preliminary design stage in terms of the value of design margins. <a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a> is an analytical method that uses dependencies in a design to first analyse it, then localise the excess margin and finally quantify them. The quantification is done considering the context of the desirable aspects of margin such as change absorption potential and the undesirable effect margins have on the performance of the system. Change absorption is quantified by incrementally varying the input requirements and calculating the maximum amount of deviation in the requirement that can be supported by the current design. The impact of margins on the product’s performance is computed by calculating the loss in performance relative to a hypothetical design featuring zero margins, denoted as the threshold design.</p>
+<p>Overall, <a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a> is structured in the following steps:</p>
+<ul>
+<li><p>Construct a Margin Analysis Network: The first step is to construct the margin analysis network (MAN). The network identifies the flow of information from the input (specification) parameters through decisions to the performance parameters. For some companies, such relationship networks may already exist for a design, which can be reused or adapted to be used in <a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a>. The following steps briefly describe how to create a MAN:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Model the design process: The first step, which shows the possible arrangement of tasks needed for the design to be completed. The aim of this step is to identify the objectives of the design, the individual tasks and subtasks and more importantly, the input (specification) (<span class="math notranslate nohighlight">\(\mathbf{s} \in \mathbb{R}^n\)</span>) and performance parameters (<span class="math notranslate nohighlight">\(\mathbf{p} \in \mathbb{R}^m\)</span>) of interest.</p></li>
+<li><p>Identify steps and parameters: For each tasks or subtasks, the individual inputs, outputs, decisions and calculations are identified.</p></li>
+<li><p>Connect key parameters into a network: Key parameters are identified and unnecessary parameters are eliminated. Inputs and outputs of tasks are connected to each other for all the systems /subsystems to form a network.</p></li>
+<li><p>Construct MAN: Once the network is formed, the margin analysis network can be created. This can be done by modelling the detailed information flows within the calculation and decision steps. The decision steps involve deciding on off-the-shelf components, i.e., choosing from a discrete set <span class="math notranslate nohighlight">\(\mathcal{D}\)</span>. For example, the decision for a material <span class="math notranslate nohighlight">\(d \in \left\{\text{Inconel 718, Titanium}\right\}\)</span>. The <a class="reference internal" href="glossary.html#term-MAN"><span class="xref std std-term">MAN</span></a> is a collection of vector-valued functions.</p></li>
+</ul>
+<div class="definitions admonition">
+<p class="admonition-title">Definition: Margin analysis network (<a class="reference internal" href="glossary.html#term-MAN"><span class="xref std std-term">MAN</span></a>)</p>
+<ul class="simple">
+<li><p>The function <span class="math notranslate nohighlight">\(\mathbf{f}: \mathbb{R}^{n}\times\mathcal{D} \to \mathbb{R}^{e}\)</span> takes input specifications <span class="math notranslate nohighlight">\(\mathbf{s}\)</span> and decisions <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> as its arguments and returns the corresponding target thresholds <span class="math notranslate nohighlight">\(\mathbf{e}^t\)</span>.</p></li>
+<li><p>The function <span class="math notranslate nohighlight">\(\mathbf{g}: \mathcal{D} \to \mathbb{R}^{e}\)</span> takes decisions <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> as its arguments and returns the corresponding decided values <span class="math notranslate nohighlight">\(\mathbf{e}^d\)</span>.</p></li>
+<li><p>The function <span class="math notranslate nohighlight">\(\mathbf{h}: \mathbb{R}^{n}\times\mathcal{D} \to \mathbb{R}^{m}\)</span> takes input specifications <span class="math notranslate nohighlight">\(\mathbf{s}\)</span> and decisions <span class="math notranslate nohighlight">\(\mathbf{d}\)</span> as its arguments and returns the corresponding performance parameters <span class="math notranslate nohighlight">\(\mathbf{p}\)</span>.</p></li>
+<li><p>The function <span class="math notranslate nohighlight">\(\mathbf{g}^{-1}: \mathbb{R}^{e} \to \mathcal{R}^{e}\)</span> takes decided values <span class="math notranslate nohighlight">\(\mathbf{e}^d\)</span> as its arguments and returns the corresponding threshold design <span class="math notranslate nohighlight">\(\mathbf{d}^\text{threshold}\)</span>.</p></li>
+</ul>
+</div>
+</div></blockquote>
+</li>
+<li><p>Margin Value Analysis: The margin value analysis consists of calculating three metrics:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Local excess margin: The first metric quantifies the local excess at each margin node in the margin analysis network. In other words it quantifies by how much a <a class="reference internal" href="glossary.html#term-DV"><span class="xref std std-term">DV</span></a> exceeds the required <a class="reference internal" href="glossary.html#term-TT"><span class="xref std std-term">TT</span></a> at each margin node. This metric is based on the definition of excess by <span id="id2"><a class="reference internal" href="index.html#id3" title="C. Eckert, O. Isaksson, and C. Earl. Design margins: a hidden issue in industry. Design Science, 5:e9, may 2019. URL: https://www.cambridge.org/core/product/identifier/S2053470119000076/type/journal_article, doi:10.1017/dsj.2019.7.">Eckert <em>et al.</em></a></span>.</p></li>
+</ul>
+<div class="definitions admonition">
+<p class="admonition-title">Definition: Excess margins</p>
+<div class="math notranslate nohighlight" id="equation-eq-excess">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eq-excess" title="Link to this equation"></a></span>\[\mathbf{e} = \left(\mathbf{f}(\mathbf{s},\mathbf{c}) - \mathbf{g}(\mathbf{c})\right){\mathbf{i}^\text{excess}}^\textsf{T} = \left(\mathbf{e}^t - \mathbf{e}^d\right){\mathbf{i}^\text{excess}}^\textsf{T},\]</div>
+<p>where the vector <span class="math notranslate nohighlight">\(\mathbf{i}^\text{excess}\)</span> is defined as</p>
+<div class="math notranslate nohighlight" id="equation-eq-iopsign1">
+<span class="eqno">(2)<a class="headerlink" href="#equation-eq-iopsign1" title="Link to this equation"></a></span>\[\begin{split}i_e^\text{excess}={\begin{cases}1&amp;{\text{if }t_e \text{ must exceed }d_e}\\-1&amp;{\text{if }t_e \text{ must not exceed }d_e}\end{cases}}.\end{split}\]</div>
+</div>
+<div class="pseudocode" id="id3">
+<div class="pseudocode-caption">
+</div><div class="pseudocode-content">
+<pre id="1" style="display:hidden;">
+            \begin{algorithm}
+\caption{Calculation of MAN parameters}
+\begin{algorithmic}
+%
+\PROCEDURE{forward}{$\mathbf{f}$, $\mathbf{g}$, $\mathbf{h}$, $\mathbf{s}$, $\mathbf{d}$, $\mathbf{i}^\text{excess}$}
+    \STATE $\mathbf{e}^t = \mathbf{f}(\mathbf{s},\mathbf{c})$
+    \STATE $\mathbf{e}^d = \mathbf{g}(\mathbf{c})$
+    \STATE $\mathbf{e} = \left(\mathbf{e}^t - \mathbf{e}^d\right){\mathbf{i}^\text{excess}}^\textsf{T}$
+    \STATE $\mathbf{p} =  \mathbf{h}(\mathbf{s},\mathbf{c})$
+\ENDPROCEDURE
+%
+\end{algorithmic}
+\end{algorithm}
+        </pre></div></div><ul class="simple">
+<li><p><a class="reference internal" href="glossary.html#term-IoP"><span class="xref std std-term">IoP</span></a>: The second metric is calculated based on the performance parameters – considering the actual design versus the performance parameters – if it is assumed that the margin is eliminated at each node. Elimination of the <span class="math notranslate nohighlight">\(i\)</span> th margin can be done by substituting a vector <span class="math notranslate nohighlight">\(\mathbf{e}_i^d\)</span> of decided values, where the <span class="math notranslate nohighlight">\(i\)</span> th component <span class="math notranslate nohighlight">\(e^d_i\)</span> is set equal to the <span class="math notranslate nohighlight">\(i\)</span> th threshold value, into a function <span class="math notranslate nohighlight">\(\mathbf{g}^{-1}: \mathbb{R}^{e} \to \mathcal{R}^{e}\)</span> to obtain the <em>threshold design</em> <span class="math notranslate nohighlight">\(\mathbf{d}_i^\text{threshold} = \mathbf{g}^{-1}(\mathbf{e}^d_i)\)</span>. In this paper, <span class="math notranslate nohighlight">\(\mathbf{g}^{-1}\)</span> is found using surrogate modeling of <span class="math notranslate nohighlight">\(\mathbf{g}\)</span> on the set <span class="math notranslate nohighlight">\(\mathcal{D}\)</span>. The impact may then be calculated by calculating the relative difference in performance between each threshold design and the nominal chosen design.</p></li>
+</ul>
+<div class="definitions admonition">
+<p class="admonition-title">Definition: Impact on performance (<a class="reference internal" href="glossary.html#term-IoP"><span class="xref std std-term">IoP</span></a>)</p>
+<div class="math notranslate nohighlight" id="equation-eq-iop">
+<span class="eqno">(3)<a class="headerlink" href="#equation-eq-iop" title="Link to this equation"></a></span>\[\begin{split}\begin{aligned}
+    I_{i,j} &amp; = \dfrac{h_j(\mathbf{s},\mathbf{d}) - h_j(\mathbf{s},\mathbf{d}_i^\text{threshold})}{h_j(\mathbf{s},\mathbf{d}_i^\text{threshold})}{i_j^p} \\
+    &amp; = \dfrac{p_j - p_{j,i}^\text{threshold}}{p_{j,i}^\text{threshold}}{i_j^p},
+\end{aligned}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(p_j\)</span> is the <span class="math notranslate nohighlight">\(j`th performance parameter, :math:`p_{j,i}^\text{threshold}\)</span> is the <span class="math notranslate nohighlight">\(j`th performance parameter of the :math:`i\)</span> th threshold design, and <span class="math notranslate nohighlight">\(\mathbf{i}^p\)</span> is sign of each performance parameter.</p>
+<div class="math notranslate nohighlight" id="equation-eq-iopsign2">
+<span class="eqno">(4)<a class="headerlink" href="#equation-eq-iopsign2" title="Link to this equation"></a></span>\[\begin{split}i_j^p={\begin{cases}1&amp;{\text{if increasing }p_j \text{ is valuable}}\\-1&amp;{\text{if decreasing }p_j \text{ is valuable}}\end{cases}}.\end{split}\]</div>
+</div>
+<div class="pseudocode" id="id4">
+<div class="pseudocode-caption">
+</div><div class="pseudocode-content">
+<pre id="2" style="display:hidden;">
+            \begin{algorithm}
+\caption{Impact on performance}
+\begin{algorithmic}
+%
+\PROCEDURE{impact}{$\mathbf{g}^{-1}$, $\mathbf{h}$, $\mathbf{e}^t$, $\mathbf{e}^d$, $\mathbf{e}$, $\mathbf{p}$, $\mathbf{s}$, $\mathbf{i}^p$}
+    \FOR{$i = 1, 2, ..., e$}
+        \STATE $\mathbf{d}_i^\text{threshold} = \mathbf{g}^{-1}({e}^{t}_{i},{e}^{d}_{\neq i})$
+        \STATE $\mathbf{p}_i^\text{threshold} = \mathbf{h}(\mathbf{s},\mathbf{d}_i^\text{threshold})$
+        \STATE $\mathbf{I}_{i} = \left(\mathbf{p} - \mathbf{p}_{i}^\text{threshold}\right) \oslash \left({\mathbf{p}_{i}^\text{threshold}} \circ {\mathbf{i}^p}\right)$
+    \ENDFOR
+\ENDPROCEDURE
+%
+\end{algorithmic}
+\end{algorithm}
+        </pre></div></div><p>This metric indicates the deteriorating effect of each margin node on each performance parameter.</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="glossary.html#term-CAC"><span class="xref std std-term">CAC</span></a>: The third metric is calculated by first calculating the variance in the specification possible which do not lead to any changes in the design and then quantifying the effect of that on the margin node. In other words, how much of the margin at each margin node can actually be absorbed without causing a propagation of changes. The allowable variance in the specifications is calculated as follows:</p></li>
+</ul>
+<div class="definitions admonition">
+<p class="admonition-title">Definition: Deterioration of an input specification</p>
+<div class="math notranslate nohighlight" id="equation-eq-speclimit">
+<span class="eqno">(5)<a class="headerlink" href="#equation-eq-speclimit" title="Link to this equation"></a></span>\[v_k=\dfrac{s_k^\text{max} - s_k}{s_k}{i_j^s},\]</div>
+<p>where <span class="math notranslate nohighlight">\(s_k^\text{max}\)</span> is the value of the <span class="math notranslate nohighlight">\(k\)</span> th specification (while setting all others to their nominal values) when any margin <span class="math notranslate nohighlight">\(\mathbf{e}\)</span> is less than or equal to zero. We call this value the text{maximum supported} specification. <span class="math notranslate nohighlight">\(\mathbf{i}^s\)</span> is the sign of the expected change in each specification parameter.</p>
+<div class="math notranslate nohighlight" id="equation-eq-iopsign3">
+<span class="eqno">(6)<a class="headerlink" href="#equation-eq-iopsign3" title="Link to this equation"></a></span>\[\begin{split}i_k^s={\begin{cases}1&amp;{s_k \text{ is expected to increase}}\\-1&amp;{s_k \text{ is expected to decrease}}\end{cases}}.\end{split}\]</div>
+</div>
+<p>This value is found by performing a line search along each specification.</p>
+<div class="pseudocode" id="id5">
+<div class="pseudocode-caption">
+</div><div class="pseudocode-content">
+<pre id="3" style="display:hidden;">
+            \begin{algorithm}
+\caption{Maximum allowable deterioration in input specifications}
+\begin{algorithmic}
+%
+\PROCEDURE{limit}{$\mathbf{f}$, $\mathbf{g}$, $\mathbf{d}$, $\mathbf{c}$, $\mathbf{s}$, $\mathbf{i}^s$, $\boldsymbol{\Delta}^s$, $k$}
+    \WHILE{$\min{\left(\mathbf{f}(\hat{s}_k,s_{\neq k},\mathbf{c}) - \mathbf{g}(\mathbf{d})\right){\mathbf{i}^\text{excess}}^\textsf{T}} &lt; \mathbf{0}$}
+        \STATE $\hat{s}_k \gets \hat{s}_k + i_k^s\Delta_k^s$
+    \ENDWHILE
+    \STATE $s_k^\text{max} \gets \hat{s}_k$
+\ENDPROCEDURE
+%
+\end{algorithmic}
+\end{algorithm}
+        </pre></div></div><p>The next step is to calculate the portion of absorbed margin for each specification by calculating the relative change in the threshold values.</p>
+<div class="definitions admonition">
+<p class="admonition-title">Definition: Change absorption capability (<a class="reference internal" href="glossary.html#term-CAC"><span class="xref std std-term">CAC</span></a>)</p>
+<div class="math notranslate nohighlight" id="equation-eq-cac1">
+<span class="eqno">(7)<a class="headerlink" href="#equation-eq-cac1" title="Link to this equation"></a></span>\[\begin{split}\begin{aligned}
+    A_{i,k} &amp; = \dfrac{f_i(s_k^\text{max},s_{\neq k},\mathbf{d}) - f_i(\mathbf{s},\mathbf{d}) }{ f_i(\mathbf{s},\mathbf{d})v_k} \\
+    &amp; = \dfrac{e^{t,\text{max}}_{k,i} - e^t_i}{{e^t_i}{v_k}},
+\end{aligned}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(t_i\)</span> is the <span class="math notranslate nohighlight">\(i\)</span> th threshold parameter, <span class="math notranslate nohighlight">\(e^{t,\text{max}}_{k,i}\)</span> is the <span class="math notranslate nohighlight">\(i\)</span> th threshold parameter corresponding to the <span class="math notranslate nohighlight">\(k\)</span> th maximum supported specification.</p>
+</div>
+<div class="pseudocode" id="id6">
+<div class="pseudocode-caption">
+</div><div class="pseudocode-content">
+<pre id="4" style="display:hidden;">
+            \begin{algorithm}
+\caption{change absorption capability}
+\begin{algorithmic}
+%
+\PROCEDURE{absorption}{$\mathbf{f}$, $\mathbf{g}$, $\mathbf{h}$, $\mathbf{d}$, $\mathbf{c}$, $\mathbf{s}$, $\mathbf{i}^s$}
+    \STATE $\mathbf{e}^{d,\text{threshold}} \gets \mathbf{e}^d$, $e^{d,\text{threshold}}_i \gets e^t_i$
+    \STATE $\mathbf{d}_i^\text{threshold} = \mathbf{g}^{-1}(\mathbf{e}^{d,\text{threshold})}$
+    \STATE $\mathbf{p}_i^\text{threshold} = \mathbf{h}(\mathbf{s},\mathbf{d}_i^\text{threshold})$
+    \STATE initialize vector of maximum supported specifications $\mathbf{s}^\text{max} \in \mathbb{R}^n$
+    \FOR{$k = 1, 2, ..., n$}
+        \STATE $s_k^\text{max} = \text{LIMIT}(\mathbf{f}, \mathbf{g}, \mathbf{d}, \mathbf{c}, \mathbf{s}, \mathbf{i}^s, k)$
+        \STATE $v_k=\dfrac{\left({s}_k^\text{max} - {s}_k\right)}{\mathbf{i}^s}{\mathbf{s}}$
+        \STATE $\mathbf{A}_{k} \gets \left(\mathbf{f}(s_k^\text{max},s_{\neq k},\mathbf{d}) - \mathbf{f}(\mathbf{s},\mathbf{d}) \right) \oslash \left({v_k}\mathbf{f}(\mathbf{s},\mathbf{d})\right)$
+    \ENDFOR
+\ENDPROCEDURE
+%
+\end{algorithmic}
+\end{algorithm}
+        </pre></div></div></div></blockquote>
+</li>
+<li><p>Aggregating metrics: The method suggests that the metrics calculated for impact and absorption be averaged based on the relative importance of the the performance parameters and the prioritisation of change in the specification. This leads to aggregate values of the two metrics. In this paper we assume equal weightings for all performance parameters and input specifications. The aggregation can be performed by taking the mean across the <span class="math notranslate nohighlight">\(i\)</span> th direction for absorption and impact as follows:</p></li>
+</ul>
+<div class="math notranslate nohighlight" id="equation-eq-cac2">
+<span class="eqno">(8)<a class="headerlink" href="#equation-eq-cac2" title="Link to this equation"></a></span>\[\begin{split}\begin{aligned}
+    \overline{A}_i &amp; = \dfrac{1}{n}\sum_{k=1}^{n} a_{i,k} \\
+    \overline{I}_i &amp; = \dfrac{1}{m}\sum_{j=1}^{m} i_{i,j} \\
+\end{aligned}\end{split}\]</div>
+<ul class="simple">
+<li><p><a class="reference internal" href="glossary.html#term-MVP"><span class="xref std std-term">MVP</span></a>: The two metrics (<span class="math notranslate nohighlight">\(\overline{\mathbf{A}}\)</span> and <span class="math notranslate nohighlight">\(\overline{\mathbf{I}}\)</span>) can then be plotted which shows the relative importance of the <span class="math notranslate nohighlight">\(i\)</span> th margin node in terms of their absorption capability and the deteriorating effect on the performance of the system.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a> is based on the idea that excess margins are created when decisions are made in a design process. The method therefore provides guidance towards identifying those decisions, leading to the identification of all the margins in a design.  The method, in its original form, was specifically developed for an incremental design context, where a design already exists and improvements are supposed to be made by making minor adjustments to the design. The method also focuses extensively on off-the-shelf components, use of which is a common practice in routine design situations. However, for the context of this paper, designs do not pre-exist and are generated through a functional modelling based <a class="reference internal" href="glossary.html#term-DSE"><span class="xref std std-term">DSE</span></a> approach.
+The <a class="reference internal" href="examples.html#examples"><span class="std std-ref">examples</span></a> provided in the documentation of this library are of a highly-integrated with continuous and discrete off-the-shelf parts showing how the <a class="reference internal" href="glossary.html#term-MVM"><span class="xref std std-term">MVM</span></a> can be adapted for <a class="reference internal" href="glossary.html#term-DSE"><span class="xref std std-term">DSE</span></a> studies.</p>
+</div>
+<div class="pseudocode" id="id7">
+<div class="pseudocode-caption">
+</div><div class="pseudocode-content">
+<pre id="5" style="display:hidden;">
+             \begin{algorithm}
+ \caption{Pseudo-algorithm for the MVM}
+ \begin{algorithmic}
+ %
+ \PROCEDURE{stochasticMVM}{$F_\mathbf{S}(\mathbf{s})$}
+     \STATE Initialization:
+     \STATE set counter $i_\text{sample} \gets 0$
+     \STATE initialize aggregate impact and absorption $\overline{\overline{\mathbf{I}}} \in \mathbb{R}^e$ and $\overline{\overline{\mathbf{A}}} \in \mathbb{R}^e$
+     \WHILE{$i_\text{sample} \leq n_\text{samples}$}
+         \STATE draw sample input specifications $\mathbf{S}\in\mathbb{R}^n \sim F_\mathbf{S}(\mathbf{s})$
+         \STATE $\mathbf{e}^t, \mathbf{e}^d, \mathbf{e}, \mathbf{p} = \text{FORWARD}(\mathbf{f}, \mathbf{g}, \mathbf{h}, \mathbf{S}, \mathbf{d}, \mathbf{i}^\text{excess})$
+         \IF{$\exists~i \text{ such that } e_i &gt; 0$}
+             \STATE set $i_\text{sample} \gets i_\text{sample} + 1$
+             \CONTINUE
+         \ENDIF
+         \STATE $\mathbf{I} = \text{IMPACT}(\mathbf{g}^{-1}, \mathbf{h},\mathbf{e}^t,\mathbf{e}^d,\mathbf{e},\mathbf{p},\mathbf{S},\mathbf{i}^p)$
+         \STATE $\mathbf{A} = \text{ABSORPTION}(\mathbf{f}, \mathbf{g}, \mathbf{h}, \mathbf{d}, \mathbf{c}, \mathbf{S}, \mathbf{i}^s)$
+         \STATE $\overline{\mathbf{A}} = \dfrac{1}{n}\sum\limits_{k=1}^{n} \mathbf{A}_k$,
+         $\overline{\mathbf{I}} = \dfrac{1}{m}\sum\limits_{j=1}^{m} \mathbf{I}_j$
+         \STATE $\overline{\overline{\mathbf{A}}} \gets \overline{\overline{\mathbf{A}}} + \overline{\mathbf{A}}$,
+         $\overline{\overline{\mathbf{I}}} \gets \overline{\overline{\mathbf{I}}} + \overline{\mathbf{I}}$
+         \STATE $i_\text{sample} \gets i_\text{sample} + 1$
+     \ENDWHILE
+     \STATE $\overline{\overline{\mathbf{A}}} \gets \overline{\overline{\mathbf{A}}}/n_\text{samples}$
+     \STATE $\overline{\overline{\mathbf{I}}} \gets \overline{\overline{\mathbf{I}}}/n_\text{samples}$
+ \ENDPROCEDURE
+ %
+ \end{algorithmic}
+ \end{algorithm}
+        </pre></div></div></section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="The margin value method library" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="glossary.html" class="btn btn-neutral float-right" title="Glossary" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

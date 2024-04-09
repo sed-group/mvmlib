@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defining fuzzy logic system for evaluating TRS performance &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Identification of design margins in the design of a strut" href="strut_example.html" />
+    <link rel="prev" title="Cookbook and Examples" href="../examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Cookbook and Examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Defining fuzzy logic system for evaluating TRS performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strut_example.html">Identification of design margins in the design of a strut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PDF_examples.html">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Cookbook and Examples</a></li>
+      <li class="breadcrumb-item active">Defining fuzzy logic system for evaluating TRS performance</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/TRS_example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Defining-fuzzy-logic-system-for-evaluating-TRS-performance">
+<h1>Defining fuzzy logic system for evaluating TRS performance<a class="headerlink" href="#Defining-fuzzy-logic-system-for-evaluating-TRS-performance" title="Link to this heading"></a></h1>
+<!-- ![load case](../images/TRS_example/load_case.png "Turbine rear structural thermal loads") --><p style="text-align:center;"><p><img alt="load case" class="no-scaled-link" src="../_images/load_case.png" style="width: 250px;" /></p>
+</p><p>This example shows how to evaluate the design margins of a turbine rear structure (TRS) when experiencing thermal loads. Two temperatures affect the TRS’ performance. They are the temperature of the nacelle compartment <span class="math notranslate nohighlight">\(T_1\)</span> and the temperature of the gas surface <span class="math notranslate nohighlight">\(T_1\)</span>. The output that we are interested in is the safety factor <span class="math notranslate nohighlight">\(n_\textrm{safety}\)</span>.</p>
+<p>Simulation results tell us that <span class="math notranslate nohighlight">\(n_\textrm{safety}\)</span> decreases when the difference <span class="math notranslate nohighlight">\({\lvert}T_2 - T_1{\rvert}\)</span> and vice versa. Based on this qualitative knowledge, we can use <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to quantify these parameters and find out how much change can a TRS absorb.</p>
+<section id="Define-fuzzy-parameters">
+<h2>Define fuzzy parameters<a class="headerlink" href="#Define-fuzzy-parameters" title="Link to this heading"></a></h2>
+<p>First let us import all the required tools to define the parameters <code class="docutils literal notranslate"><span class="pre">T1</span></code>, <code class="docutils literal notranslate"><span class="pre">T2</span></code>, and <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> as fuzzy parameters</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">TriangularFunc</span><span class="p">,</span> <span class="n">FuzzySet</span><span class="p">,</span> <span class="n">FuzzyRule</span><span class="p">,</span> <span class="n">FuzzySystem</span>
+</pre></div>
+</div>
+</div>
+<p>Next we define the <strong>universe</strong> in which our parameters can vary.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}250 \le T_1 \le 450 \\
+480 \le T_2 \le 680 \\
+1.0 \le n_\text{safety} \le 6.0 \\\end{split}\]</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="c1"># Generate universe variables</span>
+<span class="n">lb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">250</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+<span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">450</span><span class="p">,</span> <span class="mi">680</span><span class="p">,</span> <span class="mf">6.0</span><span class="p">])</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span><span class="s1">&#39;n_safety&#39;</span><span class="p">]</span>
+
+<span class="n">universe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span> <span class="c1"># grid for all variables</span>
+</pre></div>
+</div>
+</div>
+<p>Next, we define the <strong>membership functions</strong> in the form of a triangular function. The left foot of the triangle is given by <code class="docutils literal notranslate"><span class="pre">shapes_lo</span></code>, the center of the triangle is given by <code class="docutils literal notranslate"><span class="pre">shapes_md</span></code>, and the right foot of the triangle is given by <code class="docutils literal notranslate"><span class="pre">shapes_hi</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define shape of triangular membership functions</span>
+<span class="n">shapes_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lb</span><span class="p">,</span>               <span class="n">lb</span><span class="p">,</span>             <span class="n">lb</span> <span class="o">+</span> <span class="p">(</span><span class="n">ub</span><span class="o">-</span><span class="n">lb</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>  <span class="p">])</span>
+<span class="n">shapes_md</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lb</span> <span class="o">+</span> <span class="p">(</span><span class="n">ub</span><span class="o">-</span><span class="n">lb</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span>   <span class="n">lb</span> <span class="o">+</span> <span class="p">(</span><span class="n">ub</span><span class="o">-</span><span class="n">lb</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ub</span> <span class="o">-</span> <span class="p">(</span><span class="n">ub</span><span class="o">-</span><span class="n">lb</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span>  <span class="p">])</span>
+<span class="n">shapes_hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lb</span> <span class="o">+</span> <span class="mi">1</span><span class="o">*</span><span class="p">(</span><span class="n">ub</span><span class="o">-</span><span class="n">lb</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span>             <span class="n">ub</span>              <span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>Next we create fuzzy set object for each parameter by looping over <code class="docutils literal notranslate"><span class="pre">lb</span></code>, <code class="docutils literal notranslate"><span class="pre">ub</span></code>, and <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> and visualize the results fuzzy sets.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate fuzzy membership functions</span>
+<span class="n">fuzzy_sets</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lb</span><span class="p">)):</span>
+    <span class="n">lo</span> <span class="o">=</span> <span class="n">TriangularFunc</span><span class="p">(</span><span class="n">universe</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">lo</span><span class="o">.</span><span class="n">set_func</span><span class="p">(</span><span class="n">shapes_lo</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_lo</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_lo</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">md</span> <span class="o">=</span> <span class="n">TriangularFunc</span><span class="p">(</span><span class="n">universe</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">md</span><span class="o">.</span><span class="n">set_func</span><span class="p">(</span><span class="n">shapes_md</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_md</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_md</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">hi</span> <span class="o">=</span> <span class="n">TriangularFunc</span><span class="p">(</span><span class="n">universe</span><span class="p">[:,</span><span class="n">i</span><span class="p">],</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">hi</span><span class="o">.</span><span class="n">set_func</span><span class="p">(</span><span class="n">shapes_hi</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_hi</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="n">i</span><span class="p">],</span><span class="n">shapes_hi</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">fuzzyset_i</span> <span class="o">=</span> <span class="n">FuzzySet</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span><span class="n">md</span><span class="p">,</span><span class="n">hi</span><span class="p">,</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">fuzzy_sets</span> <span class="o">+=</span> <span class="p">[</span><span class="n">fuzzyset_i</span><span class="p">]</span>
+
+<span class="c1"># label each fuzzy set</span>
+<span class="n">temp_T1</span> <span class="o">=</span> <span class="n">fuzzy_sets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">temp_T2</span> <span class="o">=</span> <span class="n">fuzzy_sets</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">n_safety</span> <span class="o">=</span> <span class="n">fuzzy_sets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+<span class="c1"># Visualize these universes and membership functions</span>
+<span class="n">temp_T1</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">temp_T2</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">n_safety</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_9_0.png" src="../_images/notebooks_TRS_example_9_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_9_1.png" src="../_images/notebooks_TRS_example_9_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_9_2.png" src="../_images/notebooks_TRS_example_9_2.png" />
+</div>
+</div>
+</section>
+<section id="Define-fuzzy-rules">
+<h2>Define fuzzy rules<a class="headerlink" href="#Define-fuzzy-rules" title="Link to this heading"></a></h2>
+<p>Next we define the <strong>fuzzy rules</strong> needed to infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code>. The <strong>antecedents</strong> are <code class="docutils literal notranslate"><span class="pre">T1</span></code> and <code class="docutils literal notranslate"><span class="pre">T2</span></code> and the <strong>consequent</strong> is <code class="docutils literal notranslate"><span class="pre">n_safety</span></code>. The following fuzzy rules should be applied in our fuzzy logic system:</p>
+<table><tr><th><p>Rule</p>
+</th><th><p>T1</p>
+</th><th><p>Operator</p>
+</th><th><p>T2</p>
+</th><th><p>n_safety</p>
+</th></tr><tr><td><p>1</p>
+</td><td><p>low</p>
+</td><td><p>AND</p>
+</td><td><p>high</p>
+</td><td><p>low</p>
+</td></tr><tr><td><p>2</p>
+</td><td><p>high</p>
+</td><td><p>AND</p>
+</td><td><p>low</p>
+</td><td><p>high</p>
+</td></tr><tr><td><p>3</p>
+</td><td><p>low</p>
+</td><td><p>AND</p>
+</td><td><p>low</p>
+</td><td><p>medium</p>
+</td></tr><tr><td><p>4</p>
+</td><td><p>high</p>
+</td><td><p>AND</p>
+</td><td><p>low</p>
+</td><td><p>medium</p>
+</td></tr><tr><td><p>5</p>
+</td><td><p>medium</p>
+</td><td><p>AND</p>
+</td><td><p>high</p>
+</td><td><p>low</p>
+</td></tr><tr><td><p>6</p>
+</td><td><p>medium</p>
+</td><td><p>AND</p>
+</td><td><p>low</p>
+</td><td><p>high</p>
+</td></tr><tr><td><p>7</p>
+</td><td><p>low</p>
+</td><td><p>AND</p>
+</td><td><p>medium</p>
+</td><td><p>low</p>
+</td></tr><tr><td><p>8</p>
+</td><td><p>high</p>
+</td><td><p>AND</p>
+</td><td><p>medium</p>
+</td><td><p>high</p>
+</td></tr><tr><td><p>9</p>
+</td><td><p>medium</p>
+</td><td><p>AND</p>
+</td><td><p>medium</p>
+</td><td><p>medium</p>
+</td></tr></table><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define fuzzy rules</span>
+<span class="n">rule1</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R1&#39;</span><span class="p">)</span>
+<span class="n">rule2</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R2&#39;</span><span class="p">)</span>
+<span class="n">rule3</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">md</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R3&#39;</span><span class="p">)</span>
+<span class="n">rule4</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">md</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R4&#39;</span><span class="p">)</span>
+
+<span class="n">rule5</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R5&#39;</span><span class="p">)</span>
+<span class="n">rule6</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R6&#39;</span><span class="p">)</span>
+<span class="n">rule7</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">lo</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R7&#39;</span><span class="p">)</span>
+<span class="n">rule8</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">hi</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R8&#39;</span><span class="p">)</span>
+
+<span class="n">rule9</span> <span class="o">=</span> <span class="n">FuzzyRule</span><span class="p">([{</span><span class="s1">&#39;fun1&#39;</span><span class="p">:</span> <span class="n">temp_T1</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;fun2&#39;</span><span class="p">:</span> <span class="n">temp_T2</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="s1">&#39;operator&#39;</span><span class="p">:</span> <span class="s1">&#39;AND&#39;</span><span class="p">},],</span><span class="n">n_safety</span><span class="o">.</span><span class="n">md</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R9&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Fuzzy-inference-on-a-single-loadcase">
+<h2>Fuzzy inference on a single loadcase<a class="headerlink" href="#Fuzzy-inference-on-a-single-loadcase" title="Link to this heading"></a></h2>
+<p>Next we define our fuzzy logic system based on the <strong>antecedents</strong>, <strong>consequents</strong>, and <strong>fuzzy rules</strong> we have defined so far. We infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> based on <code class="docutils literal notranslate"><span class="pre">T1=370</span></code> and <code class="docutils literal notranslate"><span class="pre">T2=580</span></code> using the centroid rule for defuzzification (default). The outputs are the crisp value <code class="docutils literal notranslate"><span class="pre">n_safety_value</span></code>, the aggregate membership function of the output <code class="docutils literal notranslate"><span class="pre">aggregate</span></code>, and the activation function value at the centroid.</p>
+<p>All of these outputs are displayed in the plot below.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define fuzzy control system</span>
+<span class="n">rules</span> <span class="o">=</span> <span class="p">[</span><span class="n">rule1</span><span class="p">,</span> <span class="n">rule2</span><span class="p">,</span> <span class="n">rule3</span><span class="p">,</span> <span class="n">rule4</span><span class="p">,</span> <span class="n">rule5</span><span class="p">,</span> <span class="n">rule6</span><span class="p">,</span> <span class="n">rule7</span><span class="p">,</span> <span class="n">rule8</span><span class="p">,</span> <span class="n">rule9</span><span class="p">]</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">FuzzySystem</span><span class="p">([</span><span class="n">temp_T1</span><span class="p">,</span><span class="n">temp_T2</span><span class="p">],</span><span class="n">n_safety</span><span class="p">,</span><span class="n">rules</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define inputs and compute the behaviour of the TRS at a given temperature</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="mf">370.0</span><span class="p">,</span> <span class="c1"># T1</span>
+    <span class="mf">580.0</span><span class="p">,</span> <span class="c1"># T2</span>
+    <span class="p">])</span>
+<span class="n">n_safety_value</span><span class="p">,</span> <span class="n">aggregate</span><span class="p">,</span> <span class="n">n_safety_activation</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Visualize the fuzzy behaviour</span>
+<span class="n">sim</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_14_0.png" src="../_images/notebooks_TRS_example_14_0.png" />
+</div>
+</div>
+</section>
+<section id="Fuzzy-inference-on-multiple-combinations-of-loads-(2D-parameter-space)">
+<h2>Fuzzy inference on multiple combinations of loads (2D parameter space)<a class="headerlink" href="#Fuzzy-inference-on-multiple-combinations-of-loads-(2D-parameter-space)" title="Link to this heading"></a></h2>
+<p>Next we infer the value of <code class="docutils literal notranslate"><span class="pre">n_safety</span></code> for different combinations of <code class="docutils literal notranslate"><span class="pre">T1</span></code> and <code class="docutils literal notranslate"><span class="pre">T2</span></code> by sweeping over them. We first create a 2D full factorial grid of the variables</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Design</span>
+
+<span class="c1"># Simulate at higher resolution the control space in 2D</span>
+<span class="n">n_levels</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">Design</span><span class="p">(</span><span class="n">lb</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">ub</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span><span class="n">n_levels</span><span class="p">,</span><span class="s2">&quot;fullfact&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unscale</span><span class="p">()</span>
+
+<span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span> <span class="c1"># remember to reset the fuzzy system when inferring a new set of values</span>
+</pre></div>
+</div>
+</div>
+<p>Next, we retrieve the crisp values <code class="docutils literal notranslate"><span class="pre">z</span></code> for each of the samples in <code class="docutils literal notranslate"><span class="pre">inputs</span></code></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Loop through the system to collect the control surface</span>
+<span class="n">z</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+
+<span class="c1"># Reshape the outputs for contour plotting</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_levels</span><span class="p">,</span><span class="n">n_levels</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_levels</span><span class="p">,</span><span class="n">n_levels</span><span class="p">))</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_levels</span><span class="p">,</span><span class="n">n_levels</span><span class="p">))</span>
+
+<span class="c1"># Plot the result in 2D</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">()</span>
+
+<span class="n">surf</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">,)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;T1&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;T2&#39;</span><span class="p">)</span>
+
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">ScalarMappable</span><span class="p">(</span><span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">)</span>
+<span class="n">cbar</span><span class="o">.</span><span class="n">set_array</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+<span class="n">boundaries</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">51</span><span class="p">)</span>
+<span class="n">cbar_h</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">cbar</span><span class="p">,</span> <span class="n">boundaries</span><span class="o">=</span><span class="n">boundaries</span><span class="p">)</span>
+<span class="n">cbar_h</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;safety factor&#39;</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_18_0.png" src="../_images/notebooks_TRS_example_18_0.png" />
+</div>
+</div>
+<p>The expected inverse relationship between temperature difference and structural performance can be seen above</p>
+</section>
+<section id="Definition-of-uncertain-requirements">
+<h2>Definition of uncertain requirements<a class="headerlink" href="#Definition-of-uncertain-requirements" title="Link to this heading"></a></h2>
+<section id="Requirement-definition">
+<h3>Requirement definition<a class="headerlink" href="#Requirement-definition" title="Link to this heading"></a></h3>
+<p>The requirements are high level system specifications. In this examples they are given a Normal distribution in terms of <span class="math notranslate nohighlight">\(T_1\)</span>$ and <span class="math notranslate nohighlight">\(T_2\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[T_1,T_2 \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma})\]</div>
+<p>we define the means <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> and covariances <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> and use them to define a multivariate normal joint PDF</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">GaussianFunc</span> <span class="c1"># Import the Gaussian distribution class</span>
+
+<span class="c1"># Requirement specifications for T1, T2</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">370</span><span class="p">,</span><span class="mi">580</span><span class="p">])</span>
+<span class="n">Sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+    <span class="p">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">],</span>
+    <span class="p">[</span><span class="mi">75</span><span class="p">,</span> <span class="mi">100</span><span class="p">],</span>
+    <span class="p">])</span>
+<span class="n">Requirement</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">Sigma</span><span class="p">,</span> <span class="s1">&#39;R1&#39;</span><span class="p">)</span>
+<span class="n">Requirement</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<span class="n">Requirement</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Thermal specification $T_1,T_2 </span><span class="se">\</span>
+<span class="s1">    \sim \mathcal</span><span class="si">{N}</span><span class="s1">(\mu,\Sigma)$&#39;</span><span class="p">)</span>
+<span class="n">Requirement</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_21_0.png" src="../_images/notebooks_TRS_example_21_0.png" />
+</div>
+</div>
+<p>The samples from the distribution follow the expected distribution</p>
+</section>
+<section id="A-requirement-that-is-used-as-a-target-threshold">
+<h3>A requirement that is used as a target threshold<a class="headerlink" href="#A-requirement-that-is-used-as-a-target-threshold" title="Link to this heading"></a></h3>
+<p>The target that the TRS must reach is a decided safety factor value that its own safety factor must exceed</p>
+<div class="math notranslate nohighlight">
+\[n_\textrm{safety} \ge n_\textrm{safety}^{decided}\]</div>
+<p>This <span class="math notranslate nohighlight">\(n_\textrm{safety}^{decided}\)</span> is usually uncertain and can also be represented by a PDF centered around a mean</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># for n_decided</span>
+<span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">4.0</span><span class="p">,])</span>
+<span class="n">Sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.3</span><span class="o">**</span><span class="mi">2</span><span class="p">,],])</span>
+<span class="n">decided_safety</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">Sigma</span><span class="p">,</span> <span class="s1">&#39;T1&#39;</span><span class="p">)</span>
+<span class="n">decided_safety</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<span class="n">decided_safety</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Decided $n_\mathrm</span><span class="si">{safety}</span><span class="s1">^\mathrm</span><span class="si">{decided}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">decided_safety</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_24_0.png" src="../_images/notebooks_TRS_example_24_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 432x288 with 0 Axes&gt;
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Elements-of-Margin-Analysis-Network-(MAN)">
+<h2>Elements of Margin Analysis Network (MAN)<a class="headerlink" href="#Elements-of-Margin-Analysis-Network-(MAN)" title="Link to this heading"></a></h2>
+<p>In this section we define the inputs and outputs needed to construct a MAN. We begin with the input specifications, which stem from design requirements.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">InputSpec</span><span class="p">,</span> <span class="n">Behaviour</span><span class="p">,</span> <span class="n">MarginNode</span><span class="p">,</span> <span class="n">MarginNetwork</span>
+</pre></div>
+</div>
+</div>
+<section id="Input-specifications">
+<h3>Input specifications<a class="headerlink" href="#Input-specifications" title="Link to this heading"></a></h3>
+<p>There are three input specifications in this example, <span class="math notranslate nohighlight">\(T_1\)</span>, <span class="math notranslate nohighlight">\(T_2\)</span>, and <span class="math notranslate nohighlight">\(n_\textrm{safety}^{decided}\)</span></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define input specifications</span>
+<span class="n">s1</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;S1&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mi">300</span><span class="p">,</span><span class="mi">450</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;nacelle temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T1&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
+<span class="n">s2</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">Requirement</span><span class="o">.</span><span class="n">mu</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;S2&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mi">500</span><span class="p">,</span><span class="mi">650</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">cov_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;gas surface temperature&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;T2&#39;</span><span class="p">,</span> <span class="n">distribution</span><span class="o">=</span><span class="n">Requirement</span><span class="p">)</span>
+<span class="n">s3</span> <span class="o">=</span> <span class="n">InputSpec</span><span class="p">(</span><span class="n">decided_safety</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="s1">&#39;S3&#39;</span><span class="p">,</span> <span class="n">universe</span> <span class="o">=</span> <span class="p">[</span><span class="mf">3.0</span><span class="p">,</span><span class="mf">5.0</span><span class="p">],</span> <span class="n">variable_type</span><span class="o">=</span><span class="s1">&#39;FLOAT&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;decided safety&#39;</span><span class="p">,</span> <span class="n">symbol</span><span class="o">=</span><span class="s1">&#39;n_decided&#39;</span><span class="p">)</span>
+<span class="n">input_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s1</span><span class="p">,</span><span class="n">s2</span><span class="p">,</span><span class="n">s3</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Behaviour">
+<h3>Behaviour<a class="headerlink" href="#Behaviour" title="Link to this heading"></a></h3>
+<p>Finally, the TRS own safety factor (governed by its behaviour) is given a simulation model or some other calculation. In this example it is given by the fuzzy logic system we defined. We use the normalized aggregate function to define an <strong>arbitrary</strong> PDF as follows</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Distribution</span> <span class="c1"># Import the arbitrary distribution class</span>
+
+<span class="c1"># Behaviour and capability</span>
+
+<span class="n">behaviour</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">aggregate</span><span class="p">,</span><span class="n">lb</span><span class="o">=</span><span class="n">lb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ub</span><span class="o">=</span><span class="n">ub</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">behaviour</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="c1"># should be close to 10.0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">behaviour</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">())</span> <span class="c1"># should be close to 5.0</span>
+<span class="n">behaviour</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3.8828408643953733
+0.908118934351573
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_30_1.png" src="../_images/notebooks_TRS_example_30_1.png" />
+</div>
+</div>
+<p>We embed this stochastic model in <code class="docutils literal notranslate"><span class="pre">Behaviour</span></code> object for the MAN</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># this is the n_safety model</span>
+<span class="k">class</span> <span class="nc">B1</span><span class="p">(</span><span class="n">Behaviour</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">T1</span><span class="p">,</span><span class="n">T2</span><span class="p">):</span>
+        <span class="c1"># Compute for given inputs</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span><span class="n">aggregate</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">compute</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">T1</span><span class="p">,</span><span class="n">T2</span><span class="p">],]),</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">behaviour</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">aggregate</span><span class="p">,</span><span class="n">lb</span><span class="o">=</span><span class="n">lb</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">ub</span><span class="o">=</span><span class="n">ub</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_threshold</span> <span class="o">=</span> <span class="n">behaviour</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+<span class="n">b1</span> <span class="o">=</span> <span class="n">B1</span><span class="p">(</span><span class="n">n_i</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_p</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_dv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">n_tt</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;B1&#39;</span><span class="p">)</span>
+<span class="n">behaviours</span> <span class="o">=</span> <span class="p">[</span><span class="n">b1</span><span class="p">,]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Margin-Nodes">
+<h3>Margin Nodes<a class="headerlink" href="#Margin-Nodes" title="Link to this heading"></a></h3>
+<p>Now we define the margin node. Since <span class="math notranslate nohighlight">\(n_\textrm{safety} \ge n_\textrm{safety}^{decided}\)</span>, this is a <code class="docutils literal notranslate"><span class="pre">must_exceed</span></code> type of margin</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Defining a MarginNode object</span>
+<span class="n">e1</span> <span class="o">=</span> <span class="n">MarginNode</span><span class="p">(</span><span class="s1">&#39;E1&#39;</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="s1">&#39;must_exceed&#39;</span><span class="p">)</span>
+<span class="n">margin_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">e1</span><span class="p">,]</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Margin-Analysis-Network">
+<h3>Margin Analysis Network<a class="headerlink" href="#Margin-Analysis-Network" title="Link to this heading"></a></h3>
+<p>Now we define how all the previous elements are connected together inside a MAN</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Defining a MarginNetwork object</span>
+<span class="k">class</span> <span class="nc">MAN</span><span class="p">(</span><span class="n">MarginNetwork</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">randomize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Requirement</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="n">decided_safety</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="n">s1</span><span class="o">.</span><span class="n">random</span><span class="p">();</span><span class="n">s2</span><span class="o">.</span><span class="n">random</span><span class="p">();</span><span class="n">s3</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">Requirement</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+        <span class="n">decided_safety</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+        <span class="c1"># retrieve MAN components</span>
+        <span class="n">s1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># stochastic</span>
+        <span class="n">s2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># stochastic</span>
+        <span class="n">s3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_specs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="c1"># stochastic</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">behaviours</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">e1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin_nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Execute behaviour models</span>
+        <span class="n">b1</span><span class="p">(</span><span class="n">s1</span><span class="o">.</span><span class="n">value</span><span class="p">,</span><span class="n">s2</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="n">e1</span><span class="p">(</span><span class="n">b1</span><span class="o">.</span><span class="n">target_threshold</span><span class="p">,</span><span class="n">s3</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+<span class="n">man</span> <span class="o">=</span> <span class="n">MAN</span><span class="p">([],</span><span class="n">input_specs</span><span class="p">,[],</span><span class="n">behaviours</span><span class="p">,[],</span><span class="n">margin_nodes</span><span class="p">,[],</span><span class="s1">&#39;MAN_1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Running-the-MAN-inside-a-Monte-Carlo-simulation">
+<h2>Running the MAN inside a Monte-Carlo simulation<a class="headerlink" href="#Running-the-MAN-inside-a-Monte-Carlo-simulation" title="Link to this heading"></a></h2>
+<p>We loop over the defined MarginNetwork object as many times as needed to get the distribution of the margin node</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">10000</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress: </span><span class="si">%d%%</span><span class="s2">   </span><span class="se">\r</span><span class="s2">&quot;</span> <span class="o">%</span><span class="p">((</span><span class="n">n</span><span class="o">/</span><span class="n">n_epochs</span><span class="p">)</span><span class="o">*</span> <span class="mi">100</span><span class="p">))</span> <span class="c1"># display progress</span>
+    <span class="n">man</span><span class="o">.</span><span class="n">forward</span><span class="p">()</span>
+
+<span class="n">e1</span><span class="o">.</span><span class="n">excess</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Excess $\Delta = n_\mathrm</span><span class="si">{safety}</span><span class="s1"> - </span><span class="se">\</span>
+<span class="s1">    n_\mathrm</span><span class="si">{safety}</span><span class="s1">^\mathrm</span><span class="si">{decided}</span><span class="s1">$&#39;</span><span class="p">)</span>
+<span class="n">e1</span><span class="o">.</span><span class="n">excess</span><span class="o">.</span><span class="n">view_cdf</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;Excess $\Delta = n_\mathrm</span><span class="si">{safety}</span><span class="s1"> - </span><span class="se">\</span>
+<span class="s1">    n_\mathrm</span><span class="si">{safety}</span><span class="s1">^\mathrm</span><span class="si">{decided}</span><span class="s1">$&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Progress: 99%
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_38_1.png" src="../_images/notebooks_TRS_example_38_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_TRS_example_38_2.png" src="../_images/notebooks_TRS_example_38_2.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../examples.html" class="btn btn-neutral float-left" title="Cookbook and Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="strut_example.html" class="btn btn-neutral float-right" title="Identification of design margins in the design of a strut" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

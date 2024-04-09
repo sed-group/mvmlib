@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using mvmlib to define univariate and multivariate probability density functions &mdash; mvmlib 0.5.10 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/custom.css?v=03c10145" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=f1e22e58"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../_static/copybutton.js?v=f281be69"></script>
+        <script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The mvmlib API reference" href="../api.html" />
+    <link rel="prev" title="Identification of design margins in the design of a strut" href="strut_example.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            mvmlib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Technical Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Demo Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting_started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../examples.html">Cookbook and Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="TRS_example.html">Defining fuzzy logic system for evaluating TRS performance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strut_example.html">Identification of design margins in the design of a strut</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Code Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">The mvmlib API reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../history.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mvmlib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../examples.html">Cookbook and Examples</a></li>
+      <li class="breadcrumb-item active">Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/PDF_examples.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Using-mvmlib-to-define-univariate-and-multivariate-probability-density-functions">
+<h1>Using <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to define univariate and multivariate probability density functions<a class="headerlink" href="#Using-mvmlib-to-define-univariate-and-multivariate-probability-density-functions" title="Link to this heading"></a></h1>
+<p>This tutorial explains how to define different probability density functions using both standard built-in distributions and user-defined custom probability density functions</p>
+<section id="Simple-1-dimensional-uniform-distribution">
+<h2>Simple 1-dimensional uniform distribution<a class="headerlink" href="#Simple-1-dimensional-uniform-distribution" title="Link to this heading"></a></h2>
+<p>We define a uniform distribution function given by:</p>
+<div class="math notranslate nohighlight">
+\[X \sim \mathcal{U}(c,r),\]</div>
+<p>where <span class="math notranslate nohighlight">\(c\)</span> is the center of the distribution, and <span class="math notranslate nohighlight">\(r\)</span> is the range. The distribution’s density function <span class="math notranslate nohighlight">\(f(x)\)</span> is given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}f(x)={
+    \begin{cases}
+        0               &amp;{\text{for }}x &lt; c-\frac{r}{2} \\
+        {\frac{1}{r}}  &amp;{\text{for }}c-\frac{r}{2} \leq x \leq c+\frac{r}{2}  \\
+        1               &amp;{\text{for }}x &gt; c+\frac{r}{2}
+    \end{cases}
+    }\end{split}\]</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simple 1-dimensional uniform distribution</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">UniformFunc</span>
+
+<span class="n">center</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="nb">range</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="n">dist</span> <span class="o">=</span> <span class="n">UniformFunc</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">center</span><span class="p">]),</span> <span class="n">interval</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="nb">range</span><span class="p">,</span> <span class="p">]]))</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span> <span class="c1"># draw 10000 samples from the distribution (they are stores inside)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([12.06919296, 13.10179147, 13.79772695, ...,  5.36410736,
+       14.69095015,  9.09991231])
+</pre></div></div>
+</div>
+<p>We can check the approximate mean and standard deviations of the distribution and compare them with the exact values</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="c1"># should be close to 10.0</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+<span class="c1"># true standard deviation</span>
+<span class="n">exact_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(((</span><span class="nb">range</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Approximate mean: </span><span class="si">%f</span><span class="s1">, </span><span class="se">\n</span><span class="s1">Exact mean: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span><span class="n">center</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Approximate standard deviation: </span><span class="si">%f</span><span class="s1">, </span><span class="se">\n</span><span class="s1">Exact standard deviation: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">std</span><span class="p">,</span><span class="n">exact_std</span><span class="p">))</span>
+
+<span class="n">dist</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Approximate mean: 9.993473,
+Exact mean: 10.000000
+Approximate standard deviation: 2.773436,
+Exact standard deviation: 2.886751
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_4_1.png" src="../_images/notebooks_PDF_examples_4_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 432x288 with 0 Axes&gt;
+</pre></div></div>
+</div>
+</section>
+<section id="1-dimensional-Gaussian-distribution">
+<h2>1-dimensional Gaussian distribution<a class="headerlink" href="#1-dimensional-Gaussian-distribution" title="Link to this heading"></a></h2>
+<p>We repeat the same exercise for the Gaussian distribution given by:</p>
+<div class="math notranslate nohighlight">
+\[X \sim \mathcal{N}(\mu,\sigma),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\mu\)</span> is the mean of the distribution, and <span class="math notranslate nohighlight">\(\sigma\)</span> is the standard deviation.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simple 1-dimensional Gaussian distribution</span>
+<span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">GaussianFunc</span>
+
+<span class="n">mu</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">sigma</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="n">dist</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">center</span><span class="p">]),</span> <span class="n">sigma</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="p">]]))</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span> <span class="c1"># draw 10000 samples from the distribution (they are stores inside)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([12.33780984,  7.29394816,  8.45848063, ...,  6.60838067,
+       -1.183258  ,  8.64297244])
+</pre></div></div>
+</div>
+<p>We can check the approximate mean and standard deviations of the distribution and compare them with the exact values</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="c1"># should be close to 10.0</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Approximate mean: </span><span class="si">%f</span><span class="s1">, </span><span class="se">\n</span><span class="s1">Exact mean: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span><span class="n">mu</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Approximate standard deviation: </span><span class="si">%f</span><span class="s1">, </span><span class="se">\n</span><span class="s1">Exact standard deviation: </span><span class="si">%f</span><span class="s1">&#39;</span> <span class="o">%</span><span class="p">(</span><span class="n">std</span><span class="p">,</span><span class="n">sigma</span><span class="p">))</span>
+
+<span class="n">dist</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Approximate mean: 10.013612,
+Exact mean: 10.000000
+Approximate standard deviation: 4.806228,
+Exact standard deviation: 5.000000
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_8_1.png" src="../_images/notebooks_PDF_examples_8_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Figure size 432x288 with 0 Axes&gt;
+</pre></div></div>
+</div>
+</section>
+<section id="1-dimensional-arbitrary-distribution">
+<h2>1-dimensional arbitrary distribution<a class="headerlink" href="#1-dimensional-arbitrary-distribution" title="Link to this heading"></a></h2>
+<p>We define a random distribution using a custom piecewise linear probability density function given by:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}f(x)={
+    \begin{cases}
+        -0.1x   &amp;{\text{for }}x &lt; 0 \\
+        0.5x    &amp;{\text{for }}0 \leq x \leq 50  \\
+        1       &amp;{\text{for }}x &gt; 50
+    \end{cases}
+    }\end{split}\]</div>
+<p>The density function can be defined by the user as follows. <em>The density function is divided by the total area to ensure that total probability of the density function does not exceed 1</em></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Distribution</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># 2D grid</span>
+
+<span class="c1"># define a piecewise linear function</span>
+<span class="k">def</span> <span class="nf">density</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">value</span>
+        <span class="k">elif</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">50</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="mi">50</span>
+
+        <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">density</span><span class="p">,</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">density</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">density</span> <span class="o">/=</span> <span class="n">area</span> <span class="c1"># normalize by the area</span>
+
+    <span class="k">return</span> <span class="n">density</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="n">density</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">p</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x1f0d7213e48&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_10_1.png" src="../_images/notebooks_PDF_examples_10_1.png" />
+</div>
+</div>
+<p>The values of the density function can be fed to the <code class="docutils literal notranslate"><span class="pre">Distribution</span></code> class and used for further sampling</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># define the arbitrary distribution by providing the density values</span>
+<span class="n">dist</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="n">lb</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span><span class="n">ub</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+
+<span class="c1"># Compare with exact density function</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;values&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;density&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">),</span><span class="n">p</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_12_0.png" src="../_images/notebooks_PDF_examples_12_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_12_1.png" src="../_images/notebooks_PDF_examples_12_1.png" />
+</div>
+</div>
+</section>
+<section id="2-dimensional-Gaussian-distribution">
+<h2>2-dimensional Gaussian distribution<a class="headerlink" href="#2-dimensional-Gaussian-distribution" title="Link to this heading"></a></h2>
+<p>We define a 2-dimensional joint probability density function using the same built-in <code class="docutils literal notranslate"><span class="pre">Guassian</span></code> class. The joint PDF is given as follows</p>
+<div class="math notranslate nohighlight">
+\[X \sim \mathcal{N}(\boldsymbol{\mu},\boldsymbol{\Sigma}),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\boldsymbol{\mu}\)</span> is the vector of means, and <span class="math notranslate nohighlight">\(\boldsymbol{\Sigma}\)</span> is the covariance matrix.</p>
+<p>The density function can be defined by the user as follows.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2D example</span>
+<span class="n">mean_1</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">mean_2</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">sd_1</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">sd_2</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+<span class="n">mean_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mean_1</span><span class="p">,</span> <span class="n">mean_2</span><span class="p">])</span>
+<span class="n">cov_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sd_1</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd_2</span> <span class="o">**</span> <span class="mi">2</span><span class="p">]])</span>
+
+<span class="n">dist</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">mean_vector</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">cov_matrix</span><span class="p">)</span>
+
+<span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">std</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">samples</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;approximate means:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;exact means:&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mean_vector</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;approximate standard deviations (diagonal of cov matrix):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Exact standard deviations (diagonal of cov matrix):&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cov_matrix</span><span class="o">.</span><span class="n">diagonal</span><span class="p">()))</span>
+
+<span class="c1"># View distribution</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+approximate means:
+[9.97413398 4.97442997]
+exact means:
+[10.  5.]
+approximate standard deviations (diagonal of cov matrix):
+[0.9920326  1.88438444]
+Exact standard deviations (diagonal of cov matrix):
+[1. 2.]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_14_1.png" src="../_images/notebooks_PDF_examples_14_1.png" />
+</div>
+</div>
+<p>We can also introduce some covariance</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mean_1</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">mean_2</span> <span class="o">=</span> <span class="mf">5.0</span>
+<span class="n">sd_1</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">sd_2</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">cov</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="n">mean_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mean_1</span><span class="p">,</span> <span class="n">mean_2</span><span class="p">])</span>
+<span class="n">cov_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">sd_1</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cov</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd_2</span> <span class="o">**</span> <span class="mi">2</span><span class="p">]])</span>
+
+<span class="n">dist</span> <span class="o">=</span> <span class="n">GaussianFunc</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">mean_vector</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">cov_matrix</span><span class="p">)</span>
+
+<span class="n">dist</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1"># View distribution</span>
+<span class="n">dist</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_16_0.png" src="../_images/notebooks_PDF_examples_16_0.png" />
+</div>
+</div>
+</section>
+<section id="Define-a-two-dimensional-arbitrary-joint-PDF">
+<h2>Define a two dimensional arbitrary joint PDF<a class="headerlink" href="#Define-a-two-dimensional-arbitrary-joint-PDF" title="Link to this heading"></a></h2>
+<p>This requires more effort from the user to define the two-dimensional joint probability density function. We show this can be done to reproduce the 2D Gaussian function above. The <code class="docutils literal notranslate"><span class="pre">Gaussian</span></code> class provides the <code class="docutils literal notranslate"><span class="pre">compute_density</span></code> method for getting the density values.</p>
+<p>We use the design of experiments library in <code class="docutils literal notranslate"><span class="pre">mvmlib</span></code> to calculate a full-factorial 2D grid of density values first.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mvm</span> <span class="kn">import</span> <span class="n">Design</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">Design</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="o">-</span><span class="mi">100</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">]),</span> <span class="mi">512</span><span class="p">,</span> <span class="s2">&quot;fullfact&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unscale</span><span class="p">()</span>  <span class="c1"># 2D grid</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">compute_density</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># get density values</span>
+<span class="n">dist_arb</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">)))</span>
+<span class="n">dist_arb</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">dist_arb</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_PDF_examples_18_0.png" src="../_images/notebooks_PDF_examples_18_0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="strut_example.html" class="btn btn-neutral float-left" title="Identification of design margins in the design of a strut" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="The mvmlib API reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Khalil Al Handawi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
