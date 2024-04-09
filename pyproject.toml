@@ -10,11 +10,11 @@ requires-python = ">=3.8"
 dynamic = ['version', 'description']
 
 dependencies = [
-"matplotlib==3.7.0",
-"pyDOE==0.3.8",
-"scikit-fuzzy==0.4.2",
-"smt==1.1.0",
-"multiprocess==0.70.12.2"
+    "matplotlib<=3.8.4",
+    "pyDOE<=0.3.8",
+    "scikit-fuzzy<=0.4.2",
+    "smt<=1.3.0",
+    "multiprocess<=0.70.16"
 ]
 
 [tool.flit.module]
@@ -30,7 +30,9 @@ test = [
 doc = [
     "sphinx",
     "sphinx-autobuild",
-    "nbsphinx"
+    "sphinx-rtd-theme",
+    "nbsphinx",
+    "sphinx-copybutton"
 ]
 
 [project.urls]

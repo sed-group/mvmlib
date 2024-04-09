@@ -1,7 +1,10 @@
-from typing import List, Union
+from typing import List, Union, Optional
 
 import numpy as np
-from pyDOE import lhs
+from pyDOE2 import lhs
+import os, json
+
+from .utilities import check_folder, serialize
 
 """DOE Library for generating a design"""
 
@@ -99,7 +102,14 @@ def scaling(x: np.ndarray, lb: np.ndarray, ub: np.ndarray, operation: int) -> np
 
 class Design:
 
-    def __init__(self, lb: np.ndarray, ub: np.ndarray, nsamples: Union[int, List[int], np.ndarray], doe_type: str):
+    def __init__(
+            self, 
+            lb: np.ndarray, 
+            ub: np.ndarray, 
+            nsamples: Union[int, List[int], np.ndarray], 
+            doe_type: str, 
+            random_seed: Optional[int] = None
+        ):
         """
         Contains the experimental design limits, 
         samples and other relevant statistics
@@ -116,32 +126,83 @@ class Design:
         doe_type : str, optional
             Allowable values are "LHS" and "fullfact". If no value 
             given, the design is simply randomized.
-        
+        random_seed : str, optional
+            random seed for initializing LHS DOE. Does not affect 'fullfact' DOE's
+            If no value given then results are not reproducible
+        design_matrix : str, optional
+            use the provided design_matrix instead of the one generated initially
+            
         # TODO: return error if len(lb) != len(ub)
         """
 
-        self.lb = lb
-        self.ub = ub
+        self._lb = list(lb)
+        self._ub = list(ub)
 
-        self.nsamples = nsamples
         self.type = doe_type
+        self.seed = random_seed
+
+        self._nlevels = []
+        self._nsamples = 0
+        self._design = np.empty((0,len(self._lb)))
 
         # Generate latin hypercube design and store it
 
         if self.type == 'LHS':
-            assert type(self.nsamples) == int
-            self.design = lhs(len(self.lb), samples=self.nsamples)
+            assert type(nsamples) == int
+            self._nsamples = nsamples
+            self._design = lhs(len(self._lb), samples=self._nsamples, random_state=self.seed)
         elif self.type == 'fullfact':
-            bounds = np.array([[0.0] * len(self.lb), [1.0] * len(self.ub)])
-            if type(self.nsamples) == list:
-                assert len(self.nsamples) == len(self.lb)
-                self.design = gridsamp(bounds, np.array(self.nsamples))
-            if type(self.nsamples) == np.ndarray:
-                assert self.nsamples.ndim == 1
-                assert len(self.nsamples) == len(self.lb)
-                self.design = gridsamp(bounds, self.nsamples)
-            elif type(self.nsamples) == int:
-                self.design = gridsamp(bounds, np.array([self.nsamples]))
+            bounds = np.array([[0.0] * len(self._lb), [1.0] * len(self._ub)])
+            if type(nsamples) == list:
+                assert len(nsamples) == len(self._lb)
+                self._nlevels = nsamples
+                self._nsamples = np.prod(nsamples)
+                self._design = gridsamp(bounds, np.array(self._nlevels))
+            if type(nsamples) == np.ndarray:
+                assert nsamples.ndim == 1
+                assert len(nsamples) == len(self._lb)
+                self._nlevels = nsamples.tolist()
+                self._nsamples = np.prod(nsamples)
+                self._design = gridsamp(bounds, np.array(self._nlevels))
+            elif type(nsamples) == int:
+                n_levels_list = [nsamples,]*len(self._lb)
+                diff = np.array(self._lb) - np.array(self._ub)
+                n_levels_array = np.array(n_levels_list,dtype=int)
+                n_levels_array[diff==0] = 0
+                self._nlevels = n_levels_array.tolist()
+
+                self._nsamples = np.prod(self._nlevels)
+                self._design = gridsamp(bounds, np.array(self._nlevels))
+
+    @property
+    def design(self) -> np.ndarray:
+        """
+        used to return a copy of the design matrix
+
+        Returns
+        -------
+        np.ndarray
+            copy of design matrix
+        """
+        return self._design.copy()
+
+    @design.setter
+    def design(self,value:np.ndarray) -> None:
+        """
+        used to set the design matrix externally
+
+        Parameters
+        ----------
+        value : np.ndarray
+            numpy array of the matrix
+        """
+
+        n_samples = np.prod(self._nlevels) if self.type == "fullfact" else self._nsamples
+
+        assert value.shape[0] == self._nsamples
+        assert value.shape[1] == len(self._lb)
+
+        self._design = value
 
     def unscale(self) -> np.ndarray:
         """
@@ -153,7 +214,7 @@ class Design:
             numpy array of size n * nsamples of LH values unscaled by lb and ub
         """
 
-        unscaled_lh = scaling(self.design, self.lb, self.ub, 2)
+        unscaled_lh = scaling(self._design, np.array(self._lb), np.array(self._ub), 2)
 
         return unscaled_lh
 
@@ -167,4 +228,128 @@ class Design:
             numpy array of size n * nsamples of LH values between 0 and 1
         """
 
-        return self.design
+        return self._design.copy()
+
+    def save(self,name:str) -> None:
+        """
+        saves the state of the DOE to a text file
+
+        Parameters
+        ----------
+        file : str
+            the folder name to be used to save the data which includes
+            * settings.json
+            * scale.csv
+            * unscale.csv
+        """
+
+        exists = check_folder(name)
+
+        if exists:
+            print("warning folder %s already exists!" %name)
+
+        with open(os.path.join(name,"scale.csv"),"w") as f:
+            np.savetxt(f,self._design)
+
+        with open(os.path.join(name,"unscale.csv"),"w") as f:
+            np.savetxt(f,self.unscale())
+
+        with open(os.path.join(name,"settings.json"),"w") as f:
+            
+            settings = {
+                "n_samples" : self._nsamples,
+                "n_levels" : self._nlevels,
+                "lb" : self._lb,
+                "ub" : self._ub,
+                "type" : self.type,
+                "random_seed" : self.seed
+            }
+            json.dump(serialize(settings), f, indent=4)
+            print(json.dumps(serialize(settings), indent=4))
+
+    def load(self,name:str) -> None:
+        """
+        loads the state of the DOE from a text file
+
+        Parameters
+        ----------
+        file : str
+            the folder name to be used to load the data which includes
+            * settings.json
+            * scale.csv
+            * unscale.csv
+        """
+
+        exists = check_folder(name)
+        assert exists, "directory %s does not exist!" %name
+        assert os.path.isfile(os.path.join(name,"scale.csv")), "file %s/%s does not exist!" %(name,"scale.csv")
+        assert os.path.isfile(os.path.join(name,"unscale.csv")), "file %s/%s does not exist!" %(name,"unscale.csv")
+        assert os.path.isfile(os.path.join(name,"settings.json")), "file %s/%s does not exist!" %(name,"settings.json")
+
+        with open(os.path.join(name,"scale.csv"),"r") as f:
+            self._design = np.loadtxt(f)
+
+        with open(os.path.join(name,"settings.json"),"r") as f:
+            settings = json.load(f)
+
+        print(json.dumps(settings, indent=4))
+
+        self.type = settings["type"]
+        self._nlevels = settings["n_samples"]
+        self._nsamples = settings["n_levels"]
+        self._lb = settings["lb"]
+        self._ub = settings["ub"]
+        self.type = settings["type"]
+        self.seed = settings["random_seed"]
+
+def get_design(name:str) -> Design:
+    """
+    returns an a Design object initialized using the input folder
+
+    Parameters
+    ----------
+    file : str
+        the folder name to be used to load the data which includes
+        * settings.json
+        * scale.csv
+        * unscale.csv
+    """
+
+    exists = check_folder(name)
+    assert exists, "directory %s does not exist!" %name
+    assert os.path.isfile(os.path.join(name,"scale.csv")), "file %s/%s does not exist!" %(name,"scale.csv")
+    assert os.path.isfile(os.path.join(name,"unscale.csv")), "file %s/%s does not exist!" %(name,"unscale.csv")
+    assert os.path.isfile(os.path.join(name,"settings.json")), "file %s/%s does not exist!" %(name,"settings.json")
+
+    with open(os.path.join(name,"scale.csv"),"r") as f:
+        design = np.loadtxt(f)
+
+    with open(os.path.join(name,"settings.json"),"r") as f:
+        settings = json.load(f)
+
+    print(json.dumps(settings, indent=4))
+
+    if settings["type"] == "LHS":
+
+        doe = Design(
+            lb=np.array(settings["lb"]),
+            ub=np.array(settings["ub"]),
+            nsamples=settings["n_samples"],
+            doe_type =settings["type"],
+            random_seed=settings["random_seed"]
+        )
+
+    elif settings["type"] == "fullfact":
+
+        doe = Design(
+            lb=np.array(settings["lb"]),
+            ub=np.array(settings["ub"]),
+            nsamples=settings["n_levels"],
+            doe_type =settings["type"],
+            random_seed=settings["random_seed"]
+        )
+
+    doe.design = design
+
+    return doe
+
