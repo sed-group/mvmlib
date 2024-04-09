@@ -13,7 +13,7 @@ multiprocess = "<=0.70.16"
 [dev-packages]
 pipenv = "*"
 install = "*"
-flit = "*"
+flit = "<=3.9.0"
 nbsphinx = "*"
 pandoc = "*"
 pytest = ">=6.2.5"
