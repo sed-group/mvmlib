@@ -29,7 +29,6 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
 
     - name: setup pandoc environment
       uses: r-lib/actions/setup-pandoc@v1
@@ -39,6 +38,12 @@ jobs:
     - name: Install pipenv
       run: |
         python -m pip install --upgrade pipenv wheel
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
 
     - name: install dependencies
       run: |
@@ -81,7 +86,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
 
     - name: Install pipenv
       run: |
@@ -142,7 +152,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{env.deploy-python-version}}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
 
     - name: Install pipenv
       run: |
@@ -174,7 +189,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{env.deploy-python-version}}
-        cache: 'pip'
+
+    - id: cache-pipenv
+      uses: actions/cache@v1
+      with:
+        path: ~/.local/share/virtualenvs
+        key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
 
     - name: Install pipenv
       run: |
